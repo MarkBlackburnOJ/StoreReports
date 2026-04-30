@@ -527,7 +527,117 @@ select.toolbar-select:focus {
 /* ==================================================================== */
 /* KPI ITEMS (expandable cards)                                          */
 /* ==================================================================== */
-.item-list { display: flex; flex-direction: column; gap: 6px; }
+.item-list {
+  display: flex; flex-direction: column; gap: 6px;
+}
+@media (min-width: 700px) {
+  .item-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+}
+
+/* ==================================================================== */
+/* TABS — button-style pills                                             */
+/* ==================================================================== */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: -2px -2px 14px -2px;
+  padding: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mute);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.tab .icon { width: 14px; height: 14px; opacity: .85; }
+.tab:hover {
+  background: var(--paper);
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.tab[aria-selected="true"] {
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.tab[aria-selected="true"] .icon { opacity: 1; }
+
+.tab[data-tab="oos"][aria-selected="true"] {
+  background: var(--critical-soft);
+  border-color: var(--critical);
+  color: var(--critical);
+}
+.tab[data-tab="phantom"][aria-selected="true"] {
+  background: var(--phantom-soft);
+  border-color: var(--phantom);
+  color: var(--phantom);
+}
+.tab[data-tab="low"][aria-selected="true"] {
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning-deep);
+}
+.tab[data-tab="oos"][aria-selected="true"] .icon { color: var(--critical); }
+.tab[data-tab="phantom"][aria-selected="true"] .icon { color: var(--phantom); }
+.tab[data-tab="low"][aria-selected="true"] .icon { color: var(--warning-deep); }
+
+.tab-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  background: rgba(31,32,36,.06);
+  color: var(--ink-2);
+  padding: 2px 7px;
+  border-radius: 999px;
+  min-width: 22px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+/* Active tab → invert the badge: solid severity bg, white text */
+.tab[data-tab="oos"][aria-selected="true"] .tab-count {
+  background: var(--critical); color: #fff;
+}
+.tab[data-tab="phantom"][aria-selected="true"] .tab-count {
+  background: var(--phantom); color: #fff;
+}
+.tab[data-tab="low"][aria-selected="true"] .tab-count {
+  background: var(--warning-deep); color: #fff;
+}
+
+.tab-panel[hidden] { display: none; }
+.tab-summary {
+  font-size: 12.5px; color: var(--mute);
+  margin: 0 0 12px; line-height: 1.45;
+}
+.tab-summary .num { color: var(--ink); font-weight: 600; }
+
+/* On narrow viewports, hide labels — show icon + count only */
+@media (max-width: 419px) {
+  .tab .tab-label { display: none; }
+  .tab { padding: 11px 14px; gap: 8px; }
+  .tab .icon { width: 15px; height: 15px; }
+  .tab-count { font-size: 12px; padding: 2px 8px; min-width: 24px; }
+}
 
 details.item {
   position: relative;
@@ -986,60 +1096,50 @@ footer .brand {
   </section>
 
   <!-- ============ OOS ============ -->
-  <section class="section" id="section-oos">
+  <section class="section" id="section-actions">
     <div class="section-header">
-      <div class="section-icon crit"><svg class="icon"><use href="#i-x-octagon"/></svg></div>
+      <div class="section-icon crit"><svg class="icon"><use href="#i-alert-triangle"/></svg></div>
       <div class="section-title">
-        <h2>Out of stock <span class="count-badge crit" id="oos-count">0</span></h2>
-        <p id="oos-summary">—</p>
+        <h2>Action items <span class="count-badge" id="actions-total-count">0</span></h2>
+        <p>Items needing attention. Search filters all three lists at once; tab counts update live.</p>
       </div>
     </div>
     <div class="section-toolbar">
       <div class="search-input">
         <svg class="icon"><use href="#i-search"/></svg>
-        <input type="search" data-search="oos" placeholder="Search out of stock…" autocomplete="off">
-        <button class="clear" data-search-clear="oos" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
+        <input type="search" data-search="actions" placeholder="Search across all action items…" autocomplete="off">
+        <button class="clear" data-search-clear="actions" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
       </div>
     </div>
-    <div class="item-list" id="oos-list"></div>
-  </section>
-
-  <!-- ============ POSSIBLE PHANTOM ============ -->
-  <section class="section" id="section-phantom">
-    <div class="section-header">
-      <div class="section-icon phantom"><svg class="icon"><use href="#i-ghost"/></svg></div>
-      <div class="section-title">
-        <h2>Possible phantom stock <span class="count-badge phantom" id="phantom-count">0</span></h2>
-        <p id="phantom-summary">—</p>
-      </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" data-tab="oos" role="tab" aria-selected="true">
+        <svg class="icon"><use href="#i-x-octagon"/></svg>
+        <span class="tab-label">Out of stock</span>
+        <span class="tab-count" id="oos-tab-count">0</span>
+      </button>
+      <button class="tab" data-tab="phantom" role="tab" aria-selected="false">
+        <svg class="icon"><use href="#i-ghost"/></svg>
+        <span class="tab-label">Possible phantom</span>
+        <span class="tab-count" id="phantom-tab-count">0</span>
+      </button>
+      <button class="tab" data-tab="low" role="tab" aria-selected="false">
+        <svg class="icon"><use href="#i-hourglass"/></svg>
+        <span class="tab-label">Low cover</span>
+        <span class="tab-count" id="low-tab-count">0</span>
+      </button>
     </div>
-    <div class="section-toolbar">
-      <div class="search-input">
-        <svg class="icon"><use href="#i-search"/></svg>
-        <input type="search" data-search="phantom" placeholder="Search possible phantom…" autocomplete="off">
-        <button class="clear" data-search-clear="phantom" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
-      </div>
+    <div class="tab-panel" data-tab="oos" role="tabpanel">
+      <p class="tab-summary" id="oos-summary"></p>
+      <div class="item-list" id="oos-list"></div>
     </div>
-    <div class="item-list" id="phantom-list"></div>
-  </section>
-
-  <!-- ============ LOW COVER ============ -->
-  <section class="section" id="section-low">
-    <div class="section-header">
-      <div class="section-icon warn"><svg class="icon"><use href="#i-hourglass"/></svg></div>
-      <div class="section-title">
-        <h2>Low stock cover <span class="count-badge warn" id="low-count">0</span></h2>
-        <p id="low-summary">—</p>
-      </div>
+    <div class="tab-panel" data-tab="phantom" role="tabpanel" hidden>
+      <p class="tab-summary" id="phantom-summary"></p>
+      <div class="item-list" id="phantom-list"></div>
     </div>
-    <div class="section-toolbar">
-      <div class="search-input">
-        <svg class="icon"><use href="#i-search"/></svg>
-        <input type="search" data-search="low" placeholder="Search low cover…" autocomplete="off">
-        <button class="clear" data-search-clear="low" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
-      </div>
+    <div class="tab-panel" data-tab="low" role="tabpanel" hidden>
+      <p class="tab-summary" id="low-summary"></p>
+      <div class="item-list" id="low-list"></div>
     </div>
-    <div class="item-list" id="low-list"></div>
   </section>
 
   <!-- ============ TOP PERFORMERS ============ -->
@@ -1125,7 +1225,8 @@ footer .brand {
   // ====== STATE ======
   const state = {
     client: 'all',
-    search: { oos: '', phantom: '', low: '', top: '', all: '' },
+    search: { actions: '', top: '', all: '' },
+    actionTab: 'oos',
     statusTier: 'all',
     sort: 'desc',
     allLimit: 50,
@@ -1181,6 +1282,19 @@ footer .brand {
       if (key === 'all') state.allLimit = 50;
       renderSection(key);
       input.focus();
+    });
+  });
+
+  // ====== TABS WIRING ======
+  $$('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const t = tab.dataset.tab;
+      state.actionTab = t;
+      $$('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false'));
+      $$('.tab-panel').forEach(p => {
+        if (p.dataset.tab === t) p.removeAttribute('hidden');
+        else p.setAttribute('hidden', '');
+      });
     });
   });
 
@@ -1468,20 +1582,42 @@ footer .brand {
 
   // ====== KPI SECTION RENDER ======
   function renderKpiSection(key, items, primaryTag, summaryFn, defaultLimit = 10) {
-    const filtered = filteredItems(items, key);
+    // For tabbed action items, all 3 share state.search.actions and update
+    // their tab-count badge instead of a section-level count.
+    const isAction = (key === 'oos' || key === 'phantom' || key === 'low');
+    const searchKey = isAction ? 'actions' : key;
+    const query = state.search[searchKey];
+
+    let filtered = items;
+    if (state.client !== 'all') filtered = filtered.filter(matchesClient);
+    if (query) filtered = filtered.filter(it => matchesText(it, query));
+
     const listEl = $(`#${key === 'top' ? 'top-list' : key + '-list'}`);
-    const countEl = $(`#${key === 'top' ? 'top-count' : key + '-count'}`);
-    const summaryEl = key !== 'top' ? $(`#${key}-summary`) : null;
 
-    countEl.textContent = state.search[key] || state.client !== 'all'
-      ? `${fmt.int(filtered.length)} of ${fmt.int(items.length)}`
-      : fmt.int(filtered.length);
+    // Count display: tab-count for actions, section count-badge for others
+    if (isAction) {
+      const tcEl = $(`#${key}-tab-count`);
+      tcEl.textContent = (query || state.client !== 'all')
+        ? `${fmt.int(filtered.length)}/${fmt.int(items.length)}`
+        : fmt.int(filtered.length);
+    } else {
+      const cEl = $(`#${key === 'top' ? 'top-count' : key + '-count'}`);
+      if (cEl) {
+        cEl.textContent = (query || state.client !== 'all')
+          ? `${fmt.int(filtered.length)} of ${fmt.int(items.length)}`
+          : fmt.int(filtered.length);
+      }
+    }
 
+    const summaryEl = (isAction || key === 'top') ? $(`#${key}-summary`) : null;
     if (summaryEl && summaryFn) summaryEl.innerHTML = summaryFn(filtered);
 
     if (!filtered.length) {
-      const isSearch = state.search[key] || state.client !== 'all';
+      const isSearch = query || state.client !== 'all';
       listEl.innerHTML = emptyState(isSearch ? 'No matches.' : 'Nothing flagged here.', isSearch);
+      const wrap = listEl.parentElement;
+      const oldBtn = wrap.querySelector('.show-more');
+      if (oldBtn) oldBtn.style.display = 'none';
       return;
     }
 
@@ -1605,12 +1741,25 @@ footer .brand {
 
   // ====== SECTION DISPATCH ======
   function renderSection(key) {
-    if (key === 'oos') {
-      renderKpiSection('oos', D.kpis.oos, 'oos', items => oosSummary(items));
-    } else if (key === 'phantom') {
-      renderKpiSection('phantom', D.kpis.phantom, 'phantom', items => phantomSummary(items));
-    } else if (key === 'low') {
-      renderKpiSection('low', D.kpis.low_cover, 'low_cover', items => lowSummary(items));
+    if (key === 'actions') {
+      renderKpiSection('oos',     D.kpis.oos,       'oos',       oosSummary);
+      renderKpiSection('phantom', D.kpis.phantom,   'phantom',   phantomSummary);
+      renderKpiSection('low',     D.kpis.low_cover, 'low_cover', lowSummary);
+      // Total badge across all 3
+      const q = state.search.actions;
+      const allItems = [...D.kpis.oos, ...D.kpis.phantom, ...D.kpis.low_cover];
+      let filtered = allItems;
+      if (state.client !== 'all') filtered = filtered.filter(matchesClient);
+      if (q) filtered = filtered.filter(it => matchesText(it, q));
+      const totalEl = $('#actions-total-count');
+      if (totalEl) {
+        totalEl.textContent = (q || state.client !== 'all')
+          ? `${fmt.int(filtered.length)} of ${fmt.int(allItems.length)}`
+          : fmt.int(allItems.length);
+      }
+    } else if (key === 'oos' || key === 'phantom' || key === 'low') {
+      // Backward compat — still works if called individually
+      renderSection('actions');
     } else if (key === 'top') {
       renderKpiSection('top', D.kpis.top_performers, 'hot', null, 10);
     } else if (key === 'all') {
@@ -1644,9 +1793,7 @@ footer .brand {
   function rerenderAll() {
     renderHero();
     renderCharts();
-    renderSection('oos');
-    renderSection('phantom');
-    renderSection('low');
+    renderSection('actions');
     renderSection('top');
     renderStatusChips();
     renderSection('all');
