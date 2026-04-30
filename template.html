@@ -527,7 +527,7 @@ select.toolbar-select:focus {
 /* ==================================================================== */
 /* KPI ITEMS (expandable cards)                                          */
 /* ==================================================================== */
-.item-list { display: flex; flex-direction: column; gap: 8px; }
+.item-list { display: flex; flex-direction: column; gap: 6px; }
 
 details.item {
   position: relative;
@@ -557,7 +557,7 @@ details.item[open].tag-hot { border-color: var(--healthy-line); border-left-colo
 details.item > summary {
   list-style: none;
   cursor: pointer; user-select: none;
-  padding: 14px;
+  padding: 9px 12px;
   display: block;
   transition: background-color var(--t-fast);
   -webkit-tap-highlight-color: rgba(0,0,0,.04);
@@ -567,7 +567,7 @@ details.item > summary:hover { background: rgba(31,32,36,.015); }
 
 .item-head {
   display: flex; align-items: center; gap: 6px;
-  margin-bottom: 8px; flex-wrap: wrap;
+  margin-bottom: 5px; flex-wrap: wrap;
 }
 .tag {
   display: inline-flex; align-items: center; gap: 4px;
@@ -607,15 +607,15 @@ details.item > summary:hover { background: rgba(31,32,36,.015); }
 }
 
 .item-desc {
-  font-size: 14.5px; font-weight: 600; line-height: 1.32;
-  color: var(--ink); margin: 0 0 4px;
+  font-size: 14.5px; font-weight: 600; line-height: 1.28;
+  color: var(--ink); margin: 0 0 2px;
   letter-spacing: -0.01em;
   word-wrap: break-word;
 }
 .item-meta {
   font-size: 11.5px; color: var(--mute);
   display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
-  line-height: 1.4;
+  line-height: 1.25;
 }
 .item-meta .vendor { color: var(--text-soft); font-weight: 600; }
 .item-meta .barcode {
@@ -629,8 +629,8 @@ details.item > summary:hover { background: rgba(31,32,36,.015); }
 
 .item-impact {
   display: inline-flex; align-items: center; gap: 5px;
-  margin-top: 10px;
-  padding: 5px 10px;
+  margin-top: 6px;
+  padding: 3px 9px;
   border-radius: 6px;
   font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -642,9 +642,8 @@ details.item > summary:hover { background: rgba(31,32,36,.015); }
 .item-impact.healthy { background: var(--healthy-soft); color: var(--healthy-deep); }
 
 .item-stats {
-  margin-top: 12px; padding-top: 12px;
-  border-top: 1px dashed var(--line);
-  display: flex; align-items: center; gap: 14px;
+  margin-top: 7px;
+  display: flex; align-items: center; gap: 12px;
   flex-wrap: wrap;
 }
 .item-stat {
@@ -980,34 +979,8 @@ footer .brand {
       </div>
 
       <div class="chart-card">
-        <h3><svg class="icon"><use href="#i-archive"/></svg>Status distribution<span class="meta" id="status-dist-meta">—</span></h3>
-        <div class="vendor-bars" id="status-dist-bars"></div>
-        <div class="vendor-key">
-          <span><span class="sw" style="background:var(--healthy)"></span>Active</span>
-          <span><span class="sw" style="background:var(--warning)"></span>Temp.</span>
-          <span><span class="sw" style="background:var(--steel-bright)"></span>Discontinued</span>
-          <span><span class="sw" style="background:var(--phantom)"></span>Exit</span>
-        </div>
-      </div>
-
-      <div class="chart-card">
         <h3><svg class="icon"><use href="#i-x-octagon"/></svg>OOS per client<span class="meta" id="oos-pc-meta">—</span></h3>
         <div class="vendor-bars" id="oos-per-client"></div>
-      </div>
-
-      <div class="chart-card">
-        <h3><svg class="icon"><use href="#i-trending-up"/></svg>DROS per client<span class="meta" id="dros-pc-meta">—</span></h3>
-        <div class="vendor-bars" id="dros-per-client"></div>
-      </div>
-
-      <div class="chart-card">
-        <h3><svg class="icon"><use href="#i-list"/></svg>Product count per client<span class="meta" id="count-pc-meta">—</span></h3>
-        <div class="vendor-bars" id="count-per-client"></div>
-      </div>
-
-      <div class="chart-card">
-        <h3><svg class="icon"><use href="#i-package"/></svg>SOH per client<span class="meta" id="soh-pc-meta">—</span></h3>
-        <div class="vendor-bars" id="soh-per-client"></div>
       </div>
     </div>
   </section>
@@ -1260,9 +1233,7 @@ footer .brand {
 
   // ====== CHARTS ======
   // DSC histogram + donut: filtered by client.
-  // Status distribution: filtered by client (computed live from products).
-  // Per-client charts (OOS / DROS / count / SOH): never filtered — they're
-  // inherently comparison views; the active client is highlighted instead.
+  // OOS per client: never filtered — comparison view; active client highlighted.
 
   const TIER_COLOR = {
     active: 'var(--healthy)',
@@ -1308,11 +1279,7 @@ footer .brand {
     const active = activeProductsFiltered();
     drawHist(state.client === 'all' ? D.charts.dsc_histogram : dscBands(active));
     drawDonut(state.client === 'all' ? D.charts.severity : severityCounts(active));
-    drawStatusDist();   // self-filters by state.client
     drawClientBars('#oos-per-client',   '#oos-pc-meta',   'oos',    fmt.int,             'var(--critical)',    'OOS');
-    drawClientBars('#dros-per-client',  '#dros-pc-meta',  'dros',   v => fmt.dec(v, 2),  'var(--healthy)',     'DROS');
-    drawClientBars('#count-per-client', '#count-pc-meta', 'count',  fmt.int,             'var(--steel-bright)','products');
-    drawClientBars('#soh-per-client',   '#soh-pc-meta',   'soh',    fmt.int,             'var(--orange)',      'units');
   }
 
   function drawHist(hb) {
@@ -1363,30 +1330,6 @@ footer .brand {
         <span class="num">${fmt.int(sev[k])}</span>
       </div>`
     ).join('');
-  }
-
-  function drawStatusDist() {
-    let products = D.all_products;
-    if (state.client !== 'all') products = products.filter(matchesClient);
-    const counts = {};
-    products.forEach(p => { counts[p.status] = (counts[p.status] || 0) + 1; });
-    const items = Object.entries(counts).map(([status, count]) => ({
-      status, count,
-      desc: STATUS_DEFS[status] || 'Unknown',
-      tier: STATUS_TIER[status] || 'other',
-    })).sort((a, b) => b.count - a.count);
-    $('#status-dist-meta').textContent = fmt.int(products.length) + ' products';
-    if (!items.length) { $('#status-dist-bars').innerHTML = `<div class="empty-mini">No products.</div>`; return; }
-    const max = Math.max(...items.map(v => v.count), 1);
-    $('#status-dist-bars').innerHTML = items.map(v => {
-      const w = (v.count / max * 100).toFixed(0);
-      const color = TIER_COLOR[v.tier] || 'var(--mute-2)';
-      return `<div class="vendor-row" title="Status ${v.status}: ${escapeHTML(v.desc)} (${v.count})">
-        <div class="name"><span class="code">${v.status}</span><span class="desc">${escapeHTML(v.desc)}</span></div>
-        <div class="track"><span style="width:${w}%;background:${color}"></span></div>
-        <div class="num">${fmt.int(v.count)}</div>
-      </div>`;
-    }).join('');
   }
 
   function drawClientBars(barsEl, metaEl, metricKey, formatter, color, unitLabel) {
