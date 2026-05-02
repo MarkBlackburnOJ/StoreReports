@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portfolio Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>__STYLES__</style>
+</head>
+<body>
+
+<svg style="display:none" xmlns="http://www.w3.org/2000/svg"><defs>
+  <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+  <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+  <symbol id="i-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></symbol>
+  <symbol id="i-x-octagon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 16.5c-1.5 1.5-2 5-2 5s3.5-.5 5-2c.85-.85 1-2 0-3-1-1-2.15-.85-3 0z"/><path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M3 9v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9"/><path d="M9 14h6"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+  <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 9.4l-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+  <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></symbol>
+  <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-plus-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-dollar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></symbol>
+</defs></svg>
+
+<!-- ============ MASTHEAD ============ -->
+<div class="masthead">
+  <div class="mast-brand">
+    <div class="logo"><svg><use href="#i-grid"/></svg></div>
+    <div>
+      <div class="mast-title">Portfolio Report</div>
+      <div class="mast-subtitle">Account Manager · Stock Health</div>
+    </div>
+  </div>
+  <div class="mast-meta">
+    <div><div class="m-label">Latest</div><div class="m-value" id="m-latest">—</div></div>
+    <div><div class="m-label">Previous week</div><div class="m-value" id="m-7d">—</div></div>
+    <div><div class="m-label">Generated</div><div class="m-value" id="m-gen">—</div></div>
+  </div>
+</div>
+
+<!-- ============ FILTER BAR ============ -->
+<div class="filter-bar">
+  <span class="filter-bar-label"><svg class="icon"><use href="#i-filter"/></svg>Filters</span>
+
+  <div class="filter-control">
+    <label>Client Name</label>
+    <button class="filter-trigger" data-filter="client" aria-expanded="false">
+      <span class="filter-label-text">All clients</span><span class="caret">▾</span>
+    </button>
+  </div>
+
+  <div class="filter-control">
+    <label>Status</label>
+    <button class="filter-trigger" data-filter="status" aria-expanded="false">
+      <span class="filter-label-text">All statuses</span><span class="caret">▾</span>
+    </button>
+  </div>
+
+  <div class="filter-control">
+    <label>Site Profile</label>
+    <button class="filter-trigger" data-filter="profile" aria-expanded="false">
+      <span class="filter-label-text">All profiles</span><span class="caret">▾</span>
+    </button>
+  </div>
+
+  <div class="filter-control">
+    <label>Article #</label>
+    <input class="filter-text" type="search" placeholder="e.g. 994029" id="f-article-num" autocomplete="off">
+  </div>
+
+  <div class="filter-control">
+    <label>Description</label>
+    <input class="filter-text" type="search" placeholder="search description" id="f-article-desc" autocomplete="off">
+  </div>
+
+  <div class="filter-spacer"></div>
+  <div id="filter-summary" class="filter-summary" style="display:none"></div>
+  <button class="reset-btn" id="filter-reset" disabled>Reset</button>
+</div>
+
+<div class="page">
+
+  <!-- ============ HERO + KPIS ============ -->
+  <div class="hero">
+    <div class="hero-row">
+      <div>
+        <div class="hero-name" id="hero-name">Portfolio Overview</div>
+        <div class="hero-tag" id="hero-tag">— stores · — active items · latest vs previous week</div>
+      </div>
+      <div class="hero-headline">
+        <div class="hero-headline-num" id="k-health-pct">—</div>
+        <div class="hero-headline-lab">Portfolio health (% healthy)</div>
+      </div>
+    </div>
+
+    <div class="kpi-section-title">Health & demand issues</div>
+    <div class="kpi-grid">
+      <div class="kpi crit" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Out of stock</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-oos">—</div>
+        <div class="kpi-delta-row" id="k-oos-delta-wrap"></div>
+        <div class="kpi-formula">vs previous week</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Out of stock</div>
+          <div class="kpi-tooltip-formula">Status='04' AND SOH=0 AND DROS&gt;0</div>
+          <div class="kpi-tooltip-desc">Active items with zero stock on hand but positive sales velocity. Direct lost-sale items.</div>
+        </div>
+      </div>
+
+      <div class="kpi phantom" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Possible phantom</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-phantom">—</div>
+        <div class="kpi-delta-row" id="k-phantom-delta-wrap"></div>
+        <div class="kpi-formula">vs previous week</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Possible phantom</div>
+          <div class="kpi-tooltip-formula">Status='04' AND SOH&gt;0 AND days_since_last_sold ≥ 60</div>
+          <div class="kpi-tooltip-desc">Stock recorded but no sales in 60+ days — likely missing, miscounted, or in the wrong location.</div>
+        </div>
+      </div>
+
+      <div class="kpi warn" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Low cover &lt; 14d</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-low">—</div>
+        <div class="kpi-delta-row" id="k-low-delta-wrap"></div>
+        <div class="kpi-formula">vs previous week</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Low cover</div>
+          <div class="kpi-tooltip-formula">Status='04' AND SOH&gt;0 AND 0 &lt; SOH/DROS &lt; 14</div>
+          <div class="kpi-tooltip-desc">Active items with less than 2 weeks of stock at the current sales rate. Order soon.</div>
+        </div>
+      </div>
+
+      <div class="kpi steel" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Lost daily sales</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-lost">—</div>
+        <div class="kpi-delta-row" id="k-lost-delta-wrap"></div>
+        <div class="kpi-formula">units/day at risk</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Lost daily sales</div>
+          <div class="kpi-tooltip-formula">Σ DROS for items currently OOS</div>
+          <div class="kpi-tooltip-desc">Sum of daily sales velocity for items that are currently out of stock — units/day of demand you're failing to fulfill.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kpi-section-title">Stock & movement</div>
+    <div class="kpi-grid">
+      <div class="kpi info" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Total SOH</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-soh">—</div>
+        <div class="kpi-delta-row" id="k-soh-delta-wrap"></div>
+        <div class="kpi-formula">vs previous week</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Total stock on hand</div>
+          <div class="kpi-tooltip-formula">Σ SOH</div>
+          <div class="kpi-tooltip-desc">Total units of stock currently sitting on shelves across all stores in scope.</div>
+        </div>
+      </div>
+
+      <div class="kpi healthy" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Healthy items</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-healthy">—</div>
+        <div class="kpi-delta-row" id="k-healthy-delta-wrap"></div>
+        <div class="kpi-formula" id="k-healthy-sub">— of active</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Healthy items</div>
+          <div class="kpi-tooltip-formula">Status='04' AND 14 ≤ SOH/DROS &lt; 180 AND not phantom</div>
+          <div class="kpi-tooltip-desc">Active items with stock cover between 2 weeks and 6 months — neither too low nor excess. The goal state.</div>
+        </div>
+      </div>
+
+      <div class="kpi steel" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Discontinued + SOH</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-disc">—</div>
+        <div class="kpi-delta-row" id="k-disc-delta-wrap"></div>
+        <div class="kpi-formula" id="k-disc-sub">— units of dead stock</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Discontinued with SOH</div>
+          <div class="kpi-tooltip-formula">Status≠'04' AND SOH&gt;0</div>
+          <div class="kpi-tooltip-desc">Inactive items that are still holding stock — dead inventory tying up capital. The number is the count of items; the subtext shows total units. Requires status filter to include non-04 statuses to be visible.</div>
+        </div>
+      </div>
+
+      <div class="kpi healthy" tabindex="0">
+        <div class="kpi-label-row"><div class="kpi-label">Resolved this week</div><span class="kpi-info">i</span></div>
+        <div class="kpi-value" id="k-resolved">—</div>
+        <div class="kpi-delta-row"><span class="kpi-delta down-good">items recovered</span></div>
+        <div class="kpi-formula">were OOS, now in stock</div>
+        <div class="kpi-tooltip">
+          <div class="kpi-tooltip-title">Resolved this week</div>
+          <div class="kpi-tooltip-formula">OOS at previous week AND not OOS now</div>
+          <div class="kpi-tooltip-desc">Items that were out of stock at the previous week's snapshot but are back in stock now.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ KPI TIMELINE ============ -->
+  <section class="block">
+    <div class="block-header">
+      <h2>KPI timeline — are we improving or declining?</h2>
+      <span class="sub">Each metric this week vs previous week.</span>
+    </div>
+    <div class="timeline-card">
+      <table class="timeline-table">
+        <thead>
+          <tr>
+            <th style="width:36%">Metric</th>
+            <th class="snap-col">Previous week<span class="date-sub" id="ts-date-7d">—</span></th>
+            <th class="snap-col">Latest<span class="date-sub" id="ts-date-latest">—</span></th>
+            <th class="delta-col">Δ week-on-week<span class="date-sub">change</span></th>
+          </tr>
+        </thead>
+        <tbody id="timeline-body"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ SPOTLIGHTS ============ -->
+  <section class="block">
+    <div class="block-header">
+      <h2>Spotlights — the stores to call this week</h2>
+    </div>
+    <div class="spotlight-grid">
+      <div class="card spotlight improved">
+        <h3><svg class="icon"><use href="#i-rocket"/></svg> Most improved</h3>
+        <div class="sub">Largest health gain over 7 days. Replicate what worked.</div>
+        <ol id="spotlight-improved"></ol>
+      </div>
+      <div class="card spotlight regressed">
+        <h3><svg class="icon"><use href="#i-trending-down"/></svg> Most regressed</h3>
+        <div class="sub">Health dropped most over 7 days. Schedule check-in.</div>
+        <ol id="spotlight-regressed"></ol>
+      </div>
+      <div class="card spotlight priority">
+        <h3><svg class="icon"><use href="#i-flame"/></svg> Lost-sales priority</h3>
+        <div class="sub">Highest unit/day at risk — where the money is.</div>
+        <ol id="spotlight-priority"></ol>
+      </div>
+      <div class="card spotlight persistent">
+        <h3><svg class="icon"><use href="#i-alert-triangle"/></svg> Persistent issues</h3>
+        <div class="sub">Most items OOS at both snapshots. Escalation candidates.</div>
+        <ol id="spotlight-persistent"></ol>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STORE TABLE ============ -->
+  <section class="block">
+    <div class="block-header">
+      <h2>Stores</h2>
+      <span class="sub">Click any row to drill into that store's products below.</span>
+    </div>
+    <div class="tbl-tabs" id="store-tabs"></div>
+    <div class="tbl-tab-desc" id="store-tab-desc"></div>
+    <div class="tbl-toolbar">
+      <div class="search-input">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" id="store-search" placeholder="Search store name or code…" autocomplete="off">
+      </div>
+      <span class="tbl-meta" id="store-meta">—</span>
+    </div>
+    <table class="data-tbl" id="store-table"></table>
+    <div class="tbl-pagination">
+      <button id="store-prev">← Prev</button>
+      <span class="page-info" id="store-page-info">—</span>
+      <button id="store-next">Next →</button>
+    </div>
+  </section>
+
+  <!-- ============ PRODUCT TABLE ============ -->
+  <section class="block" id="product-section">
+    <div class="block-header">
+      <h2>Products</h2>
+      <span class="sub">Cross-portfolio product view. Click a store row above to filter to that store.</span>
+    </div>
+    <div id="product-pin-wrap"></div>
+    <div class="tbl-tabs" id="product-tabs"></div>
+    <div class="tbl-tab-desc" id="product-tab-desc"></div>
+    <div class="tbl-toolbar">
+      <div class="search-input">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" id="product-search" placeholder="Search by article number or description…" autocomplete="off">
+      </div>
+      <span class="tbl-meta" id="product-meta">—</span>
+    </div>
+    <table class="data-tbl" id="product-table"></table>
+    <div class="tbl-pagination">
+      <button id="product-prev">← Prev</button>
+      <span class="page-info" id="product-page-info">—</span>
+      <button id="product-next">Next →</button>
+    </div>
+  </section>
+
+  <!-- ============ CLIENT TABLE ============ -->
+  <section class="block">
+    <div class="block-header">
+      <h2>Clients / vendors</h2>
+      <span class="sub">Aggregated across the portfolio. Useful for buying conversations.</span>
+    </div>
+    <div class="tbl-tabs" id="client-tabs"></div>
+    <div class="tbl-tab-desc" id="client-tab-desc"></div>
+    <table class="data-tbl" id="client-table"></table>
+  </section>
+
+  <!-- ============ PROFILE BREAKDOWN ============ -->
+  <section class="block">
+    <div class="block-header">
+      <h2>By store profile</h2>
+      <span class="sub">Aggregated across Corporate / Franchisee / DC.</span>
+    </div>
+    <div class="profile-grid" id="profile-grid"></div>
+  </section>
+
+  <!-- ============ GLOSSARY ============ -->
+  <section class="block">
+    <div class="glossary">
+      <h2 class="glossary-title"><svg class="icon" style="width:18px;height:18px"><use href="#i-help"/></svg> Glossary</h2>
+      <p class="glossary-sub">Every metric and term on this report, with its formula and how to use it. Read this once, then come back as needed.</p>
+      <div class="glossary-grid">
+
+        <div class="glossary-section-title">Stock health KPIs</div>
+
+        <div class="glossary-item crit">
+          <div class="glossary-term">Out of stock (OOS)</div>
+          <span class="glossary-formula">Status='04' AND SOH=0 AND DROS&gt;0</span>
+          <div class="glossary-desc">Active items with zero stock but positive demand. <strong>Action:</strong> reorder immediately. These are direct lost sales.</div>
+        </div>
+
+        <div class="glossary-item phantom">
+          <div class="glossary-term">Possible phantom</div>
+          <span class="glossary-formula">Status='04' AND SOH&gt;0 AND days_since_last_sold ≥ 60</span>
+          <div class="glossary-desc">System shows stock but no sales in 60+ days — likely missing, miscounted, or in the wrong location. <strong>Action:</strong> physical count, audit shelf vs system.</div>
+        </div>
+
+        <div class="glossary-item warn">
+          <div class="glossary-term">Low cover</div>
+          <span class="glossary-formula">Status='04' AND SOH&gt;0 AND 0 &lt; SOH/DROS &lt; 14</span>
+          <div class="glossary-desc">Less than 2 weeks of stock at the current sales rate. <strong>Action:</strong> reorder soon — these are tomorrow's OOS.</div>
+        </div>
+
+        <div class="glossary-item healthy">
+          <div class="glossary-term">Healthy</div>
+          <span class="glossary-formula">Status='04' AND 14 ≤ SOH/DROS &lt; 180 AND not phantom</span>
+          <div class="glossary-desc">Adequate stock cover, not excess, selling normally. The goal state. The portfolio health % is the share of active items in this state.</div>
+        </div>
+
+        <div class="glossary-item steel">
+          <div class="glossary-term">Lost daily sales</div>
+          <span class="glossary-formula">Σ DROS for OOS items</span>
+          <div class="glossary-desc">Sum of daily sales velocity for items currently OOS — units/day of demand not being fulfilled. Use to prioritize OOS recovery by financial impact.</div>
+        </div>
+
+        <div class="glossary-item info">
+          <div class="glossary-term">Total SOH</div>
+          <span class="glossary-formula">Σ SOH</span>
+          <div class="glossary-desc">Total stock units across the portfolio. Higher isn't automatically better — pair with DROS to gauge cover.</div>
+        </div>
+
+        <div class="glossary-item steel">
+          <div class="glossary-term">Discontinued + SOH</div>
+          <span class="glossary-formula">Status≠'04' AND SOH&gt;0</span>
+          <div class="glossary-desc">Inactive items still holding stock — dead inventory tying up capital and shelf space. <strong>Action:</strong> liquidate, return to vendor, or reactivate the listing if demand exists. <strong>Note:</strong> only visible when the Status filter includes non-04 statuses.</div>
+        </div>
+
+        <div class="glossary-section-title">Movement (week-on-week)</div>
+
+        <div class="glossary-item healthy">
+          <div class="glossary-term">Resolved</div>
+          <span class="glossary-formula">OOS at previous week AND not OOS now</span>
+          <div class="glossary-desc">Items recovered this week. The rep got these back in stock — credit them.</div>
+        </div>
+
+        <div class="glossary-item crit">
+          <div class="glossary-term">New OOS</div>
+          <span class="glossary-formula">NOT OOS at previous week AND OOS now</span>
+          <div class="glossary-desc">Items that slipped this week. Investigate: ordering miss, supplier delay, or unexpected demand spike.</div>
+        </div>
+
+        <div class="glossary-item phantom">
+          <div class="glossary-term">Persistent OOS</div>
+          <span class="glossary-formula">OOS at previous week AND OOS now</span>
+          <div class="glossary-desc">OOS for the entire reporting period — at least a full week. <strong>Action:</strong> escalate. Often a supplier or listing issue, not a rep issue.</div>
+        </div>
+
+        <div class="glossary-section-title">Reference terms</div>
+
+        <div class="glossary-item">
+          <div class="glossary-term">SOH — Stock On Hand</div>
+          <div class="glossary-desc">Total units of an item physically present in store, per the inventory system.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">DROS — Daily Rate of Sales</div>
+          <div class="glossary-desc">Units sold per day, averaged over a recent window. The demand signal.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">DSC — Days of Stock Cover</div>
+          <div class="glossary-desc">SOH ÷ DROS. How many days the current stock will last at the current sales rate.</div>
+        </div>
+        <div class="glossary-item">
+          <div class="glossary-term">Status '04'</div>
+          <div class="glossary-desc">Active / sellable item code. Other statuses are inactive (discontinued, suspended, etc.).</div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <div style="text-align:center; color:var(--mute-2); font-size:11.5px; padding:24px; border-top:1px solid var(--line); margin-top:32px;">
+    Generated <span id="footer-gen">—</span> · <span id="footer-stats">—</span>
+  </div>
+
+</div>
+
+<script id="payload" type="application/json">__PAYLOAD__</script>
+<script>__SCRIPT__</script>
+</body>
+</html>
