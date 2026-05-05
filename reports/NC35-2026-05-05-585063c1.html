@@ -1,0 +1,1812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1F2024">
+<title>Stock Action Report</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Brand */
+  --orange: #E8743C;
+  --orange-deep: #C85B25;
+  --orange-bright: #F18A4F;
+  --orange-soft: #FCEBE0;
+
+  /* Steel + Charcoal */
+  --steel: #557585;
+  --steel-deep: #3D5765;
+  --steel-bright: #6E8B9A;
+  --steel-soft: #E5EBEF;
+
+  --ink: #1F2024;
+  --ink-2: #2B2F36;
+  --ink-3: #3F4651;
+  --ink-4: #4F5763;
+
+  /* Surfaces */
+  --paper: #F4F6F8;
+  --paper-2: #EAEDF1;
+  --card: #FFFFFF;
+  --line: #DFE3E8;
+  --line-2: #CFD5DD;
+
+  /* Text */
+  --mute: #6B7480;
+  --mute-2: #8A929D;
+  --text: #1F2024;
+  --text-soft: #3F4651;
+
+  /* Severity */
+  --critical: #D64A2C;
+  --critical-deep: #B23A1F;
+  --critical-soft: #FBE9E2;
+  --critical-line: #F2C9BC;
+
+  --phantom: #8B2D14;
+  --phantom-soft: #F4D9CF;
+  --phantom-line: #E9B7A4;
+
+  --warning: #D69021;
+  --warning-deep: #A86E15;
+  --warning-soft: #FBF1D8;
+  --warning-line: #F0DDA6;
+
+  --healthy: #4A8B5E;
+  --healthy-deep: #356B45;
+  --healthy-soft: #E5F0E9;
+  --healthy-line: #C1DCC9;
+
+  --excess: #557585;
+  --excess-soft: #E5EBEF;
+
+  /* Radii */
+  --r-sm: 7px;
+  --r: 11px;
+  --r-lg: 16px;
+  --r-xl: 22px;
+
+  /* Shadows */
+  --sh-1: 0 1px 2px rgba(31,32,36,.06), 0 0 0 1px rgba(31,32,36,.04);
+  --sh-2: 0 2px 6px rgba(31,32,36,.08), 0 1px 2px rgba(31,32,36,.04);
+  --sh-3: 0 8px 22px rgba(31,32,36,.10), 0 2px 6px rgba(31,32,36,.05);
+
+  /* Transitions */
+  --t-fast: .15s ease;
+  --t: .22s cubic-bezier(.4,0,.2,1);
+}
+
+* { box-sizing: border-box; }
+*::-webkit-scrollbar { display: none; }
+html { -webkit-text-size-adjust: 100%; scroll-padding-top: 110px; }
+body {
+  margin: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  font-size: 15px; line-height: 1.5;
+  color: var(--text); background: var(--paper);
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+}
+.num, .mono { font-family: 'JetBrains Mono', ui-monospace, monospace;
+              font-variant-numeric: tabular-nums;
+              font-feature-settings: "tnum" 1, "ss01" 1; }
+.icon { width: 1em; height: 1em; flex-shrink: 0; vertical-align: -0.125em; }
+svg { display: block; }
+button { font-family: inherit; cursor: pointer; }
+input, select { font-family: inherit; }
+
+.app { max-width: 760px; margin: 0 auto; padding-bottom: 80px; }
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+
+/* Animations */
+@keyframes pulse-dot { 0%,100% { transform: scale(1); opacity: 1 } 50% { transform: scale(1.4); opacity: .55 } }
+@keyframes fade-in { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
+
+/* ==================================================================== */
+/* MASTHEAD                                                              */
+/* ==================================================================== */
+.masthead {
+  position: sticky; top: 0; z-index: 50;
+  background: var(--ink); color: #fff;
+  padding: 11px 16px;
+  display: flex; align-items: center; gap: 12px;
+}
+.brandmark {
+  width: 36px; height: 36px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--orange-bright) 0%, var(--orange-deep) 100%);
+  border-radius: 9px; display: grid; place-items: center;
+  box-shadow: 0 1px 2px rgba(0,0,0,.3) inset, 0 1px 0 rgba(255,255,255,.1);
+}
+.brandmark svg { width: 20px; height: 20px; color: #fff; }
+.mast-title { flex: 1; min-width: 0; }
+.mast-title .t1 { font-size: 14px; font-weight: 700; line-height: 1.15; letter-spacing: -0.01em; }
+.mast-title .t2 { font-size: 11.5px; color: rgba(255,255,255,.62); margin-top: 2px; line-height: 1.2; }
+
+/* ==================================================================== */
+/* CLIENT FILTER (sticky, sits below masthead)                           */
+/* ==================================================================== */
+.client-bar {
+  position: sticky; top: 58px; z-index: 49;
+  background: var(--ink-2); color: #fff;
+  padding: 8px 12px;
+  display: flex; align-items: center; gap: 10px;
+  border-top: 1px solid rgba(255,255,255,.05);
+  border-bottom: 1px solid rgba(0,0,0,.3);
+}
+.client-bar .label {
+  font-size: 11px; font-weight: 600;
+  color: rgba(255,255,255,.6);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  display: inline-flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.client-bar .label .icon { width: 12px; height: 12px; }
+.client-bar select {
+  flex: 1;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+  color: #fff; font-size: 13.5px; font-weight: 500;
+  padding: 9px 32px 9px 12px;
+  border-radius: 8px;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+  min-width: 0;
+}
+.client-bar select:focus {
+  outline: 2px solid var(--orange);
+  outline-offset: -2px;
+  background-color: rgba(255,255,255,.13);
+}
+.client-bar select.active {
+  background-color: rgba(232,116,60,.18);
+  border-color: rgba(232,116,60,.5);
+}
+.client-bar .clear-client {
+  background: rgba(255,255,255,.1); color: #fff;
+  border: none; padding: 0;
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  display: none; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.client-bar .clear-client.show { display: flex; }
+.client-bar .clear-client:hover { background: rgba(255,255,255,.18); }
+.client-bar .clear-client .icon { width: 14px; height: 14px; }
+
+/* ==================================================================== */
+/* HERO                                                                  */
+/* ==================================================================== */
+.hero {
+  position: relative;
+  padding: 28px 18px 24px;
+  color: #fff; overflow: hidden;
+  background:
+    linear-gradient(180deg,
+      var(--orange-bright) 0%,
+      var(--orange) 18%,
+      var(--orange-deep) 38%,
+      var(--steel) 64%,
+      var(--steel-deep) 84%,
+      var(--ink) 100%);
+}
+.hero::before {
+  content: ''; position: absolute; inset: 0;
+  background:
+    radial-gradient(120% 80% at 0% 100%, rgba(0,0,0,.18), transparent 50%),
+    radial-gradient(80% 60% at 100% 0%, rgba(255,255,255,.08), transparent 50%);
+  pointer-events: none;
+}
+.hero > * { position: relative; }
+.hero-eyebrow {
+  font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
+  color: rgba(255,255,255,.85); margin-bottom: 12px;
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(0,0,0,.18); padding: 4px 10px; border-radius: 999px;
+}
+.hero-eyebrow .icon { width: 12px; height: 12px; }
+.hero-name {
+  font-size: 26px; font-weight: 800; line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 8px;
+  text-shadow: 0 1px 0 rgba(0,0,0,.15);
+}
+.hero-meta {
+  font-size: 12.5px; color: rgba(255,255,255,.85); margin-bottom: 22px;
+  display: flex; gap: 14px; flex-wrap: wrap;
+}
+.hero-meta > span { display: inline-flex; align-items: center; gap: 5px; }
+.hero-meta .icon { width: 13px; height: 13px; }
+
+.hero-stats {
+  display: grid; grid-template-columns: 1fr; gap: 10px;
+}
+@media (min-width: 540px) { .hero-stats { grid-template-columns: repeat(3, 1fr); } }
+
+.hero-stat {
+  position: relative; padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(0,0,0,.20);
+  border: 1px solid rgba(255,255,255,.10);
+  overflow: hidden;
+}
+.hero-stat::before {
+  content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; background: currentColor; opacity: .85;
+}
+.hero-stat.crit { color: #fff; background: linear-gradient(135deg, var(--critical) 0%, var(--critical-deep) 100%); border-color: rgba(0,0,0,.18); }
+.hero-stat.phantom { color: #fff; background: linear-gradient(135deg, #A0381C 0%, var(--phantom) 100%); border-color: rgba(0,0,0,.18); }
+.hero-stat.warn { color: var(--ink); background: linear-gradient(135deg, #F2BB47 0%, #D89218 100%); border-color: rgba(0,0,0,.10); }
+.hero-stat.warn::before { background: var(--ink); opacity: .25; }
+
+.hero-stat .v {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 32px; font-weight: 700; line-height: 1;
+  letter-spacing: -0.02em;
+}
+.hero-stat .label {
+  font-size: 11.5px; font-weight: 600; margin-top: 8px;
+  display: flex; align-items: center; gap: 5px;
+  letter-spacing: .01em;
+}
+.hero-stat .label .icon { width: 13px; height: 13px; }
+.hero-stat .sub {
+  font-size: 11px; opacity: .82; margin-top: 4px;
+  font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+}
+.hero-stat.warn .sub { color: rgba(0,0,0,.7); opacity: 1; }
+
+/* ==================================================================== */
+/* SECTIONS                                                              */
+/* ==================================================================== */
+.section {
+  padding: 24px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+.section.charts-section { background: var(--paper); padding-bottom: 8px; }
+.section + .section { border-top: 1px solid var(--line); }
+
+.section-header {
+  display: flex; align-items: flex-start; gap: 12px;
+  margin-bottom: 14px;
+}
+.section-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  border-radius: 10px;
+  display: grid; place-items: center;
+  background: var(--ink); color: #fff;
+}
+.section-icon svg { width: 18px; height: 18px; }
+.section-icon.crit { background: var(--critical); }
+.section-icon.phantom { background: var(--phantom); }
+.section-icon.warn { background: var(--warning); }
+.section-icon.healthy { background: var(--healthy); }
+.section-icon.steel { background: var(--steel); }
+
+.section-title {
+  flex: 1; min-width: 0;
+}
+.section-title h2 {
+  font-size: 19px; font-weight: 700; line-height: 1.2;
+  margin: 0 0 3px; letter-spacing: -0.01em;
+  color: var(--ink);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.section-title .count-badge {
+  display: inline-flex; align-items: baseline;
+  font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+  font-size: 12px; font-weight: 700;
+  padding: 2px 8px; border-radius: 999px;
+  background: var(--paper-2); color: var(--ink-2);
+  letter-spacing: 0;
+}
+.section-title .count-badge.crit { background: var(--critical-soft); color: var(--critical); }
+.section-title .count-badge.phantom { background: var(--phantom-soft); color: var(--phantom); }
+.section-title .count-badge.warn { background: var(--warning-soft); color: var(--warning-deep); }
+.section-title .count-badge.healthy { background: var(--healthy-soft); color: var(--healthy-deep); }
+
+.section-title p {
+  font-size: 12.5px; color: var(--mute);
+  margin: 4px 0 0;
+  line-height: 1.45;
+}
+.section-title p .num { color: var(--ink); font-weight: 600; }
+
+/* Section toolbar */
+.section-toolbar {
+  display: flex; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.search-input {
+  position: relative; flex: 1; min-width: 0;
+}
+.search-input > .icon {
+  position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+  color: var(--mute); width: 14px; height: 14px;
+  pointer-events: none;
+}
+.search-input input {
+  width: 100%; padding: 10px 36px 10px 34px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink); font-size: 14px; font-weight: 500;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+}
+.search-input input::placeholder { color: var(--mute-2); font-weight: 400; }
+.search-input input:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(232,116,60,.18);
+}
+.search-input .clear {
+  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+  background: var(--paper-2); border: none;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  display: none; align-items: center; justify-content: center;
+  color: var(--ink-3);
+}
+.search-input .clear.show { display: flex; }
+.search-input .clear:hover { background: var(--line); color: var(--ink); }
+.search-input .clear .icon { width: 12px; height: 12px; }
+
+select.toolbar-select {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  color: var(--ink); font-size: 13.5px; font-weight: 500;
+  padding: 10px 30px 10px 12px;
+  -webkit-appearance: none; appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7480' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+  cursor: pointer;
+  min-height: 40px;
+}
+select.toolbar-select:focus {
+  outline: none;
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(232,116,60,.18);
+}
+
+/* ==================================================================== */
+/* CHARTS                                                                */
+/* ==================================================================== */
+.charts-grid {
+  display: grid; grid-template-columns: 1fr; gap: 12px;
+}
+@media (min-width: 720px) { .charts-grid { grid-template-columns: 1fr 1fr; } }
+
+.chart-card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  box-shadow: var(--sh-1);
+}
+.chart-card.full { grid-column: 1 / -1; }
+.chart-card h3 {
+  margin: 0 0 14px;
+  font-size: 13px; font-weight: 700; letter-spacing: -0.005em;
+  color: var(--ink-2);
+  display: flex; align-items: center; gap: 7px;
+}
+.chart-card h3 .icon { width: 14px; height: 14px; color: var(--orange); }
+.chart-card h3 .meta {
+  margin-left: auto; font-size: 11px; font-weight: 600;
+  color: var(--mute); letter-spacing: 0;
+}
+
+/* Donut */
+.donut-wrap { display: flex; align-items: center; gap: 14px; }
+.donut { flex-shrink: 0; }
+.donut-legend { font-size: 12px; flex: 1; min-width: 0; }
+.donut-legend > div {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 0;
+}
+.donut-legend .sw { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
+.donut-legend .label { color: var(--text-soft); flex: 1; min-width: 0; font-size: 12px; }
+.donut-legend .num {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  color: var(--ink); font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+.donut text { font-family: 'JetBrains Mono', monospace; }
+
+/* DSC histogram */
+.hist {
+  display: flex; align-items: flex-end; gap: 5px; height: 110px;
+  padding: 16px 4px 0;
+}
+.hist .bar {
+  flex: 1; min-height: 3px;
+  border-radius: 5px 5px 0 0;
+  position: relative;
+  transition: opacity var(--t-fast);
+}
+.hist .bar.crit { background: var(--critical); }
+.hist .bar.warn { background: var(--warning); }
+.hist .bar.ok { background: var(--healthy); }
+.hist .bar.excess { background: var(--steel-bright); }
+.hist .bar:hover { opacity: .85; }
+.hist .bar .v {
+  position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+  font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700;
+  color: var(--ink-2); margin-bottom: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.hist-labels {
+  display: flex; gap: 5px; margin-top: 6px; padding: 0 4px;
+}
+.hist-labels > div {
+  flex: 1; text-align: center; font-size: 10.5px;
+  color: var(--mute); font-weight: 500;
+  font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hist-key {
+  display: flex; gap: 14px; margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11px; color: var(--mute);
+  flex-wrap: wrap;
+}
+.hist-key > span { display: inline-flex; align-items: center; gap: 5px; }
+.hist-key .sw { width: 10px; height: 10px; border-radius: 2px; }
+
+/* Vendor stacked bars / per-client rows / status distribution */
+.vendor-bars {
+  display: flex; flex-direction: column; gap: 6px;
+}
+.vendor-row {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 12px;
+  padding: 1px 0;
+  position: relative;
+}
+.vendor-row .name {
+  flex: 0 0 118px;
+  color: var(--text-soft); font-weight: 600; font-size: 11.5px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  letter-spacing: -0.005em;
+}
+.vendor-row .name .code {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  color: var(--ink); margin-right: 5px;
+  background: var(--paper-2);
+  padding: 1px 5px; border-radius: 3px;
+  letter-spacing: 0;
+}
+.vendor-row .name .desc {
+  color: var(--mute); font-weight: 500;
+}
+.vendor-row .track {
+  flex: 1; height: 16px; border-radius: 4px; overflow: hidden;
+  background: var(--paper-2);
+  display: flex;
+  min-width: 0;
+}
+.vendor-row .track > span { display: block; height: 100%; transition: width var(--t); }
+.vendor-row .num {
+  flex: 0 0 44px; text-align: right;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  color: var(--ink-2); font-variant-numeric: tabular-nums;
+}
+.vendor-row.highlight .name { color: var(--orange-deep); }
+.vendor-row.highlight .num { color: var(--orange-deep); }
+.vendor-row.highlight::before {
+  content: ''; position: absolute;
+  left: -3px; top: 3px; bottom: 3px;
+  width: 3px; border-radius: 2px;
+  background: var(--orange);
+}
+.empty-mini {
+  text-align: center; padding: 16px 8px;
+  color: var(--mute); font-size: 12px;
+}
+.vendor-key {
+  display: flex; gap: 14px; margin-top: 12px; padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: 11px; color: var(--mute);
+  flex-wrap: wrap;
+}
+.vendor-key > span { display: inline-flex; align-items: center; gap: 5px; }
+.vendor-key .sw { width: 10px; height: 10px; border-radius: 2px; }
+
+/* ==================================================================== */
+/* KPI ITEMS (expandable cards)                                          */
+/* ==================================================================== */
+.item-list {
+  display: flex; flex-direction: column; gap: 6px;
+}
+@media (min-width: 700px) {
+  .item-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: start;
+  }
+}
+
+/* ==================================================================== */
+/* TABS — button-style pills                                             */
+/* ==================================================================== */
+.tabs {
+  display: flex;
+  gap: 6px;
+  margin: -2px -2px 14px -2px;
+  padding: 2px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex-shrink: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 9px 13px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mute);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+  transition: background var(--t-fast), border-color var(--t-fast), color var(--t-fast), box-shadow var(--t-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+.tab .icon { width: 14px; height: 14px; opacity: .85; }
+.tab:hover {
+  background: var(--paper);
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.tab[aria-selected="true"] {
+  color: var(--ink);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.tab[aria-selected="true"] .icon { opacity: 1; }
+
+.tab[data-tab="oos"][aria-selected="true"] {
+  background: var(--critical-soft);
+  border-color: var(--critical);
+  color: var(--critical);
+}
+.tab[data-tab="phantom"][aria-selected="true"] {
+  background: var(--phantom-soft);
+  border-color: var(--phantom);
+  color: var(--phantom);
+}
+.tab[data-tab="low"][aria-selected="true"] {
+  background: var(--warning-soft);
+  border-color: var(--warning);
+  color: var(--warning-deep);
+}
+.tab[data-tab="oos"][aria-selected="true"] .icon { color: var(--critical); }
+.tab[data-tab="phantom"][aria-selected="true"] .icon { color: var(--phantom); }
+.tab[data-tab="low"][aria-selected="true"] .icon { color: var(--warning-deep); }
+
+.tab-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  background: rgba(31,32,36,.06);
+  color: var(--ink-2);
+  padding: 2px 7px;
+  border-radius: 999px;
+  min-width: 22px;
+  text-align: center;
+  letter-spacing: 0;
+  line-height: 1.2;
+}
+/* Active tab → invert the badge: solid severity bg, white text */
+.tab[data-tab="oos"][aria-selected="true"] .tab-count {
+  background: var(--critical); color: #fff;
+}
+.tab[data-tab="phantom"][aria-selected="true"] .tab-count {
+  background: var(--phantom); color: #fff;
+}
+.tab[data-tab="low"][aria-selected="true"] .tab-count {
+  background: var(--warning-deep); color: #fff;
+}
+
+.tab-panel[hidden] { display: none; }
+.tab-summary {
+  font-size: 12.5px; color: var(--mute);
+  margin: 0 0 12px; line-height: 1.45;
+}
+.tab-summary .num { color: var(--ink); font-weight: 600; }
+
+/* On narrow viewports, hide labels — show icon + count only */
+@media (max-width: 419px) {
+  .tab .tab-label { display: none; }
+  .tab { padding: 11px 14px; gap: 8px; }
+  .tab .icon { width: 15px; height: 15px; }
+  .tab-count { font-size: 12px; padding: 2px 8px; min-width: 24px; }
+}
+
+details.item {
+  position: relative;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  border-left: 4px solid transparent;
+  transition: border-color var(--t-fast), box-shadow var(--t-fast);
+  overflow: hidden;
+}
+details.item.tag-oos { border-left-color: var(--critical); }
+details.item.tag-phantom { border-left-color: var(--phantom); }
+details.item.tag-low { border-left-color: var(--warning); }
+details.item.tag-hot { border-left-color: var(--healthy); }
+details.item:not(.tag-oos):not(.tag-phantom):not(.tag-low):not(.tag-hot) {
+  border-left-color: var(--line);
+}
+details.item[open] {
+  box-shadow: var(--sh-2);
+  border-color: var(--ink-3);
+}
+details.item[open].tag-oos { border-color: var(--critical-line); border-left-color: var(--critical); }
+details.item[open].tag-phantom { border-color: var(--phantom-line); border-left-color: var(--phantom); }
+details.item[open].tag-low { border-color: var(--warning-line); border-left-color: var(--warning); }
+details.item[open].tag-hot { border-color: var(--healthy-line); border-left-color: var(--healthy); }
+
+details.item > summary {
+  list-style: none;
+  cursor: pointer; user-select: none;
+  padding: 9px 12px;
+  display: block;
+  transition: background-color var(--t-fast);
+  -webkit-tap-highlight-color: rgba(0,0,0,.04);
+}
+details.item > summary::-webkit-details-marker { display: none; }
+details.item > summary:hover { background: rgba(31,32,36,.015); }
+
+.item-head {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 5px; flex-wrap: wrap;
+}
+.tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 4px 9px;
+  border-radius: 5px;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+  white-space: nowrap;
+}
+.tag .icon { width: 11px; height: 11px; }
+.tag.oos { background: var(--critical); color: #fff; }
+.tag.phantom { background: var(--phantom); color: #fff; }
+.tag.low { background: var(--warning); color: #fff; }
+.tag.hot { background: var(--healthy); color: #fff; }
+.tag.healthy { background: var(--healthy-soft); color: var(--healthy-deep); }
+.tag.disc { background: var(--ink-3); color: #fff; }
+.tag.inactive { background: var(--paper-2); color: var(--mute); border: 1px solid var(--line); }
+.tag.status {
+  background: var(--paper-2); color: var(--ink-3);
+  border: 1px solid var(--line);
+  font-family: 'JetBrains Mono', monospace; letter-spacing: .04em;
+  text-transform: none; font-size: 10px; font-weight: 600;
+}
+.tag.status.active { background: var(--healthy-soft); color: var(--healthy-deep); border-color: var(--healthy-line); }
+.tag.status.discontinued { background: var(--paper-2); color: var(--ink-3); }
+.tag.status.temp { background: var(--warning-soft); color: var(--warning-deep); border-color: var(--warning-line); }
+.tag.status.exit { background: var(--phantom-soft); color: var(--phantom); border-color: var(--phantom-line); }
+.tag.status.deleted { background: #E8EAEE; color: var(--mute); }
+
+.item-rank {
+  margin-left: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: var(--mute-2);
+  letter-spacing: 0;
+  flex-shrink: 0;
+}
+
+.item-desc {
+  font-size: 14.5px; font-weight: 600; line-height: 1.28;
+  color: var(--ink); margin: 0 0 2px;
+  letter-spacing: -0.01em;
+  word-wrap: break-word;
+}
+.item-meta {
+  font-size: 11.5px; color: var(--mute);
+  display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+  line-height: 1.25;
+}
+.item-meta .vendor { color: var(--text-soft); font-weight: 600; }
+.item-meta .barcode {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--mute);
+}
+.item-meta .barcode .icon { width: 11px; height: 11px; color: var(--mute-2); }
+.item-meta .article-id {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+}
+
+.item-impact {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-top: 6px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace; font-size: 11.5px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.item-impact .icon { width: 12px; height: 12px; }
+.item-impact.crit { background: var(--critical-soft); color: var(--critical); }
+.item-impact.phantom { background: var(--phantom-soft); color: var(--phantom); }
+.item-impact.warn { background: var(--warning-soft); color: var(--warning-deep); }
+.item-impact.healthy { background: var(--healthy-soft); color: var(--healthy-deep); }
+
+.item-stats {
+  margin-top: 7px;
+  display: flex; align-items: center; gap: 12px;
+  flex-wrap: wrap;
+}
+.item-stat {
+  display: flex; align-items: baseline; gap: 5px;
+  font-size: 12px;
+}
+.item-stat .l {
+  font-size: 9.5px; font-weight: 700; color: var(--mute);
+  text-transform: uppercase; letter-spacing: .05em;
+}
+.item-stat .v {
+  font-family: 'JetBrains Mono', monospace; font-weight: 700;
+  font-size: 13px; color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.item-stat .v.crit { color: var(--critical); }
+.item-stat .v.warn { color: var(--warning-deep); }
+.item-stat .v.ok { color: var(--healthy-deep); }
+
+.item-chevron {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  transition: transform var(--t), background-color var(--t);
+}
+.item-chevron::after {
+  content: ''; width: 7px; height: 7px;
+  border-right: 2.5px solid var(--ink-3);
+  border-bottom: 2.5px solid var(--ink-3);
+  transform: rotate(45deg);
+  margin-top: -2px;
+}
+details.item[open] .item-chevron {
+  transform: rotate(180deg);
+  background: var(--ink-2);
+}
+details.item[open] .item-chevron::after {
+  border-color: #fff;
+}
+
+.item-detail {
+  padding: 14px; padding-top: 12px;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+}
+@media (min-width: 600px) { .detail-grid { grid-template-columns: repeat(3, 1fr); } }
+.detail-cell {
+  font-size: 12px;
+  padding-bottom: 4px;
+}
+.detail-cell .l {
+  font-size: 9.5px; font-weight: 700; color: var(--mute);
+  text-transform: uppercase; letter-spacing: .05em;
+  margin-bottom: 4px;
+}
+.detail-cell .v {
+  font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums;
+  font-size: 12.5px; font-weight: 600; color: var(--ink);
+  word-break: break-word; line-height: 1.4;
+}
+.detail-cell .v.text {
+  font-family: 'Inter', sans-serif; font-weight: 500;
+}
+.detail-cell .v.muted { color: var(--mute); font-weight: 500; }
+.detail-cell .v .age { color: var(--mute); font-weight: 500; font-size: 11px; }
+
+/* Empty / show-more */
+.empty {
+  background: var(--card);
+  border: 1px dashed var(--line-2);
+  border-radius: 12px;
+  padding: 30px 20px;
+  text-align: center;
+  color: var(--mute);
+}
+.empty .icon-wrap {
+  width: 44px; height: 44px;
+  margin: 0 auto 10px;
+  border-radius: 50%;
+  background: var(--paper-2);
+  display: grid; place-items: center;
+}
+.empty .icon-wrap .icon { width: 20px; height: 20px; color: var(--healthy-deep); }
+.empty .text { font-size: 13px; font-weight: 500; color: var(--ink-3); }
+
+.show-more {
+  margin-top: 12px; padding: 12px;
+  width: 100%; min-height: 44px;
+  background: var(--card);
+  border: 1px dashed var(--line-2);
+  border-radius: 11px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--ink-3);
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  transition: border-color var(--t-fast), color var(--t-fast);
+}
+.show-more:hover { border-color: var(--orange); color: var(--orange); border-style: solid; }
+.show-more .icon { width: 14px; height: 14px; }
+
+/* ==================================================================== */
+/* ALL PRODUCTS — same pattern as KPI but more compact options          */
+/* ==================================================================== */
+.filter-chips {
+  display: flex; gap: 6px; flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.filter-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 7px 12px; min-height: 32px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px; font-weight: 600;
+  color: var(--text-soft);
+  white-space: nowrap;
+  transition: background-color var(--t-fast), color var(--t-fast), border-color var(--t-fast);
+}
+.filter-chip:hover { border-color: var(--ink-3); }
+.filter-chip[data-active="true"] {
+  background: var(--ink); color: #fff; border-color: var(--ink);
+}
+.filter-chip .icon { width: 12px; height: 12px; }
+.filter-chip .count {
+  font-family: 'JetBrains Mono', monospace; font-size: 10.5px;
+  background: var(--paper-2); padding: 1px 6px;
+  border-radius: 4px; color: var(--mute);
+  font-variant-numeric: tabular-nums; font-weight: 700;
+}
+.filter-chip[data-active="true"] .count {
+  background: rgba(255,255,255,.15); color: rgba(255,255,255,.95);
+}
+
+/* ==================================================================== */
+/* FAB                                                                   */
+/* ==================================================================== */
+.fab {
+  position: fixed; bottom: 16px; right: 16px;
+  width: 48px; height: 48px;
+  border-radius: 999px;
+  background: var(--ink); color: #fff;
+  border: none;
+  box-shadow: var(--sh-3);
+  display: none; align-items: center; justify-content: center;
+  z-index: 40;
+  transition: transform var(--t-fast);
+}
+.fab.show { display: flex; }
+.fab:active { transform: scale(.92); }
+.fab .icon { width: 18px; height: 18px; }
+
+/* ==================================================================== */
+/* FOOTER                                                                */
+/* ==================================================================== */
+footer {
+  padding: 20px 16px 28px;
+  text-align: center;
+  font-size: 11px; color: var(--mute);
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+}
+footer .brand {
+  font-weight: 700; color: var(--ink-2);
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+  margin-bottom: 4px;
+}
+
+/* ==================================================================== */
+/* RESPONSIVE                                                            */
+/* ==================================================================== */
+@media (min-width: 540px) {
+  .hero { padding: 36px 24px 32px; }
+  .hero-name { font-size: 32px; }
+  .section { padding: 32px 24px; }
+  .section-icon { width: 44px; height: 44px; }
+  .section-icon svg { width: 20px; height: 20px; }
+  .section-title h2 { font-size: 21px; }
+}
+
+@media print {
+  .masthead, .client-bar, .fab,
+  .section-toolbar, .show-more, .filter-chips { display: none !important; }
+  body { background: #fff; }
+  details.item { break-inside: avoid; }
+  details.item[open] { box-shadow: none; }
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <!-- Status / Severity -->
+    <symbol id="i-alert-octagon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+    <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+    <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+    <symbol id="i-x-octagon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></symbol>
+
+    <!-- Phantom = ghost (purpose-drawn) -->
+    <symbol id="i-ghost" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M12 2a8 8 0 0 0-8 8v12l3-3 2.5 2.5L12 19l2.5 2.5L17 19l3 3V10a8 8 0 0 0-8-8z"/></symbol>
+    <symbol id="i-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" y1="2" x2="22" y2="22"/></symbol>
+
+    <!-- Time / Cover -->
+    <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+    <symbol id="i-hourglass" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></symbol>
+
+    <!-- Trends -->
+    <symbol id="i-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></symbol>
+    <symbol id="i-trending-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/></symbol>
+    <symbol id="i-flame" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></symbol>
+
+    <!-- Charts -->
+    <symbol id="i-bar-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></symbol>
+    <symbol id="i-pie-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></symbol>
+    <symbol id="i-activity" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></symbol>
+
+    <!-- Misc -->
+    <symbol id="i-store" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M5 9v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9"/><path d="M9 21V13h6v8"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+    <symbol id="i-search-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="8" x2="14" y2="14"/><line x1="14" y1="8" x2="8" y2="14"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+    <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+    <symbol id="i-arrow-down" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></symbol>
+    <symbol id="i-package" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+    <symbol id="i-filter" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/></symbol>
+    <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+    <symbol id="i-barcode" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14"/><path d="M5.5 5v14"/><path d="M9 5v14"/><path d="M12 5v14"/><path d="M14 5v14"/><path d="M17 5v14"/><path d="M20 5v14"/></symbol>
+    <symbol id="i-shopping-cart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></symbol>
+    <symbol id="i-zap-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="12.41 6.75 13 2 10.57 4.92"/><polyline points="18.57 12.91 21 10 15.66 10"/><polyline points="8 8 3 14 12 14 11 22 16 16"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+  </defs>
+</svg>
+
+<div class="app">
+
+  <!-- ============ MASTHEAD ============ -->
+  <header class="masthead">
+    <div class="brandmark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="12 2 21.5 7.5 21.5 16.5 12 22 2.5 16.5 2.5 7.5 12 2"/>
+        <line x1="7.5" y1="9" x2="16.5" y2="15"/>
+        <line x1="9" y1="13" x2="14.5" y2="11"/>
+      </svg>
+    </div>
+    <div class="mast-title">
+      <div class="t1">Stock Action Report</div>
+      <div class="t2" id="mast-meta">—</div>
+    </div>
+  </header>
+
+  <!-- ============ CLIENT FILTER ============ -->
+  <div class="client-bar">
+    <div class="label"><svg class="icon"><use href="#i-filter"/></svg>Client</div>
+    <select id="client-filter" aria-label="Filter by client">
+      <option value="all">All clients</option>
+    </select>
+    <button class="clear-client" id="clear-client" aria-label="Clear client filter">
+      <svg class="icon"><use href="#i-x"/></svg>
+    </button>
+  </div>
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="hero-eyebrow"><svg class="icon"><use href="#i-store"/></svg>Store report</div>
+    <h1 class="hero-name" id="hero-name">—</h1>
+    <div class="hero-meta">
+      <span><svg class="icon"><use href="#i-store"/></svg><span id="hero-code">—</span></span>
+      <span id="hero-profile">—</span>
+      <span><svg class="icon"><use href="#i-calendar"/></svg>Week ending <span id="hero-week">—</span></span>
+      <span><svg class="icon"><use href="#i-package"/></svg><span id="hero-active-count">—</span> active items</span>
+    </div>
+    <div class="hero-stats">
+      <div class="hero-stat crit">
+        <div class="v" id="kpi-oos">0</div>
+        <div class="label"><svg class="icon"><use href="#i-x-octagon"/></svg>Out of stock</div>
+        <div class="sub" id="kpi-oos-sub">—</div>
+      </div>
+      <div class="hero-stat phantom">
+        <div class="v" id="kpi-phantom">0</div>
+        <div class="label"><svg class="icon"><use href="#i-ghost"/></svg>Possible phantom</div>
+        <div class="sub" id="kpi-phantom-sub">—</div>
+      </div>
+      <div class="hero-stat warn">
+        <div class="v" id="kpi-low">0</div>
+        <div class="label"><svg class="icon"><use href="#i-hourglass"/></svg>Low cover &lt;14d</div>
+        <div class="sub" id="kpi-low-sub">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ AT-A-GLANCE CHARTS ============ -->
+  <section class="section charts-section">
+    <div class="section-header">
+      <div class="section-icon"><svg class="icon"><use href="#i-activity"/></svg></div>
+      <div class="section-title">
+        <h2>At a glance</h2>
+        <p>Stock issues across the active catalogue. Healthy products are excluded here but appear in the full table at the bottom.</p>
+      </div>
+    </div>
+    <div class="charts-grid">
+      <div class="chart-card full">
+        <h3><svg class="icon"><use href="#i-bar-chart"/></svg>Days cover distribution<span class="meta" id="hist-meta">—</span></h3>
+        <div class="hist" id="hist-bars"></div>
+        <div class="hist-labels" id="hist-labels"></div>
+        <div class="hist-key">
+          <span><span class="sw" style="background:var(--critical)"></span>Critical (0–14d)</span>
+          <span><span class="sw" style="background:var(--warning)"></span>Watch (14–30d)</span>
+          <span><span class="sw" style="background:var(--healthy)"></span>Healthy (30–180d)</span>
+          <span><span class="sw" style="background:var(--steel-bright)"></span>Excess (180d+)</span>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3><svg class="icon"><use href="#i-pie-chart"/></svg>Issues breakdown<span class="meta" id="donut-meta">—</span></h3>
+        <div class="donut-wrap">
+          <svg class="donut" id="donut" width="118" height="118" viewBox="0 0 118 118"></svg>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <h3><svg class="icon"><use href="#i-x-octagon"/></svg>OOS per client<span class="meta" id="oos-pc-meta">—</span></h3>
+        <div class="vendor-bars" id="oos-per-client"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ OOS ============ -->
+  <section class="section" id="section-actions">
+    <div class="section-header">
+      <div class="section-icon crit"><svg class="icon"><use href="#i-alert-triangle"/></svg></div>
+      <div class="section-title">
+        <h2>Action items <span class="count-badge" id="actions-total-count">0</span></h2>
+        <p>Items needing attention. Search filters all three lists at once; tab counts update live.</p>
+      </div>
+    </div>
+    <div class="section-toolbar">
+      <div class="search-input">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" data-search="actions" placeholder="Search across all action items…" autocomplete="off">
+        <button class="clear" data-search-clear="actions" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button class="tab" data-tab="oos" role="tab" aria-selected="true">
+        <svg class="icon"><use href="#i-x-octagon"/></svg>
+        <span class="tab-label">Out of stock</span>
+        <span class="tab-count" id="oos-tab-count">0</span>
+      </button>
+      <button class="tab" data-tab="phantom" role="tab" aria-selected="false">
+        <svg class="icon"><use href="#i-ghost"/></svg>
+        <span class="tab-label">Possible phantom</span>
+        <span class="tab-count" id="phantom-tab-count">0</span>
+      </button>
+      <button class="tab" data-tab="low" role="tab" aria-selected="false">
+        <svg class="icon"><use href="#i-hourglass"/></svg>
+        <span class="tab-label">Low cover</span>
+        <span class="tab-count" id="low-tab-count">0</span>
+      </button>
+    </div>
+    <div class="tab-panel" data-tab="oos" role="tabpanel">
+      <p class="tab-summary" id="oos-summary"></p>
+      <div class="item-list" id="oos-list"></div>
+    </div>
+    <div class="tab-panel" data-tab="phantom" role="tabpanel" hidden>
+      <p class="tab-summary" id="phantom-summary"></p>
+      <div class="item-list" id="phantom-list"></div>
+    </div>
+    <div class="tab-panel" data-tab="low" role="tabpanel" hidden>
+      <p class="tab-summary" id="low-summary"></p>
+      <div class="item-list" id="low-list"></div>
+    </div>
+  </section>
+
+  <!-- ============ TOP PERFORMERS ============ -->
+  <section class="section" id="section-top">
+    <div class="section-header">
+      <div class="section-icon healthy"><svg class="icon"><use href="#i-trophy"/></svg></div>
+      <div class="section-title">
+        <h2>Top performers <span class="count-badge healthy" id="top-count">0</span></h2>
+        <p>The fastest-moving active items at this store.</p>
+      </div>
+    </div>
+    <div class="section-toolbar">
+      <div class="search-input">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" data-search="top" placeholder="Search top performers…" autocomplete="off">
+        <button class="clear" data-search-clear="top" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+    </div>
+    <div class="item-list" id="top-list"></div>
+  </section>
+
+  <!-- ============ ALL PRODUCTS ============ -->
+  <section class="section" id="section-all">
+    <div class="section-header">
+      <div class="section-icon steel"><svg class="icon"><use href="#i-list"/></svg></div>
+      <div class="section-title">
+        <h2>All products <span class="count-badge" id="all-count">0</span></h2>
+        <p>Full catalogue. Tap any row for details. Filter by status or sort below.</p>
+      </div>
+    </div>
+    <div class="section-toolbar">
+      <div class="search-input">
+        <svg class="icon"><use href="#i-search"/></svg>
+        <input type="search" data-search="all" placeholder="Search all products…" autocomplete="off">
+        <button class="clear" data-search-clear="all" aria-label="Clear"><svg class="icon"><use href="#i-x"/></svg></button>
+      </div>
+      <select id="all-sort" class="toolbar-select">
+        <option value="desc">A–Z</option>
+        <option value="dros_desc">Highest sales</option>
+        <option value="dros_asc">Lowest sales</option>
+        <option value="dsc_asc">Lowest cover</option>
+        <option value="dsc_desc">Highest cover</option>
+        <option value="soh_desc">Most stock</option>
+        <option value="status">Status</option>
+      </select>
+    </div>
+    <div class="filter-chips" id="status-chips"></div>
+    <div class="item-list" id="all-list"></div>
+    <button class="show-more" id="all-more" style="display:none"></button>
+  </section>
+
+  <footer>
+    <div class="brand">Stock Action Report</div>
+    <div id="footer-meta">—</div>
+  </footer>
+</div>
+
+<button class="fab" id="fab" aria-label="Back to top"><svg class="icon"><use href="#i-arrow-up"/></svg></button>
+
+<script id="payload" type="application/json">{"meta":{"store_code":"NC35","store_name":"The Grove","profile":"Corporate Store","week_ending":"2026-05-03","week_ending_pretty":"03 May 2026","generated":"05 May 2026 at 08:40"},"summary":{"total_articles":283,"active_count":150,"oos_count":1,"phantom_count":10,"low_cover_count":19,"healthy_count":123,"lost_daily_sales":0.72,"phantom_units":142,"low_cover_at_risk":0.67},"charts":{"severity":{"oos":1,"phantom":10,"low_cover":19,"healthy":123},"dsc_histogram":[{"band":"0","label":"Out","sev":"crit","count":18},{"band":"1-14","label":"1–14","sev":"crit","count":2},{"band":"14-30","label":"14–30","sev":"warn","count":3},{"band":"30-90","label":"30–90","sev":"ok","count":32},{"band":"90-180","label":"90–180","sev":"ok","count":33},{"band":"180-365","label":"180–365","sev":"excess","count":30},{"band":"365+","label":"365+","sev":"excess","count":32}],"status_breakdown":[{"status":"04","desc":"Active","count":150,"tier":"active"},{"status":"72","desc":"Discontinued","count":94,"tier":"discontinued"},{"status":"62","desc":"Interrupted supply","count":22,"tier":"temp"},{"status":"05","desc":"Allocations only","count":13,"tier":"active"},{"status":"60","desc":"Seasonal — temp discontinued","count":3,"tier":"temp"},{"status":"07","desc":"Permanently discontinued","count":1,"tier":"discontinued"}],"vendor_breakdown":[{"name":"SCHOU","count":116,"active":38,"oos":0,"phantom":2,"low_cover":2,"healthy":36,"dros":8.28,"soh":1562},{"name":"CLIPPA SALES","count":81,"active":69,"oos":1,"phantom":5,"low_cover":13,"healthy":52,"dros":9.3,"soh":1224},{"name":"OTIMA","count":28,"active":15,"oos":0,"phantom":1,"low_cover":1,"healthy":11,"dros":19.59,"soh":1376},{"name":"HQ FOODS","count":14,"active":14,"oos":0,"phantom":0,"low_cover":1,"healthy":13,"dros":2.45,"soh":173},{"name":"BOARDMAN BROS","count":10,"active":2,"oos":0,"phantom":0,"low_cover":0,"healthy":2,"dros":0.29,"soh":120},{"name":"MPO VAPES","count":9,"active":0,"oos":0,"phantom":0,"low_cover":0,"healthy":0,"dros":0.25,"soh":151},{"name":"LUMOSS","count":8,"active":6,"oos":0,"phantom":1,"low_cover":0,"healthy":5,"dros":0.71,"soh":332},{"name":"TRAMARCO TRADING","count":7,"active":1,"oos":0,"phantom":1,"low_cover":1,"healthy":0,"dros":0.09,"soh":270},{"name":"ELEV8R","count":6,"active":1,"oos":0,"phantom":0,"low_cover":1,"healthy":0,"dros":0.41,"soh":269},{"name":"LK PRODUCTS","count":4,"active":4,"oos":0,"phantom":0,"low_cover":0,"healthy":4,"dros":0.09,"soh":28}]},"kpis":{"oos":[{"id":"729601","desc":"FISHERMAN FRIEND SPRMINT PASTILLES 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":0.0,"dros":0.725,"dsc":0.0,"last_recv":"2026-03-17","last_sold":"2026-04-26","last_ord":"","days_recv":49,"days_sold":9,"days_ord":null,"barcode":"96103975","tags":["oos"]}],"phantom":[{"id":"1007397","desc":"LUMOSS BEER MUG 500ML SINGLES","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":35.0,"dros":0.11,"dsc":318.2,"last_recv":"2025-11-25","last_sold":"2026-02-19","last_ord":"2025-11-19","days_recv":161,"days_sold":75,"days_ord":167,"barcode":"6009552807208","tags":["phantom"]},{"id":"928378","desc":"DAY HI BALL GLASSES COLOUR 300ML 4EA","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-12","last_sold":"2026-01-01","last_ord":"2025-10-06","days_recv":205,"days_sold":124,"days_ord":211,"barcode":"5714988000499","tags":["phantom","low_cover"]},{"id":"952345","desc":"DAY STAINLESS STEEL VACUUM FLASK 500ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":17.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"2025-07-12","last_ord":"2026-04-10","days_recv":16,"days_sold":297,"days_ord":25,"barcode":"5709386753429","tags":["phantom","low_cover"]},{"id":"993988","desc":"OTIMA VINO GLASS","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.022,"dsc":636.4,"last_recv":"2025-05-25","last_sold":"2026-02-02","last_ord":"2025-05-22","days_recv":345,"days_sold":92,"days_ord":348,"barcode":"781718076968","tags":["phantom"]},{"id":"209739","desc":"CARR'S BISCUIT TABLE WATER 125GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":11.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-18","last_sold":"2026-01-07","last_ord":"","days_recv":229,"days_sold":118,"days_ord":null,"barcode":"5000168001104","tags":["phantom","low_cover"]},{"id":"1009456","desc":"FILIPINOS SPECULOOS WITH MILK CHOC 118GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.011,"dsc":909.1,"last_recv":"2025-12-22","last_sold":"2026-02-07","last_ord":"","days_recv":134,"days_sold":87,"days_ord":null,"barcode":"8436048965636","tags":["phantom"]},{"id":"1009456","desc":"FILIPINOS SPECULOOS WITH MILK CHOC 118GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.011,"dsc":909.1,"last_recv":"2025-12-22","last_sold":"2026-02-07","last_ord":"","days_recv":134,"days_sold":87,"days_ord":null,"barcode":"","tags":["phantom"]},{"id":"191241","desc":"ILLY CLASSICO BEANS 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-15","last_sold":"2025-12-09","last_ord":"","days_recv":355,"days_sold":147,"days_ord":null,"barcode":"8003753900520","tags":["phantom","low_cover"]},{"id":"402557","desc":"ILLY CLASSICO GROUND 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.022,"dsc":272.7,"last_recv":"2026-01-01","last_sold":"2026-02-08","last_ord":"","days_recv":124,"days_sold":86,"days_ord":null,"barcode":"8003753900438","tags":["phantom"]},{"id":"1002496","desc":"TTI SPRINGBOK KIDDIES SCOOTER TOY342XSPB","vendor":"TRAMARCO TRADING","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":5.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-12-29","last_sold":"2026-01-29","last_ord":"2025-12-22","days_recv":127,"days_sold":96,"days_ord":134,"barcode":"6004049047112","tags":["phantom","low_cover"]}],"low_cover":[{"id":"228078","desc":"HQ FOODS CRUSHED GARLIC 100ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.593,"dsc":11.8,"last_recv":"2026-04-15","last_sold":"2026-05-02","last_ord":"2026-05-03","days_recv":20,"days_sold":3,"days_ord":2,"barcode":"6001475018921","tags":["low_cover"]},{"id":"122877","desc":"CLIPPER LIGHTER GAS 300ML 1EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":1.0,"dros":0.077,"dsc":13.0,"last_recv":"2025-10-05","last_sold":"2026-05-02","last_ord":"","days_recv":212,"days_sold":3,"days_ord":null,"barcode":"8412765130014","tags":["low_cover"]},{"id":"1025202","desc":"AMOS PEELERZ GUMMY BANANA 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289083","tags":["low_cover"]},{"id":"1025212","desc":"AMOS PEELERZ GUMMY LYCHEE 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289113","tags":["low_cover"]},{"id":"1025201","desc":"AMOS PEELERZ GUMMY MANGO 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289076","tags":["low_cover"]},{"id":"1025204","desc":"AMOS PEELERZ GUMMY ORANGE 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289106","tags":["low_cover"]},{"id":"1025203","desc":"AMOS PEELERZ GUMMY PEACH 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289090","tags":["low_cover"]},{"id":"209739","desc":"CARR'S BISCUIT TABLE WATER 125GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":11.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-18","last_sold":"2026-01-07","last_ord":"","days_recv":229,"days_sold":118,"days_ord":null,"barcode":"5000168001104","tags":["phantom","low_cover"]},{"id":"928378","desc":"DAY HI BALL GLASSES COLOUR 300ML 4EA","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-12","last_sold":"2026-01-01","last_ord":"2025-10-06","days_recv":205,"days_sold":124,"days_ord":211,"barcode":"5714988000499","tags":["phantom","low_cover"]},{"id":"952345","desc":"DAY STAINLESS STEEL VACUUM FLASK 500ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":17.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"2025-07-12","last_ord":"2026-04-10","days_recv":16,"days_sold":297,"days_ord":25,"barcode":"5709386753429","tags":["phantom","low_cover"]},{"id":"1006163","desc":"FILIPINOS CRISPY BITES MILK CHOCO 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"","last_ord":"","days_recv":16,"days_sold":null,"days_ord":null,"barcode":"8436048965049","tags":["low_cover"]},{"id":"1006162","desc":"FILIPINOS CRISPY BITES WHITE CHOCO 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"","last_ord":"","days_recv":16,"days_sold":null,"days_ord":null,"barcode":"8436048965056","tags":["low_cover"]},{"id":"1009435","desc":"FILIPINOS WITH MILK CHOCOLATE 120GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":12.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-14","last_sold":"","last_ord":"","days_recv":203,"days_sold":null,"days_ord":null,"barcode":"8436048965513","tags":["low_cover"]},{"id":"191241","desc":"ILLY CLASSICO BEANS 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-15","last_sold":"2025-12-09","last_ord":"","days_recv":355,"days_sold":147,"days_ord":null,"barcode":"8003753900520","tags":["phantom","low_cover"]},{"id":"961443","desc":"OTIMA CLOTHES HANGER BLACK 5 PACK","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-12","last_sold":"","last_ord":"2026-04-10","days_recv":23,"days_sold":null,"days_ord":25,"barcode":"781718508674","tags":["low_cover"]},{"id":"1015895","desc":"SERANO BEER MIX NUTS & CRACKERS 150GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-21","last_sold":"","last_ord":"","days_recv":45,"days_sold":null,"days_ord":null,"barcode":"5290097022138","tags":["low_cover"]},{"id":"1015815","desc":"SERANO WINE MIX NUTS & CRACKERS 150GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-21","last_sold":"","last_ord":"","days_recv":45,"days_sold":null,"days_ord":null,"barcode":"5290097022145","tags":["low_cover"]},{"id":"1016700","desc":"SIP SF SWEET&SOUR LEMONADE CORDIAL 750ML","vendor":"ELEV8R","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-23","last_sold":"","last_ord":"","days_recv":43,"days_sold":null,"days_ord":null,"barcode":"6009900580845","tags":["low_cover"]},{"id":"1002496","desc":"TTI SPRINGBOK KIDDIES SCOOTER TOY342XSPB","vendor":"TRAMARCO TRADING","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":5.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-12-29","last_sold":"2026-01-29","last_ord":"2025-12-22","days_recv":127,"days_sold":96,"days_ord":134,"barcode":"6004049047112","tags":["phantom","low_cover"]}],"top_performers":[{"id":"926865","desc":"OTIMA SNAP IT RECTANGLE FOOD SAVER 1.2L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":383.0,"dros":6.857,"dsc":55.9,"last_recv":"2026-04-26","last_sold":"2026-05-03","last_ord":"2026-04-23","days_recv":9,"days_sold":2,"days_ord":12,"barcode":"700083073945","tags":["hot"]},{"id":"926873","desc":"OTIMA ROUND MICROFRESH FOOD SAVER 1L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":451.0,"dros":6.187,"dsc":72.9,"last_recv":"2026-04-26","last_sold":"2026-05-03","last_ord":"2026-04-23","days_recv":9,"days_sold":2,"days_ord":12,"barcode":"700083612649","tags":["hot"]}]},"all_products":[{"id":"990709","desc":"ALIVE AAA10 1.5V ALKALINE BATTERIES 10EA","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":48.0,"dros":0.088,"dsc":545.5,"last_recv":"2025-11-16","last_sold":"2026-04-27","last_ord":"2025-11-12","days_recv":170,"days_sold":8,"days_ord":174,"barcode":"5709386614966","tags":["inactive"]},{"id":"990889","desc":"ALIVE BATTERY ALKALINE AA LR6 1.5V 10EA","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":96.0,"dros":0.066,"dsc":1454.5,"last_recv":"2025-11-16","last_sold":"2026-05-03","last_ord":"2025-11-12","days_recv":170,"days_sold":2,"days_ord":174,"barcode":"5709386614980","tags":["healthy"]},{"id":"1003936","desc":"AMOS FRUIT GUMMY GRAPE BURST 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":29.0,"dros":0.143,"dsc":202.8,"last_recv":"2026-02-10","last_sold":"2026-05-02","last_ord":"","days_recv":84,"days_sold":3,"days_ord":null,"barcode":"6936756277776","tags":["healthy"]},{"id":"1003937","desc":"AMOS FRUIT GUMMY PEACH BURST 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":8.0,"dros":0.044,"dsc":181.8,"last_recv":"2025-09-09","last_sold":"2026-04-28","last_ord":"","days_recv":238,"days_sold":7,"days_ord":null,"barcode":"6936756277790","tags":["healthy"]},{"id":"1003876","desc":"AMOS FRUIT GUMMY PINEAPPLE BURST 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.044,"dsc":340.9,"last_recv":"2025-09-09","last_sold":"2026-04-05","last_ord":"","days_recv":238,"days_sold":30,"days_ord":null,"barcode":"6936756277813","tags":["healthy"]},{"id":"1003939","desc":"AMOS FRUIT GUMMY STRAWBERRY BURST 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":12.0,"dros":0.11,"dsc":109.1,"last_recv":"2025-09-09","last_sold":"2026-05-01","last_ord":"","days_recv":238,"days_sold":4,"days_ord":null,"barcode":"6936756277752","tags":["healthy"]},{"id":"1003882","desc":"AMOS GUMMY BLOCKS BERRY MIX 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":35.0,"dros":0.011,"dsc":3181.8,"last_recv":"2026-03-05","last_sold":"2026-04-24","last_ord":"","days_recv":61,"days_sold":11,"days_ord":null,"barcode":"6936756277738","tags":["healthy"]},{"id":"1025202","desc":"AMOS PEELERZ GUMMY BANANA 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289083","tags":["low_cover"]},{"id":"1025212","desc":"AMOS PEELERZ GUMMY LYCHEE 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289113","tags":["low_cover"]},{"id":"1025201","desc":"AMOS PEELERZ GUMMY MANGO 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289076","tags":["low_cover"]},{"id":"1025204","desc":"AMOS PEELERZ GUMMY ORANGE 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289106","tags":["low_cover"]},{"id":"1025203","desc":"AMOS PEELERZ GUMMY PEACH 80GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-05-03","last_sold":"","last_ord":"","days_recv":2,"days_sold":null,"days_ord":null,"barcode":"6936756289090","tags":["low_cover"]},{"id":"778563","desc":"BAXTONS BUTTER TOFFEE LIQ 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":11.0,"dros":0.044,"dsc":250.0,"last_recv":"2025-11-13","last_sold":"2026-04-21","last_ord":"","days_recv":173,"days_sold":14,"days_ord":null,"barcode":"6002553008346","tags":["healthy"]},{"id":"778562","desc":"BAXTONS BUTTER TOFFEE MINT 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":23.0,"dros":0.143,"dsc":160.8,"last_recv":"2026-03-11","last_sold":"2026-04-20","last_ord":"","days_recv":55,"days_sold":15,"days_ord":null,"barcode":"6002553008322","tags":["healthy"]},{"id":"778541","desc":"BAXTONS BUTTER TOFFEE ORIG 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":6.0,"dros":0.088,"dsc":68.2,"last_recv":"2025-11-19","last_sold":"2026-04-30","last_ord":"","days_recv":167,"days_sold":5,"days_ord":null,"barcode":"6002553008308","tags":["healthy"]},{"id":"721605","desc":"BAXTONS CANDY MELLOW APRICOT FLAV 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":14.0,"dros":0.374,"dsc":37.4,"last_recv":"2026-03-11","last_sold":"2026-04-30","last_ord":"","days_recv":55,"days_sold":5,"days_ord":null,"barcode":"6002553008001","tags":["healthy"]},{"id":"737109","desc":"BAXTONS FRUIT CHEW 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":19.0,"dros":0.154,"dsc":123.4,"last_recv":"2026-02-18","last_sold":"2026-04-18","last_ord":"","days_recv":76,"days_sold":17,"days_ord":null,"barcode":"6002553008100","tags":["healthy"]},{"id":"778566","desc":"BAXTONS ORELLO'S MIXED BERRY 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":14.0,"dros":0.077,"dsc":181.8,"last_recv":"2025-11-26","last_sold":"2026-04-08","last_ord":"","days_recv":160,"days_sold":27,"days_ord":null,"barcode":"6002553008223","tags":["healthy"]},{"id":"778642","desc":"BAXTONS ORELLOS MINT CHEWS 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":13.0,"dros":0.033,"dsc":393.9,"last_recv":"2025-11-26","last_sold":"2026-04-02","last_ord":"","days_recv":160,"days_sold":33,"days_ord":null,"barcode":"6002553008186","tags":["healthy"]},{"id":"721604","desc":"BAXTONS STRAWBERRY CREAM 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":3.0,"dros":0.088,"dsc":34.1,"last_recv":"2025-11-19","last_sold":"2026-04-20","last_ord":"","days_recv":167,"days_sold":15,"days_ord":null,"barcode":"6002553008025","tags":["healthy"]},{"id":"625280","desc":"BELGIAN BAR HAZEL NUT CRUNCH 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":13.0,"dros":0.011,"dsc":1181.8,"last_recv":"2025-09-07","last_sold":"2026-04-02","last_ord":"","days_recv":240,"days_sold":33,"days_ord":null,"barcode":"5413121360833","tags":["healthy"]},{"id":"219431","desc":"BELGIAN HEART CHOCOLATE 65GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-25","last_sold":"2026-01-02","last_ord":"","days_recv":345,"days_sold":123,"days_ord":null,"barcode":"5413121351602","tags":["discontinued_stock"]},{"id":"375736","desc":"BELGIAN HEARTS CHOCS 200GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.077,"dsc":0.0,"last_recv":"2025-04-22","last_sold":"2026-04-10","last_ord":"","days_recv":378,"days_sold":25,"days_ord":null,"barcode":"5413121350018","tags":["inactive"]},{"id":"339239","desc":"BELGIAN MILK DARK CHOC 72% 100GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":21.0,"dros":0.187,"dsc":112.3,"last_recv":"2026-03-21","last_sold":"2026-05-01","last_ord":"","days_recv":45,"days_sold":4,"days_ord":null,"barcode":"5413121355082","tags":["discontinued_stock"]},{"id":"214022","desc":"BELGIAN SEA SHELL BLU/RIBB CHOC 250GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.044,"dsc":90.9,"last_recv":"2025-04-20","last_sold":"2026-04-28","last_ord":"","days_recv":380,"days_sold":7,"days_ord":null,"barcode":"5413121350032","tags":["discontinued_stock"]},{"id":"109738","desc":"BELGIAN SEA SHELL BLU/RIBB CHOC 65GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":15.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-25","last_sold":"2026-01-03","last_ord":"","days_recv":345,"days_sold":122,"days_ord":null,"barcode":"5413121350056","tags":["discontinued_stock"]},{"id":"425404","desc":"BELGIAN SEASHELL DARK CHOC 250GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-09-01","last_sold":"2025-12-25","last_ord":"","days_recv":611,"days_sold":131,"days_ord":null,"barcode":"5413121359844","tags":["discontinued_stock"]},{"id":"710193","desc":"BELGIAN SEASHELLS COFFEE CHOC S/PCK 60GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.011,"dsc":454.5,"last_recv":"2025-05-25","last_sold":"2026-03-23","last_ord":"","days_recv":345,"days_sold":43,"days_ord":null,"barcode":"5413121360673","tags":["discontinued_stock"]},{"id":"710192","desc":"BELGIAN SEASHELLS DARK CHOC S/PACK 60GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.044,"dsc":0.0,"last_recv":"2025-04-20","last_sold":"2026-03-28","last_ord":"","days_recv":380,"days_sold":38,"days_ord":null,"barcode":"5413121360666","tags":["inactive"]},{"id":"339237","desc":"BELGIAN WHITE CHOCOLATE 100GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.198,"dsc":0.0,"last_recv":"2025-04-29","last_sold":"2026-03-01","last_ord":"","days_recv":371,"days_sold":65,"days_ord":null,"barcode":"5413121355143","tags":["inactive"]},{"id":"676871","desc":"BIT PLASTICS COLLAPSIBLE CRATE","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.011,"dsc":2545.5,"last_recv":"2025-12-02","last_sold":"2026-04-30","last_ord":"2025-11-24","days_recv":154,"days_sold":5,"days_ord":162,"barcode":"658325576825","tags":["healthy"]},{"id":"209739","desc":"CARR'S BISCUIT TABLE WATER 125GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":11.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-18","last_sold":"2026-01-07","last_ord":"","days_recv":229,"days_sold":118,"days_ord":null,"barcode":"5000168001104","tags":["phantom","low_cover"]},{"id":"122877","desc":"CLIPPER LIGHTER GAS 300ML 1EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":1.0,"dros":0.077,"dsc":13.0,"last_recv":"2025-10-05","last_sold":"2026-05-02","last_ord":"","days_recv":212,"days_sold":3,"days_ord":null,"barcode":"8412765130014","tags":["low_cover"]},{"id":"205443","desc":"CLIPPER REFILLABLE LIGHTERS 1EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":42.0,"dros":0.165,"dsc":254.5,"last_recv":"2026-02-24","last_sold":"2026-05-01","last_ord":"","days_recv":70,"days_sold":4,"days_ord":null,"barcode":"194283653517","tags":["healthy"]},{"id":"122892","desc":"CLOVER LEAF 8CM BALL CANDLE WHITE","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-07-11","last_sold":"2026-02-14","last_ord":"","days_recv":663,"days_sold":80,"days_ord":null,"barcode":"","tags":["inactive"]},{"id":"122892","desc":"CLOVER LEAF 8CM BALL CANDLE WHITE","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-07-11","last_sold":"2026-02-14","last_ord":"","days_recv":663,"days_sold":80,"days_ord":null,"barcode":"6001623326038","tags":["inactive"]},{"id":"110327","desc":"CLOVER LEAF PARTY LIGHT 15CM WHITE 4EA","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":7.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-24","last_sold":"2025-12-25","last_ord":"","days_recv":376,"days_sold":131,"days_ord":null,"barcode":"","tags":["discontinued_stock"]},{"id":"110327","desc":"CLOVER LEAF PARTY LIGHT 15CM WHITE 4EA","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":7.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-24","last_sold":"2025-12-25","last_ord":"","days_recv":376,"days_sold":131,"days_ord":null,"barcode":"6001623081319","tags":["discontinued_stock"]},{"id":"234044","desc":"CLOVER LEAF T LIGHT CANDLES 50EA","vendor":"BOARDMAN BROS","status":"72","listing":"","rp":"ND","supply":"Standard","soh":0.0,"dros":0.099,"dsc":0.0,"last_recv":"2024-07-11","last_sold":"2026-02-16","last_ord":"","days_recv":663,"days_sold":78,"days_ord":null,"barcode":"6001623350057","tags":["inactive"]},{"id":"234044","desc":"CLOVER LEAF T LIGHT CANDLES 50EA","vendor":"BOARDMAN BROS","status":"72","listing":"","rp":"ND","supply":"Standard","soh":0.0,"dros":0.099,"dsc":0.0,"last_recv":"2024-07-11","last_sold":"2026-02-16","last_ord":"","days_recv":663,"days_sold":78,"days_ord":null,"barcode":"","tags":["inactive"]},{"id":"205181","desc":"CLOVER LEAF TEA LIGHT CANDLES 10EA","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-24","last_sold":"2025-11-02","last_ord":"","days_recv":376,"days_sold":184,"days_ord":null,"barcode":"6001623011019","tags":["discontinued_stock"]},{"id":"205181","desc":"CLOVER LEAF TEA LIGHT CANDLES 10EA","vendor":"BOARDMAN BROS","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-24","last_sold":"2025-11-02","last_ord":"","days_recv":376,"days_sold":184,"days_ord":null,"barcode":"","tags":["discontinued_stock"]},{"id":"147189","desc":"CLOVER LEAF TEA LIGHT CANDLES 20EA","vendor":"BOARDMAN BROS","status":"04","listing":"L","rp":"Y9","supply":"Standard","soh":33.0,"dros":0.033,"dsc":1000.0,"last_recv":"2025-02-06","last_sold":"2026-03-20","last_ord":"","days_recv":453,"days_sold":46,"days_ord":null,"barcode":"6001623469032","tags":["healthy"]},{"id":"147189","desc":"CLOVER LEAF TEA LIGHT CANDLES 20EA","vendor":"BOARDMAN BROS","status":"04","listing":"L","rp":"Y9","supply":"Standard","soh":33.0,"dros":0.033,"dsc":1000.0,"last_recv":"2025-02-06","last_sold":"2026-03-20","last_ord":"","days_recv":453,"days_sold":46,"days_ord":null,"barcode":"","tags":["healthy"]},{"id":"921410","desc":"DANGRILL ROASTING PAN OVAL 39X20.5CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.143,"dsc":0.0,"last_recv":"2023-07-27","last_sold":"2026-04-02","last_ord":"2023-07-21","days_recv":1013,"days_sold":33,"days_ord":1019,"barcode":"5709386881931","tags":["inactive"]},{"id":"976118","desc":"DAY 300ML GLASS RIBBED MUG","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":21.0,"dros":0.066,"dsc":318.2,"last_recv":"2026-01-18","last_sold":"2026-04-13","last_ord":"2026-01-15","days_recv":107,"days_sold":22,"days_ord":110,"barcode":"5714988036443","tags":["healthy"]},{"id":"938450","desc":"DAY AGRA ROLLNG TABLE 2 SHELF","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"2026-03-16","last_ord":"2024-07-12","days_recv":660,"days_sold":50,"days_ord":662,"barcode":"5709386726362","tags":["inactive"]},{"id":"938417","desc":"DAY AVA TABLE 40X40CM GREY","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.022,"dsc":90.9,"last_recv":"2025-09-11","last_sold":"2026-04-11","last_ord":"2025-09-11","days_recv":236,"days_sold":24,"days_ord":236,"barcode":"5709386723125","tags":["inactive"]},{"id":"938417","desc":"DAY AVA TABLE 40X40CM GREY","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.022,"dsc":90.9,"last_recv":"2025-09-11","last_sold":"2026-04-11","last_ord":"2025-09-11","days_recv":236,"days_sold":24,"days_ord":236,"barcode":"5709386723125","tags":["inactive"]},{"id":"938403","desc":"DAY AVA TABLE 40X40CM MSGREEN","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-12-07","last_sold":"2025-02-02","last_ord":"2025-12-03","days_recv":149,"days_sold":457,"days_ord":153,"barcode":"5709386723668","tags":["inactive"]},{"id":"938403","desc":"DAY AVA TABLE 40X40CM MSGREEN","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-12-07","last_sold":"2025-02-02","last_ord":"2025-12-03","days_recv":149,"days_sold":457,"days_ord":153,"barcode":"5709386723668","tags":["inactive"]},{"id":"938405","desc":"DAY AVA TABLE 40X40CM SAGE","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.011,"dsc":181.8,"last_recv":"2025-12-07","last_sold":"2026-04-14","last_ord":"2025-12-03","days_recv":149,"days_sold":21,"days_ord":153,"barcode":"5709386723118","tags":["inactive"]},{"id":"938405","desc":"DAY AVA TABLE 40X40CM SAGE","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.011,"dsc":181.8,"last_recv":"2025-12-07","last_sold":"2026-04-14","last_ord":"2025-12-03","days_recv":149,"days_sold":21,"days_ord":153,"barcode":"5709386723118","tags":["inactive"]},{"id":"924048","desc":"DAY BAKING ACCESS SET ASTD 4PCS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2023-11-05","last_sold":"2026-04-10","last_ord":"2023-10-31","days_recv":912,"days_sold":25,"days_ord":917,"barcode":"5709386740139","tags":["inactive"]},{"id":"954867","desc":"DAY BASTING BRUSH 22CM SILICONE","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":62.0,"dros":0.187,"dsc":331.6,"last_recv":"2025-12-14","last_sold":"2026-04-29","last_ord":"2025-12-11","days_recv":142,"days_sold":6,"days_ord":145,"barcode":"5709386106256","tags":["healthy"]},{"id":"938419","desc":"DAY BELLA TABLE 38X50CM BLACK","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.011,"dsc":272.7,"last_recv":"2025-07-13","last_sold":"2026-04-19","last_ord":"2025-07-08","days_recv":296,"days_sold":16,"days_ord":301,"barcode":"5709386737320","tags":["discontinued_stock"]},{"id":"938419","desc":"DAY BELLA TABLE 38X50CM BLACK","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.011,"dsc":272.7,"last_recv":"2025-07-13","last_sold":"2026-04-19","last_ord":"2025-07-08","days_recv":296,"days_sold":16,"days_ord":301,"barcode":"5709386737320","tags":["discontinued_stock"]},{"id":"984197","desc":"DAY BOTTLE CLEANING BRUSH 34CM","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":46.0,"dros":0.022,"dsc":2090.9,"last_recv":"2026-04-19","last_sold":"2026-02-26","last_ord":"2026-04-14","days_recv":16,"days_sold":68,"days_ord":21,"barcode":"5714988073646","tags":["inactive"]},{"id":"924063","desc":"DAY BOTTLE GLASS B/BOO LID 1L","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":9.0,"dros":0.044,"dsc":204.5,"last_recv":"2025-03-02","last_sold":"2026-04-04","last_ord":"2025-02-25","days_recv":429,"days_sold":31,"days_ord":434,"barcode":"5709386752415","tags":["discontinued_stock"]},{"id":"921421","desc":"DAY BOTTLE GLASS CLEAR 500ML","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":20.0,"dros":0.055,"dsc":363.6,"last_recv":"2026-04-12","last_sold":"2026-03-29","last_ord":"2026-04-06","days_recv":23,"days_sold":37,"days_ord":29,"barcode":"5709386874452","tags":["inactive"]},{"id":"921432","desc":"DAY BOTTLE GLASS COLOUR 1L","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-02-16","last_sold":"2025-11-04","last_ord":"2025-02-10","days_recv":443,"days_sold":182,"days_ord":449,"barcode":"5709386740467","tags":["discontinued_stock"]},{"id":"924059","desc":"DAY BOTTLE GLASS WITH SLEEVE 750ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":10.0,"dros":0.077,"dsc":129.9,"last_recv":"2025-10-26","last_sold":"2026-04-23","last_ord":"2025-10-20","days_recv":191,"days_sold":12,"days_ord":197,"barcode":"5709386779139","tags":["discontinued_stock"]},{"id":"924095","desc":"DAY BOTTLE PLASTIC SCRIPT ASTD 500ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.033,"dsc":848.5,"last_recv":"2025-05-25","last_sold":"2026-03-20","last_ord":"2025-09-11","days_recv":345,"days_sold":46,"days_ord":236,"barcode":"5709386779788","tags":["healthy"]},{"id":"924041","desc":"DAY BOTTLE PLASTIC WITH STRAP 0.5L","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":8.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-11","last_sold":"2025-10-08","last_ord":"2025-09-11","days_recv":236,"days_sold":209,"days_ord":236,"barcode":"5709386741617","tags":["inactive"]},{"id":"921437","desc":"DAY BOTTLE S/S DOUBLE WALL 500ML ASTD","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.055,"dsc":90.9,"last_recv":"2025-07-06","last_sold":"2026-04-06","last_ord":"2025-06-30","days_recv":303,"days_sold":29,"days_ord":309,"barcode":"5709386740405","tags":["discontinued_stock"]},{"id":"924034","desc":"DAY BREAD BASKET ASTD 24.5CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2023-10-12","last_sold":"2026-04-28","last_ord":"2023-10-03","days_recv":936,"days_sold":7,"days_ord":945,"barcode":"5709386751241","tags":["inactive"]},{"id":"924096","desc":"DAY CAKE PLATE GLASS 30CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.022,"dsc":136.4,"last_recv":"2023-12-03","last_sold":"2026-03-14","last_ord":"2023-12-01","days_recv":884,"days_sold":52,"days_ord":886,"barcode":"5701390381766","tags":["discontinued_stock"]},{"id":"924007","desc":"DAY CUP WITH LID & SPOON ASTD 350ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-11","last_sold":"2025-11-13","last_ord":"2025-09-11","days_recv":236,"days_sold":173,"days_ord":236,"barcode":"5714988040150","tags":["discontinued_stock"]},{"id":"928610","desc":"DAY CUTLERY MULTI COLOR 24EA","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":21.0,"dros":0.121,"dsc":173.6,"last_recv":"2026-03-21","last_sold":"2026-04-23","last_ord":"2026-03-13","days_recv":45,"days_sold":12,"days_ord":53,"barcode":"5709386833527","tags":["healthy"]},{"id":"921433","desc":"DAY CUTLERY S/S BLACK MATT 16PCS SET","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":12.0,"dros":0.011,"dsc":1090.9,"last_recv":"2025-11-30","last_sold":"2026-04-06","last_ord":"2025-11-21","days_recv":156,"days_sold":29,"days_ord":165,"barcode":"5709386831370","tags":["healthy"]},{"id":"921434","desc":"DAY CUTLERY S/S COPPER MATT 16PCS SET","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.0,"dsc":0.0,"last_recv":"2023-08-31","last_sold":"2025-11-22","last_ord":"2023-08-24","days_recv":978,"days_sold":164,"days_ord":985,"barcode":"5709386831387","tags":["inactive"]},{"id":"924097","desc":"DAY CUTTING BOARD W/STORAGE 38CM","vendor":"SCHOU","status":"72","listing":"","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-09-11","last_sold":"2026-03-30","last_ord":"2025-09-11","days_recv":236,"days_sold":36,"days_ord":236,"barcode":"5709386740450","tags":["inactive"]},{"id":"990103","desc":"DAY DRINKING BOTTLE 0.5L W/STRAP","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":32.0,"dros":0.374,"dsc":85.6,"last_recv":"2026-03-29","last_sold":"2026-04-25","last_ord":"2026-03-26","days_recv":37,"days_sold":10,"days_ord":40,"barcode":"5714988066563","tags":["healthy"]},{"id":"955142","desc":"DAY DRINKING BOTTLE 0.675L","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":18.0,"dros":0.055,"dsc":327.3,"last_recv":"2025-09-11","last_sold":"2026-05-03","last_ord":"2025-09-11","days_recv":236,"days_sold":2,"days_ord":236,"barcode":"5709386108076","tags":["healthy"]},{"id":"950409","desc":"DAY DRINKING BOTTLE 0.75L LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-07-02","last_sold":"","last_ord":"","days_recv":672,"days_sold":null,"days_ord":null,"barcode":"5701390670754","tags":["discontinued_stock"]},{"id":"955056","desc":"DAY DRINKING BOTTLE ASSORTED 450ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":10.0,"dros":0.11,"dsc":90.9,"last_recv":"2025-11-09","last_sold":"2026-04-06","last_ord":"2025-11-04","days_recv":177,"days_sold":29,"days_ord":182,"barcode":"5714988000598","tags":["discontinued_stock"]},{"id":"939017","desc":"DAY ED WALLSHLF CRKBASE 2PC","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"2026-04-13","last_ord":"2024-07-12","days_recv":660,"days_sold":22,"days_ord":662,"barcode":"5709386726836","tags":["inactive"]},{"id":"939017","desc":"DAY ED WALLSHLF CRKBASE 2PC","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"2026-04-13","last_ord":"2024-07-12","days_recv":660,"days_sold":22,"days_ord":662,"barcode":"5709386726836","tags":["inactive"]},{"id":"1015096","desc":"DAY FAN HEATER 2000W","vendor":"SCHOU","status":"60","listing":"L","rp":"ND","supply":"Stock Transfer","soh":28.0,"dros":0.088,"dsc":318.2,"last_recv":"2026-04-05","last_sold":"2026-04-25","last_ord":"2026-03-30","days_recv":30,"days_sold":10,"days_ord":36,"barcode":"5714988099271","tags":["discontinued_stock"]},{"id":"921438","desc":"DAY FLASK S/S 1L ASSORTED III","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.033,"dsc":151.5,"last_recv":"2025-06-22","last_sold":"2026-04-17","last_ord":"2025-06-17","days_recv":317,"days_sold":18,"days_ord":322,"barcode":"5709386740436","tags":["discontinued_stock"]},{"id":"955006","desc":"DAY FLY REPELLER 0.5W","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":11.0,"dros":0.22,"dsc":50.0,"last_recv":"2026-04-05","last_sold":"2026-04-17","last_ord":"2026-04-03","days_recv":30,"days_sold":18,"days_ord":32,"barcode":"5714988015769","tags":["healthy"]},{"id":"972355","desc":"DAY FOLDABLE LAUNDRY BASKET BAMBOO","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":9.0,"dros":0.033,"dsc":272.7,"last_recv":"2026-04-19","last_sold":"2026-04-19","last_ord":"2026-04-13","days_recv":16,"days_sold":16,"days_ord":22,"barcode":"5709386737726","tags":["inactive"]},{"id":"924011","desc":"DAY FOOD SAVER RECT ASTD 4PCS","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.099,"dsc":40.4,"last_recv":"2025-08-10","last_sold":"2026-03-25","last_ord":"2025-08-01","days_recv":268,"days_sold":41,"days_ord":277,"barcode":"5709386779214","tags":["inactive"]},{"id":"966468","desc":"DAY FOOD TONG SET 3PCS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":52.0,"dros":0.374,"dsc":139.0,"last_recv":"2026-03-29","last_sold":"2026-05-02","last_ord":"2026-03-23","days_recv":37,"days_sold":3,"days_ord":43,"barcode":"","tags":["healthy"]},{"id":"918241","desc":"DAY GLASS COFFEE PLUNGER 1L","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.099,"dsc":151.5,"last_recv":"2026-03-29","last_sold":"2026-04-28","last_ord":"2026-03-23","days_recv":37,"days_sold":7,"days_ord":43,"barcode":"5701390490611","tags":["healthy"]},{"id":"966467","desc":"DAY GRATER SET 3PCS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":55.0,"dros":0.286,"dsc":192.3,"last_recv":"2026-03-29","last_sold":"2026-04-17","last_ord":"2026-03-23","days_recv":37,"days_sold":18,"days_ord":43,"barcode":"","tags":["healthy"]},{"id":"924047","desc":"DAY GRATER WITH BOX ASTD","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.055,"dsc":363.6,"last_recv":"2026-05-03","last_sold":"2026-04-06","last_ord":"2026-04-29","days_recv":2,"days_sold":29,"days_ord":6,"barcode":"5709386108021","tags":["healthy"]},{"id":"928378","desc":"DAY HI BALL GLASSES COLOUR 300ML 4EA","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-12","last_sold":"2026-01-01","last_ord":"2025-10-06","days_recv":205,"days_sold":124,"days_ord":211,"barcode":"5714988000499","tags":["phantom","low_cover"]},{"id":"924052","desc":"DAY ICE CUBE BALL ASTD 4PCS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.077,"dsc":0.0,"last_recv":"2023-12-03","last_sold":"2026-04-30","last_ord":"2023-12-01","days_recv":884,"days_sold":5,"days_ord":886,"barcode":"5709386740870","tags":["inactive"]},{"id":"924053","desc":"DAY ICE CUBE TRAY ASTD 15PCS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2023-12-03","last_sold":"2026-04-25","last_ord":"2023-12-04","days_recv":884,"days_sold":10,"days_ord":883,"barcode":"5709386741679","tags":["inactive"]},{"id":"924050","desc":"DAY ICE POPS ASTD 4PCS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":11.0,"dros":0.143,"dsc":76.9,"last_recv":"2026-03-29","last_sold":"2026-04-27","last_ord":"2026-03-23","days_recv":37,"days_sold":8,"days_ord":43,"barcode":"5709386108052","tags":["discontinued_stock"]},{"id":"938389","desc":"DAY JESSE TABLE 2SHELF 40X50CM","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.011,"dsc":90.9,"last_recv":"2025-06-15","last_sold":"2026-03-16","last_ord":"2025-06-12","days_recv":324,"days_sold":50,"days_ord":327,"barcode":"5701390487529","tags":["inactive"]},{"id":"938389","desc":"DAY JESSE TABLE 2SHELF 40X50CM","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.011,"dsc":90.9,"last_recv":"2025-06-15","last_sold":"2026-03-16","last_ord":"2025-06-12","days_recv":324,"days_sold":50,"days_ord":327,"barcode":"5701390487529","tags":["inactive"]},{"id":"992893","desc":"DAY LUGGAGE TAG","vendor":"SCHOU","status":"60","listing":"L","rp":"ND","supply":"Stock Transfer","soh":41.0,"dros":0.044,"dsc":931.8,"last_recv":"2025-08-17","last_sold":"2026-03-27","last_ord":"2025-08-11","days_recv":261,"days_sold":39,"days_ord":267,"barcode":"5714988076579","tags":["discontinued_stock"]},{"id":"957744","desc":"DAY LUNCH BOX 19X11X6CM","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":22.0,"dros":0.11,"dsc":200.0,"last_recv":"2026-03-29","last_sold":"2026-04-27","last_ord":"2026-03-20","days_recv":37,"days_sold":8,"days_ord":46,"barcode":"5714988060172","tags":["healthy"]},{"id":"921418","desc":"DAY MEASURING JAR GLASS 1L","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":11.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-20","last_sold":"2024-09-14","last_ord":"2025-10-14","days_recv":197,"days_sold":598,"days_ord":203,"barcode":"5709386822002","tags":["discontinued_stock"]},{"id":"924045","desc":"DAY MEASURING JUG ASTD 3PCS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":25.0,"dros":0.022,"dsc":1136.4,"last_recv":"2026-03-29","last_sold":"2026-04-12","last_ord":"2026-03-26","days_recv":37,"days_sold":23,"days_ord":40,"barcode":"5709386740702","tags":["healthy"]},{"id":"946507","desc":"DAY METALLIC TRAVEL MUG W/SILICONE 400ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":32.0,"dros":0.044,"dsc":727.3,"last_recv":"2026-04-12","last_sold":"2026-04-24","last_ord":"2026-04-06","days_recv":23,"days_sold":11,"days_ord":29,"barcode":"5714988075886","tags":["healthy"]},{"id":"938442","desc":"DAY MILA 3 WALL SHELF 60X15X54 BEACH","vendor":"SCHOU","status":"07","listing":"","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"2026-03-15","last_ord":"2024-07-12","days_recv":660,"days_sold":51,"days_ord":662,"barcode":"5709386723064","tags":["inactive"]},{"id":"918240","desc":"DAY MILK FROTHER B/O","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":59.0,"dros":0.319,"dsc":185.0,"last_recv":"2026-05-03","last_sold":"2026-05-03","last_ord":"2026-04-30","days_recv":2,"days_sold":2,"days_ord":5,"barcode":"5714988104807","tags":["healthy"]},{"id":"950774","desc":"DAY MUG RIDGES 250ML","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":23.0,"dros":0.011,"dsc":2090.9,"last_recv":"2025-12-28","last_sold":"2026-02-05","last_ord":"2025-12-23","days_recv":128,"days_sold":89,"days_ord":133,"barcode":"5709386727789","tags":["inactive"]},{"id":"966469","desc":"DAY PEELER SET 3PCS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":69.0,"dros":0.308,"dsc":224.0,"last_recv":"2026-03-29","last_sold":"2026-05-02","last_ord":"2026-03-23","days_recv":37,"days_sold":3,"days_ord":43,"barcode":"","tags":["healthy"]},{"id":"953002","desc":"DAY RIBBED BOWL 12.5H6.5CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-13","last_sold":"2025-08-09","last_ord":"2025-04-11","days_recv":387,"days_sold":269,"days_ord":389,"barcode":"5709386108823","tags":["discontinued_stock"]},{"id":"924043","desc":"DAY ROASTING PAN WITH LID 42X29CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":10.0,"dros":0.066,"dsc":151.5,"last_recv":"2023-12-03","last_sold":"2026-03-26","last_ord":"2023-12-01","days_recv":884,"days_sold":40,"days_ord":886,"barcode":"5709386723361","tags":["discontinued_stock"]},{"id":"918237","desc":"DAY S/S BLACK PEDAL BIN 5L","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-05-12","last_sold":"2026-04-07","last_ord":"2025-05-09","days_recv":358,"days_sold":28,"days_ord":361,"barcode":"5701390499294","tags":["inactive"]},{"id":"946491","desc":"DAY S/S COOKWARE 6PCS W/LID","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":4.0,"dros":0.044,"dsc":90.9,"last_recv":"2026-04-05","last_sold":"2026-05-02","last_ord":"2026-04-03","days_recv":30,"days_sold":3,"days_ord":32,"barcode":"5714988023146","tags":["healthy"]},{"id":"918234","desc":"DAY S/S CUTLERY SET 16PC","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":9.0,"dros":0.066,"dsc":136.4,"last_recv":"2026-03-21","last_sold":"2026-04-12","last_ord":"2026-03-13","days_recv":45,"days_sold":23,"days_ord":53,"barcode":"5709386831363","tags":["healthy"]},{"id":"995295","desc":"DAY SCISSOR SET 3PCS","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.033,"dsc":0.0,"last_recv":"2025-08-17","last_sold":"2026-02-22","last_ord":"2025-08-11","days_recv":261,"days_sold":72,"days_ord":267,"barcode":"5709386749194","tags":["inactive"]},{"id":"953186","desc":"DAY SCRAPER 24.5CM SILICONE","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":46.0,"dros":0.099,"dsc":464.6,"last_recv":"2025-12-14","last_sold":"2026-05-03","last_ord":"2025-12-11","days_recv":142,"days_sold":2,"days_ord":145,"barcode":"5709386106263","tags":["healthy"]},{"id":"921413","desc":"DAY SPICE MILL GRINDER ELEC 2PC","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.011,"dsc":1272.7,"last_recv":"2026-03-29","last_sold":"2026-04-03","last_ord":"2026-03-26","days_recv":37,"days_sold":32,"days_ord":40,"barcode":"5709386770709","tags":["healthy"]},{"id":"953428","desc":"DAY SPICE MILL GRINDER GLASS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":34.0,"dros":0.154,"dsc":220.8,"last_recv":"2026-03-14","last_sold":"2026-04-07","last_ord":"2026-03-12","days_recv":52,"days_sold":28,"days_ord":54,"barcode":"5701390390874","tags":["healthy"]},{"id":"955150","desc":"DAY SPRAY MOP GREY","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":8.0,"dros":0.198,"dsc":40.4,"last_recv":"2026-05-03","last_sold":"2026-05-01","last_ord":"2026-04-30","days_recv":2,"days_sold":4,"days_ord":5,"barcode":"5709386745905","tags":["healthy"]},{"id":"968537","desc":"DAY SR JUG 1.1L","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.33,"dsc":3.0,"last_recv":"2024-11-10","last_sold":"2026-03-25","last_ord":"2024-11-05","days_recv":541,"days_sold":41,"days_ord":546,"barcode":"5714988048576","tags":["discontinued_stock"]},{"id":"966492","desc":"DAY SR TUMBLER 350ML 4PCS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2024-12-08","last_sold":"2026-03-06","last_ord":"2024-12-03","days_recv":513,"days_sold":60,"days_ord":518,"barcode":"5714988048590","tags":["inactive"]},{"id":"966494","desc":"DAY SR VACUUM FLASK 500ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.011,"dsc":272.7,"last_recv":"2025-09-11","last_sold":"2026-03-06","last_ord":"2025-09-11","days_recv":236,"days_sold":60,"days_ord":236,"barcode":"5714988048583","tags":["discontinued_stock"]},{"id":"1021727","desc":"DAY SS&PP TRAVEL MUG 450ML ASTD","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.11,"dsc":127.3,"last_recv":"2026-04-12","last_sold":"2026-05-03","last_ord":"2026-04-06","days_recv":23,"days_sold":2,"days_ord":29,"barcode":"5714988104685","tags":["healthy"]},{"id":"952345","desc":"DAY STAINLESS STEEL VACUUM FLASK 500ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":17.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"2025-07-12","last_ord":"2026-04-10","days_recv":16,"days_sold":297,"days_ord":25,"barcode":"5709386753429","tags":["phantom","low_cover"]},{"id":"938402","desc":"DAY STOCKHOLM TABLE 55X45CM","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":7.0,"dros":0.011,"dsc":636.4,"last_recv":"2025-02-16","last_sold":"2026-03-16","last_ord":"2025-02-11","days_recv":443,"days_sold":50,"days_ord":448,"barcode":"5709386731311","tags":["inactive"]},{"id":"938402","desc":"DAY STOCKHOLM TABLE 55X45CM","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":7.0,"dros":0.011,"dsc":636.4,"last_recv":"2025-02-16","last_sold":"2026-03-16","last_ord":"2025-02-11","days_recv":443,"days_sold":50,"days_ord":448,"barcode":"5709386731311","tags":["inactive"]},{"id":"924004","desc":"DAY STORAGE BOTTLE WITH LID 1L","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":29.0,"dros":0.121,"dsc":239.7,"last_recv":"2025-12-20","last_sold":"2026-05-02","last_ord":"2025-12-17","days_recv":136,"days_sold":3,"days_ord":139,"barcode":"5709386741402","tags":["healthy"]},{"id":"955057","desc":"DAY STORAGE BOX SET CLEAR 3PC","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-11-03","last_sold":"2025-10-16","last_ord":"2024-11-01","days_recv":548,"days_sold":201,"days_ord":550,"barcode":"5709386740498","tags":["discontinued_stock"]},{"id":"992801","desc":"DAY STORAGE BOX SET RECT 4PCS","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.231,"dsc":64.9,"last_recv":"2026-04-12","last_sold":"2026-04-26","last_ord":"2026-04-10","days_recv":23,"days_sold":9,"days_ord":25,"barcode":"5714988067652","tags":["healthy"]},{"id":"957505","desc":"DAY STORAGE BOXES 4PC","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":11.0,"dros":0.253,"dsc":43.5,"last_recv":"2026-03-29","last_sold":"2026-05-02","last_ord":"2026-03-23","days_recv":37,"days_sold":3,"days_ord":43,"barcode":"5714988000369","tags":["inactive"]},{"id":"984334","desc":"DAY STORAGE BOXES 8PCS ASTD","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.451,"dsc":44.3,"last_recv":"2025-11-30","last_sold":"2026-04-18","last_ord":"2025-11-24","days_recv":156,"days_sold":17,"days_ord":162,"barcode":"5714988068932","tags":["healthy"]},{"id":"923701","desc":"DAY STORAGE JAR GLASS 150ML WITH LID","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.341,"dsc":46.9,"last_recv":"2026-03-21","last_sold":"2026-04-23","last_ord":"2026-03-13","days_recv":45,"days_sold":12,"days_ord":53,"barcode":"5701390442795","tags":["healthy"]},{"id":"924003","desc":"DAY STORAGE JAR GLASS 1L WITH LID","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":23.0,"dros":0.253,"dsc":90.9,"last_recv":"2026-03-21","last_sold":"2026-05-02","last_ord":"2026-03-13","days_recv":45,"days_sold":3,"days_ord":53,"barcode":"5709386874568","tags":["healthy"]},{"id":"924002","desc":"DAY STORAGE JAR GLASS 500ML WITH LID","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":21.0,"dros":0.319,"dsc":65.8,"last_recv":"2026-03-21","last_sold":"2026-04-27","last_ord":"2026-03-13","days_recv":45,"days_sold":8,"days_ord":53,"barcode":"5701390442771","tags":["healthy"]},{"id":"921408","desc":"DAY TERRA SIDE PLATE GREY 21CM","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":8.0,"dros":0.0,"dsc":0.0,"last_recv":"2023-07-27","last_sold":"2025-11-09","last_ord":"2023-07-21","days_recv":1013,"days_sold":177,"days_ord":1019,"barcode":"5709386755621","tags":["inactive"]},{"id":"921436","desc":"DAY THERMO JUG 1L ASSORTED III","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":13.0,"dros":0.055,"dsc":236.4,"last_recv":"2025-06-22","last_sold":"2026-04-30","last_ord":"2025-06-17","days_recv":317,"days_sold":5,"days_ord":322,"barcode":"5709386740443","tags":["discontinued_stock"]},{"id":"966566","desc":"DAY THERMO JUG 1L W/WOODEN HANDLE ASTD","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-01-26","last_sold":"2026-02-03","last_ord":"2025-01-17","days_recv":464,"days_sold":91,"days_ord":473,"barcode":"","tags":["inactive"]},{"id":"950406","desc":"DAY THERMO ROUND JUG 1L LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-08-11","last_sold":"2026-02-04","last_ord":"","days_recv":632,"days_sold":90,"days_ord":null,"barcode":"5701390670693","tags":["inactive"]},{"id":"950408","desc":"DAY THERMO ROUND JUG 1L TAPESTRY BLUE","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2024-08-11","last_sold":"2026-02-02","last_ord":"","days_recv":632,"days_sold":92,"days_ord":null,"barcode":"5701390670716","tags":["inactive"]},{"id":"950684","desc":"DAY THERMO STRAIGHT JUG 1L DARK GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.011,"dsc":90.9,"last_recv":"2024-07-07","last_sold":"2026-02-02","last_ord":"","days_recv":667,"days_sold":92,"days_ord":null,"barcode":"5701390670792","tags":["discontinued_stock"]},{"id":"950683","desc":"DAY THERMO STRAIGHT JUG 1L LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.022,"dsc":45.5,"last_recv":"2024-07-07","last_sold":"2026-02-04","last_ord":"","days_recv":667,"days_sold":90,"days_ord":null,"barcode":"5701390670785","tags":["discontinued_stock"]},{"id":"950685","desc":"DAY THERMO STRAIGHT JUG 1L TAPESTRY BLUE","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.055,"dsc":0.0,"last_recv":"2024-07-07","last_sold":"2026-03-01","last_ord":"","days_recv":667,"days_sold":65,"days_ord":null,"barcode":"5701390670808","tags":["inactive"]},{"id":"924061","desc":"DAY TONG STAINLESS STEEL 27CM","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":40.0,"dros":0.055,"dsc":727.3,"last_recv":"2025-11-30","last_sold":"2026-04-08","last_ord":"2025-11-21","days_recv":156,"days_sold":27,"days_ord":165,"barcode":"5709386770716","tags":["healthy"]},{"id":"950702","desc":"DAY TRAVEL MUG 380ML DARK GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":15.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2025-09-24","last_ord":"","days_recv":330,"days_sold":223,"days_ord":null,"barcode":"5701390670884","tags":["discontinued_stock"]},{"id":"950701","desc":"DAY TRAVEL MUG 380ML LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2025-12-25","last_ord":"","days_recv":330,"days_sold":131,"days_ord":null,"barcode":"5701390670877","tags":["discontinued_stock"]},{"id":"950703","desc":"DAY TRAVEL MUG 380ML TAPESTRY BLUE","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2026-03-04","last_ord":"","days_recv":330,"days_sold":62,"days_ord":null,"barcode":"5701390670891","tags":["inactive"]},{"id":"950734","desc":"DAY TRAVEL MUG 450ML LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.011,"dsc":363.6,"last_recv":"2025-05-25","last_sold":"2026-04-08","last_ord":"","days_recv":345,"days_sold":27,"days_ord":null,"barcode":"5701390670938","tags":["discontinued_stock"]},{"id":"933240","desc":"DAY TUMBLER 350ML 4PCS MOSS","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":3.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-03-03","last_sold":"2026-01-29","last_ord":"","days_recv":793,"days_sold":96,"days_ord":null,"barcode":"5709386820275","tags":["discontinued_stock"]},{"id":"924055","desc":"DAY TUMBLER GLASS 270ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":8.0,"dros":0.0,"dsc":0.0,"last_recv":"2023-10-12","last_sold":"2025-07-15","last_ord":"2023-10-03","days_recv":936,"days_sold":294,"days_ord":945,"barcode":"5709386823122","tags":["discontinued_stock"]},{"id":"924058","desc":"DAY UMBRELLA BLACK 95CM","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":11.0,"dros":0.099,"dsc":111.1,"last_recv":"2026-02-01","last_sold":"2026-03-29","last_ord":"2026-01-30","days_recv":93,"days_sold":37,"days_ord":95,"barcode":"5714988068154","tags":["healthy"]},{"id":"921420","desc":"DAY UNIVERSAL LID 6PCS","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":11.0,"dros":0.011,"dsc":1000.0,"last_recv":"2023-07-06","last_sold":"2026-04-23","last_ord":"2023-06-27","days_recv":1034,"days_sold":12,"days_ord":1043,"barcode":"5709386740535","tags":["inactive"]},{"id":"950630","desc":"DAY VACUUM FLASK 500ML LIGHT GREY","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":10.0,"dros":0.011,"dsc":909.1,"last_recv":"2025-06-09","last_sold":"2026-03-24","last_ord":"","days_recv":330,"days_sold":42,"days_ord":null,"barcode":"5701390670846","tags":["discontinued_stock"]},{"id":"950772","desc":"DAY VACUUM FLASK 500ML TAPESTRY BLUE","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2026-03-22","last_ord":"","days_recv":330,"days_sold":44,"days_ord":null,"barcode":"5701391671248","tags":["inactive"]},{"id":"952800","desc":"DAY VACUUM FLASK 700ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.088,"dsc":0.0,"last_recv":"2024-08-06","last_sold":"2026-02-08","last_ord":"2024-08-02","days_recv":637,"days_sold":86,"days_ord":641,"barcode":"5709386108151","tags":["inactive"]},{"id":"924094","desc":"DAY VACUUM FLASK S/STEEL ASTD 500ML","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":9.0,"dros":0.022,"dsc":409.1,"last_recv":"2025-07-13","last_sold":"2026-04-02","last_ord":"2025-07-07","days_recv":296,"days_sold":33,"days_ord":302,"barcode":"5709386779771","tags":["discontinued_stock"]},{"id":"950687","desc":"DAY VACUUM FLASK W/THERMO 400ML D/GREY","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2026-04-15","last_ord":"","days_recv":330,"days_sold":20,"days_ord":null,"barcode":"5701390670822","tags":["inactive"]},{"id":"950686","desc":"DAY VACUUM FLASK W/THERMO 400ML L/GREY","vendor":"SCHOU","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2026-04-03","last_ord":"","days_recv":330,"days_sold":32,"days_ord":null,"barcode":"5701390670815","tags":["inactive"]},{"id":"1021726","desc":"DAY W26 PP SILICONE TRAVEL MUG 500ML","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.242,"dsc":57.9,"last_recv":"2026-05-03","last_sold":"2026-05-03","last_ord":"2026-05-01","days_recv":2,"days_sold":2,"days_ord":4,"barcode":"5714988104692","tags":["healthy"]},{"id":"954868","desc":"DAY WHISK 25CM SILICONE","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":23.0,"dros":0.143,"dsc":160.8,"last_recv":"2025-12-07","last_sold":"2026-05-01","last_ord":"2025-12-02","days_recv":149,"days_sold":4,"days_ord":154,"barcode":"5709386106249","tags":["healthy"]},{"id":"938428","desc":"DAY ZIA 2 WALL SHELF 60X15X33 BEACHWOOD","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"2026-04-10","last_ord":"2024-07-12","days_recv":660,"days_sold":25,"days_ord":662,"barcode":"5701390546424","tags":["inactive"]},{"id":"938422","desc":"DAY ZIA 2 WALL SHELF 60X15X33 BLCK","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.022,"dsc":45.5,"last_recv":"2024-07-14","last_sold":"2026-04-13","last_ord":"2024-07-12","days_recv":660,"days_sold":22,"days_ord":662,"barcode":"5701390546417","tags":["discontinued_stock"]},{"id":"938431","desc":"DAY ZIA 5 WALL SHELF 59X15X116CM","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-07-14","last_sold":"","last_ord":"2024-07-12","days_recv":660,"days_sold":null,"days_ord":662,"barcode":"5709386724634","tags":["discontinued_stock"]},{"id":"1006163","desc":"FILIPINOS CRISPY BITES MILK CHOCO 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"","last_ord":"","days_recv":16,"days_sold":null,"days_ord":null,"barcode":"8436048965049","tags":["low_cover"]},{"id":"1006162","desc":"FILIPINOS CRISPY BITES WHITE CHOCO 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-19","last_sold":"","last_ord":"","days_recv":16,"days_sold":null,"days_ord":null,"barcode":"8436048965056","tags":["low_cover"]},{"id":"1009456","desc":"FILIPINOS SPECULOOS WITH MILK CHOC 118GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.011,"dsc":909.1,"last_recv":"2025-12-22","last_sold":"2026-02-07","last_ord":"","days_recv":134,"days_sold":87,"days_ord":null,"barcode":"8436048965636","tags":["phantom"]},{"id":"1009456","desc":"FILIPINOS SPECULOOS WITH MILK CHOC 118GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.011,"dsc":909.1,"last_recv":"2025-12-22","last_sold":"2026-02-07","last_ord":"","days_recv":134,"days_sold":87,"days_ord":null,"barcode":"","tags":["phantom"]},{"id":"972173","desc":"FILIPINOS WHITE CHOCOLATE 128GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":1.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-04-17","last_sold":"2025-08-08","last_ord":"","days_recv":383,"days_sold":270,"days_ord":null,"barcode":"8436048965520","tags":["discontinued_stock"]},{"id":"1009436","desc":"FILIPINOS WITH DARK CHOCOLATE 120GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":8.0,"dros":0.011,"dsc":727.3,"last_recv":"2025-10-14","last_sold":"2026-04-05","last_ord":"","days_recv":203,"days_sold":30,"days_ord":null,"barcode":"8436048965650","tags":["healthy"]},{"id":"1009435","desc":"FILIPINOS WITH MILK CHOCOLATE 120GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":12.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-14","last_sold":"","last_ord":"","days_recv":203,"days_sold":null,"days_ord":null,"barcode":"8436048965513","tags":["low_cover"]},{"id":"545708","desc":"FISHERMAN FRIEND BLACK CURRENT","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":13.0,"dros":0.462,"dsc":28.1,"last_recv":"2026-03-29","last_sold":"2026-05-01","last_ord":"","days_recv":37,"days_sold":4,"days_ord":null,"barcode":"50084470","tags":["healthy"]},{"id":"729455","desc":"FISHERMAN FRIEND HON&LEMON PASTILLE 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.396,"dsc":70.7,"last_recv":"2026-05-03","last_sold":"2026-05-02","last_ord":"","days_recv":2,"days_sold":3,"days_ord":null,"barcode":"96091722","tags":["healthy"]},{"id":"174041","desc":"FISHERMAN FRIEND LOZ MINT S/FREE 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.451,"dsc":33.3,"last_recv":"2026-03-17","last_sold":"2026-04-26","last_ord":"","days_recv":49,"days_sold":9,"days_ord":null,"barcode":"50819539","tags":["healthy"]},{"id":"168446","desc":"FISHERMAN FRIEND LOZ STRONG MINT 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.231,"dsc":103.9,"last_recv":"2026-04-19","last_sold":"2026-05-02","last_ord":"","days_recv":16,"days_sold":3,"days_ord":null,"barcode":"50819553","tags":["healthy"]},{"id":"152286","desc":"FISHERMAN FRIEND LOZ SUG/FREE CHE 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":12.0,"dros":0.22,"dsc":54.5,"last_recv":"2026-02-03","last_sold":"2026-05-01","last_ord":"","days_recv":91,"days_sold":4,"days_ord":null,"barcode":"50357475","tags":["healthy"]},{"id":"215547","desc":"FISHERMAN FRIEND LOZ SUGAR FREE 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.407,"dsc":17.2,"last_recv":"2026-02-19","last_sold":"2026-05-02","last_ord":"","days_recv":75,"days_sold":3,"days_ord":null,"barcode":"50836376","tags":["healthy"]},{"id":"159709","desc":"FISHERMAN FRIEND LOZ XTRA STRONG 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":24.0,"dros":0.385,"dsc":62.3,"last_recv":"2026-04-26","last_sold":"2026-05-03","last_ord":"","days_recv":9,"days_sold":2,"days_ord":null,"barcode":"50819485","tags":["healthy"]},{"id":"264303","desc":"FISHERMAN FRIEND LOZENGES ANISEED 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.165,"dsc":97.0,"last_recv":"2026-02-05","last_sold":"2026-05-01","last_ord":"","days_recv":89,"days_sold":4,"days_ord":null,"barcode":"50819546","tags":["healthy"]},{"id":"937682","desc":"FISHERMAN FRIEND LOZENGES CITRUS 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":13.0,"dros":0.418,"dsc":31.1,"last_recv":"2026-03-05","last_sold":"2026-05-01","last_ord":"","days_recv":61,"days_sold":4,"days_ord":null,"barcode":"96091715","tags":["healthy"]},{"id":"930734","desc":"FISHERMAN FRIEND LOZENGES RASPBERRY 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":11.0,"dros":0.582,"dsc":18.9,"last_recv":"2026-04-07","last_sold":"2026-05-03","last_ord":"","days_recv":28,"days_sold":2,"days_ord":null,"barcode":"96148068","tags":["healthy"]},{"id":"729601","desc":"FISHERMAN FRIEND SPRMINT PASTILLES 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":0.0,"dros":0.725,"dsc":0.0,"last_recv":"2026-03-17","last_sold":"2026-04-26","last_ord":"","days_recv":49,"days_sold":9,"days_ord":null,"barcode":"96103975","tags":["oos"]},{"id":"1025569","desc":"GRROWL CHOC CHARGE PROTEIN BAR 40GR","vendor":"ELEV8R","status":"62","listing":"L","rp":"ND","supply":"Standard","soh":51.0,"dros":0.099,"dsc":515.2,"last_recv":"2026-02-17","last_sold":"2026-05-01","last_ord":"","days_recv":77,"days_sold":4,"days_ord":null,"barcode":"677144704370","tags":["inactive"]},{"id":"1025570","desc":"GRROWL CHOC CRUNCH PROTEIN BAR 40GR","vendor":"ELEV8R","status":"62","listing":"L","rp":"ND","supply":"Standard","soh":52.0,"dros":0.088,"dsc":590.9,"last_recv":"2026-02-17","last_sold":"2026-04-27","last_ord":"","days_recv":77,"days_sold":8,"days_ord":null,"barcode":"677144704363","tags":["inactive"]},{"id":"1025568","desc":"GRROWL DATE ME BAR 40GR","vendor":"ELEV8R","status":"62","listing":"L","rp":"ND","supply":"Standard","soh":54.0,"dros":0.066,"dsc":818.2,"last_recv":"2026-02-17","last_sold":"2026-04-30","last_ord":"","days_recv":77,"days_sold":5,"days_ord":null,"barcode":"6009804525041","tags":["inactive"]},{"id":"1025572","desc":"GRROWL PEANUT POWER CRUNCH PRO BAR 40GR","vendor":"ELEV8R","status":"62","listing":"L","rp":"ND","supply":"Standard","soh":53.0,"dros":0.077,"dsc":688.3,"last_recv":"2026-02-17","last_sold":"2026-05-01","last_ord":"2026-02-09","days_recv":77,"days_sold":4,"days_ord":85,"barcode":"677144704387","tags":["inactive"]},{"id":"1025571","desc":"GRROWL PEANUT POWER PROTEIN BAR 40GR","vendor":"ELEV8R","status":"62","listing":"L","rp":"ND","supply":"Standard","soh":53.0,"dros":0.077,"dsc":688.3,"last_recv":"2026-02-17","last_sold":"2026-05-03","last_ord":"","days_recv":77,"days_sold":2,"days_ord":null,"barcode":"677144704394","tags":["inactive"]},{"id":"858833","desc":"HARIBO GOLD BEARS 160GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.044,"dsc":159.1,"last_recv":"2025-12-14","last_sold":"2026-04-13","last_ord":"","days_recv":142,"days_sold":22,"days_ord":null,"barcode":"8691216098596","tags":["healthy"]},{"id":"858834","desc":"HARIBO HAPPY COLA 160GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":9.0,"dros":0.055,"dsc":163.6,"last_recv":"2025-10-09","last_sold":"2026-04-12","last_ord":"","days_recv":208,"days_sold":23,"days_ord":null,"barcode":"8691216098589","tags":["healthy"]},{"id":"971016","desc":"HARIBO HAPPY COLA SOUR FIZZ 70GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.143,"dsc":111.9,"last_recv":"2026-01-28","last_sold":"2026-04-22","last_ord":"","days_recv":97,"days_sold":13,"days_ord":null,"barcode":"8691216095496","tags":["healthy"]},{"id":"858836","desc":"HARIBO ROULETTE ROLL 25GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":42.0,"dros":0.187,"dsc":224.6,"last_recv":"2026-04-26","last_sold":"2026-04-30","last_ord":"","days_recv":9,"days_sold":5,"days_ord":null,"barcode":"8691216098749","tags":["healthy"]},{"id":"858835","desc":"HARIBO STARMIX 160GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.033,"dsc":454.5,"last_recv":"2025-12-25","last_sold":"2026-04-28","last_ord":"","days_recv":131,"days_sold":7,"days_ord":null,"barcode":"8691216098565","tags":["healthy"]},{"id":"886605","desc":"HI-CHEW GRAPE & STRAWBERRY 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.077,"dsc":181.8,"last_recv":"2026-01-08","last_sold":"2026-04-10","last_ord":"","days_recv":117,"days_sold":25,"days_ord":null,"barcode":"4710035316514","tags":["healthy"]},{"id":"886606","desc":"HI-CHEW GRAPE PEACH&LYCHEE 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.044,"dsc":159.1,"last_recv":"2025-11-27","last_sold":"2026-04-30","last_ord":"","days_recv":159,"days_sold":5,"days_ord":null,"barcode":"4902888973505","tags":["healthy"]},{"id":"886604","desc":"HI-CHEW GRAPE&GREEN APPLE 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.022,"dsc":318.2,"last_recv":"2025-08-21","last_sold":"2026-04-02","last_ord":"","days_recv":257,"days_sold":33,"days_ord":null,"barcode":"4902888973499","tags":["healthy"]},{"id":"904687","desc":"HI-CHEW PASSION FRUIT 35GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":23.0,"dros":0.198,"dsc":116.2,"last_recv":"2026-02-08","last_sold":"2026-04-25","last_ord":"","days_recv":86,"days_sold":10,"days_ord":null,"barcode":"47117822","tags":["healthy"]},{"id":"890335","desc":"HI-CHEW PEACH 35GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":34.0,"dros":0.209,"dsc":162.7,"last_recv":"2026-04-15","last_sold":"2026-05-01","last_ord":"","days_recv":20,"days_sold":4,"days_ord":null,"barcode":"47113299","tags":["healthy"]},{"id":"854097","desc":"HI-CHEW STICK GRAPE 35GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":33.0,"dros":0.209,"dsc":157.9,"last_recv":"2026-03-17","last_sold":"2026-04-26","last_ord":"","days_recv":49,"days_sold":9,"days_ord":null,"barcode":"47112940","tags":["healthy"]},{"id":"854098","desc":"HI-CHEW STICK GREEN APPLE 35GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":30.0,"dros":0.099,"dsc":303.0,"last_recv":"2026-01-21","last_sold":"2026-04-26","last_ord":"","days_recv":104,"days_sold":9,"days_ord":null,"barcode":"47112964","tags":["healthy"]},{"id":"854099","desc":"HI-CHEW STICK STRAWBERRY 35GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":28.0,"dros":0.154,"dsc":181.8,"last_recv":"2026-02-17","last_sold":"2026-04-26","last_ord":"","days_recv":77,"days_sold":9,"days_ord":null,"barcode":"47112933","tags":["healthy"]},{"id":"938380","desc":"HI-CHEW SUPER FRUIT MIX 90GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":22.0,"dros":0.022,"dsc":1000.0,"last_recv":"2026-03-01","last_sold":"2026-03-28","last_ord":"","days_recv":65,"days_sold":38,"days_ord":null,"barcode":"8859623800328","tags":["healthy"]},{"id":"158344","desc":"HQ FOODS BBQ SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.242,"dsc":41.3,"last_recv":"2026-04-07","last_sold":"2026-05-01","last_ord":"2026-04-05","days_recv":28,"days_sold":4,"days_ord":30,"barcode":"6001475002937","tags":["healthy"]},{"id":"343913","desc":"HQ FOODS BRAAI SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":18.0,"dros":0.165,"dsc":109.1,"last_recv":"2026-04-30","last_sold":"2026-04-26","last_ord":"2026-04-28","days_recv":5,"days_sold":9,"days_ord":7,"barcode":"6001476200929","tags":["healthy"]},{"id":"102048","desc":"HQ FOODS CHICKEN BRAAI SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.242,"dsc":62.0,"last_recv":"2026-04-28","last_sold":"2026-05-02","last_ord":"2026-04-26","days_recv":7,"days_sold":3,"days_ord":9,"barcode":"6001475008465","tags":["healthy"]},{"id":"112583","desc":"HQ FOODS CHILLI SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":8.0,"dros":0.11,"dsc":72.7,"last_recv":"2026-02-17","last_sold":"2026-04-27","last_ord":"2026-02-15","days_recv":77,"days_sold":8,"days_ord":79,"barcode":"6001475000162","tags":["healthy"]},{"id":"107161","desc":"HQ FOODS CHILLI&DANYA GRN SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":8.0,"dros":0.055,"dsc":145.5,"last_recv":"2025-10-09","last_sold":"2026-04-07","last_ord":"2025-10-07","days_recv":208,"days_sold":28,"days_ord":210,"barcode":"6001475012905","tags":["healthy"]},{"id":"228078","desc":"HQ FOODS CRUSHED GARLIC 100ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.593,"dsc":11.8,"last_recv":"2026-04-15","last_sold":"2026-05-02","last_ord":"2026-05-03","days_recv":20,"days_sold":3,"days_ord":2,"barcode":"6001475018921","tags":["low_cover"]},{"id":"969205","desc":"HQ FOODS GARLIC & GINGER 100ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.297,"dsc":33.7,"last_recv":"2026-03-31","last_sold":"2026-04-26","last_ord":"2026-03-29","days_recv":35,"days_sold":9,"days_ord":37,"barcode":"6001475018716","tags":["healthy"]},{"id":"968590","desc":"HQ FOODS GARLIC GINGER DHANYA 375ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":13.0,"dros":0.088,"dsc":147.7,"last_recv":"2026-04-07","last_sold":"2026-04-27","last_ord":"2026-04-05","days_recv":28,"days_sold":8,"days_ord":30,"barcode":"6001475018976","tags":["healthy"]},{"id":"383692","desc":"HQ FOODS GARLIC&CHILLI SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.187,"dsc":85.6,"last_recv":"2026-05-03","last_sold":"2026-05-02","last_ord":"2026-05-01","days_recv":2,"days_sold":3,"days_ord":4,"barcode":"6001475002524","tags":["healthy"]},{"id":"968243","desc":"HQ FOODS HOT MANGO ATCHAR 375ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":16.0,"dros":0.055,"dsc":290.9,"last_recv":"2026-04-19","last_sold":"2026-04-24","last_ord":"2026-04-17","days_recv":16,"days_sold":11,"days_ord":18,"barcode":"6001475000926","tags":["healthy"]},{"id":"174094","desc":"HQ FOODS MANGO ATCHAR 375ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":11.0,"dros":0.022,"dsc":500.0,"last_recv":"2025-07-01","last_sold":"2026-04-14","last_ord":"2025-06-29","days_recv":308,"days_sold":21,"days_ord":310,"barcode":"6001475001008","tags":["healthy"]},{"id":"398208","desc":"HQ FOODS PURE CRUSHED GARLIC 375ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.264,"dsc":37.9,"last_recv":"2026-04-19","last_sold":"2026-05-03","last_ord":"2026-04-17","days_recv":16,"days_sold":2,"days_ord":18,"barcode":"6001475010062","tags":["healthy"]},{"id":"398206","desc":"HQ FOODS PURE GARLIC & GINGER 375ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":18.0,"dros":0.044,"dsc":409.1,"last_recv":"2026-04-22","last_sold":"2026-04-13","last_ord":"2026-04-21","days_recv":13,"days_sold":22,"days_ord":14,"barcode":"6001475010079","tags":["healthy"]},{"id":"1003148","desc":"HQ FOODS SWEET CHILLI SAUCE 500ML","vendor":"HQ FOODS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":13.0,"dros":0.088,"dsc":147.7,"last_recv":"2026-04-19","last_sold":"2026-05-02","last_ord":"2026-04-17","days_recv":16,"days_sold":3,"days_ord":18,"barcode":"6001475912502","tags":["healthy"]},{"id":"191241","desc":"ILLY CLASSICO BEANS 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-15","last_sold":"2025-12-09","last_ord":"","days_recv":355,"days_sold":147,"days_ord":null,"barcode":"8003753900520","tags":["phantom","low_cover"]},{"id":"402557","desc":"ILLY CLASSICO GROUND 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.022,"dsc":272.7,"last_recv":"2026-01-01","last_sold":"2026-02-08","last_ord":"","days_recv":124,"days_sold":86,"days_ord":null,"barcode":"8003753900438","tags":["phantom"]},{"id":"853859","desc":"ILLY COFFEE CAPS ESPRESSO CLASSIC 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.088,"dsc":113.6,"last_recv":"2026-04-12","last_sold":"2026-03-22","last_ord":"","days_recv":23,"days_sold":44,"days_ord":null,"barcode":"8003753158679","tags":["healthy"]},{"id":"853858","desc":"ILLY COFFEE CAPS ESPRESSO INTENSO 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.077,"dsc":129.9,"last_recv":"2026-03-10","last_sold":"2026-03-12","last_ord":"","days_recv":56,"days_sold":54,"days_ord":null,"barcode":"8003753158761","tags":["healthy"]},{"id":"853170","desc":"ILLY COFFEE CAPS L/CLASIC 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":3.0,"dros":0.066,"dsc":45.5,"last_recv":"2025-10-27","last_sold":"2026-04-04","last_ord":"","days_recv":190,"days_sold":31,"days_ord":null,"barcode":"8003753158730","tags":["healthy"]},{"id":"853836","desc":"ILLY COFFEE CAPSULES DECAF 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.055,"dsc":181.8,"last_recv":"2026-01-21","last_sold":"2026-05-01","last_ord":"","days_recv":104,"days_sold":4,"days_ord":null,"barcode":"8003753168128","tags":["healthy"]},{"id":"853816","desc":"ILLY COFFEE CAPSULES ESPRESSO FORTE 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":9.0,"dros":0.055,"dsc":163.6,"last_recv":"2026-04-26","last_sold":"2026-04-21","last_ord":"","days_recv":9,"days_sold":14,"days_ord":null,"barcode":"8003753158709","tags":["healthy"]},{"id":"1015346","desc":"LUMOSS 500ML ARCTIC ICE BOTTLE","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":64.0,"dros":0.088,"dsc":727.3,"last_recv":"2026-04-12","last_sold":"2026-05-03","last_ord":"2026-04-05","days_recv":23,"days_sold":2,"days_ord":30,"barcode":"6009552809318","tags":["healthy"]},{"id":"1008636","desc":"LUMOSS ARCTIC ICE BOTTLE 1L SINGLES","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":73.0,"dros":0.044,"dsc":1659.1,"last_recv":"2026-01-25","last_sold":"2026-04-12","last_ord":"2026-01-22","days_recv":100,"days_sold":23,"days_ord":103,"barcode":"6009552807246","tags":["healthy"]},{"id":"1007397","desc":"LUMOSS BEER MUG 500ML SINGLES","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":35.0,"dros":0.11,"dsc":318.2,"last_recv":"2025-11-25","last_sold":"2026-02-19","last_ord":"2025-11-19","days_recv":161,"days_sold":75,"days_ord":167,"barcode":"6009552807208","tags":["phantom"]},{"id":"1007398","desc":"LUMOSS BLUE MOUNTAIN TRAVEL MUG 400ML","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":23.0,"dros":0.011,"dsc":2090.9,"last_recv":"2025-09-21","last_sold":"2026-03-12","last_ord":"2025-09-19","days_recv":226,"days_sold":54,"days_ord":228,"barcode":"6009552807239","tags":["healthy"]},{"id":"1007456","desc":"LUMOSS FROSTED TUCAN TUMBLER 600ML","vendor":"LUMOSS","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":23.0,"dros":0.044,"dsc":522.7,"last_recv":"2025-09-28","last_sold":"2026-04-03","last_ord":"2025-09-22","days_recv":219,"days_sold":32,"days_ord":225,"barcode":"6009552807109","tags":["discontinued_stock"]},{"id":"953688","desc":"LUMOSS RIBBED COFFEE TUMBLER 350ML ASTD","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":75.0,"dros":0.154,"dsc":487.0,"last_recv":"2026-05-03","last_sold":"2026-05-01","last_ord":"2026-04-28","days_recv":2,"days_sold":4,"days_ord":7,"barcode":"6009552807895","tags":["healthy"]},{"id":"640194","desc":"LUMOSS SHOT GLASSES ASSORTED 6EA","vendor":"LUMOSS","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.187,"dsc":0.0,"last_recv":"2024-11-10","last_sold":"2026-03-25","last_ord":"2024-11-04","days_recv":541,"days_sold":41,"days_ord":547,"barcode":"6009699466504","tags":["inactive"]},{"id":"920026","desc":"LUMOSS THERMO TRAVEL MUG 400ML ASSORTED","vendor":"LUMOSS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":39.0,"dros":0.077,"dsc":506.5,"last_recv":"2026-03-29","last_sold":"2026-04-18","last_ord":"2026-03-23","days_recv":37,"days_sold":17,"days_ord":43,"barcode":"6009552807130","tags":["healthy"]},{"id":"861808","desc":"MCVITIES DIGEST BISCUITS ORIG 250GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":6.0,"dros":0.11,"dsc":54.5,"last_recv":"2026-01-08","last_sold":"2026-05-03","last_ord":"","days_recv":117,"days_sold":2,"days_ord":null,"barcode":"5000396052213","tags":["healthy"]},{"id":"989084","desc":"MPO VAPES 5000P KIWI P/FRT&GVA 35MG 8ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":8.0,"dros":0.022,"dsc":363.6,"last_recv":"2025-09-05","last_sold":"2026-04-22","last_ord":"2025-09-03","days_recv":242,"days_sold":13,"days_ord":244,"barcode":"6009900634098","tags":["discontinued_stock"]},{"id":"989026","desc":"MPO VAPES MAX 5000 P BAJA BLAST 35MG 8ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":9.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-09-05","last_sold":"2025-10-06","last_ord":"2025-09-03","days_recv":242,"days_sold":211,"days_ord":244,"barcode":"6009900634050","tags":["discontinued_stock"]},{"id":"964761","desc":"MPO VAPES MAX 5000 PUFFS B/SLS 50MG 13ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":20.0,"dros":0.033,"dsc":606.1,"last_recv":"2025-06-17","last_sold":"2026-04-10","last_ord":"2025-06-11","days_recv":322,"days_sold":25,"days_ord":328,"barcode":"6009900634180","tags":["discontinued_stock"]},{"id":"964766","desc":"MPO VAPES MAX 5000 PUFFS F/A/I 50MG 13ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":40.0,"dros":0.077,"dsc":519.5,"last_recv":"2025-06-17","last_sold":"2026-04-07","last_ord":"2025-06-11","days_recv":322,"days_sold":28,"days_ord":328,"barcode":"6009900634159","tags":["discontinued_stock"]},{"id":"964760","desc":"MPO VAPES MAX 5000 PUFFS S/GRPE 50MG 3ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":38.0,"dros":0.033,"dsc":1151.5,"last_recv":"2025-06-17","last_sold":"2026-03-25","last_ord":"2025-06-11","days_recv":322,"days_sold":41,"days_ord":328,"barcode":"6009900634111","tags":["discontinued_stock"]},{"id":"964777","desc":"MPO VAPES MINI 400 PUFFS B/R/L 50MG 2ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":11.0,"dros":0.044,"dsc":250.0,"last_recv":"2025-08-14","last_sold":"2026-04-26","last_ord":"2025-08-07","days_recv":264,"days_sold":9,"days_ord":271,"barcode":"6009900634029","tags":["discontinued_stock"]},{"id":"964776","desc":"MPO VAPES MINI 400 PUFFS B/SBER 50MG 2ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":2.0,"dros":0.044,"dsc":45.5,"last_recv":"2025-09-05","last_sold":"2026-03-19","last_ord":"2025-09-03","days_recv":242,"days_sold":47,"days_ord":244,"barcode":"6009900634005","tags":["discontinued_stock"]},{"id":"964778","desc":"MPO VAPES MINI 400 PUFFS BJELLY 50MG 2ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":13.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-11-20","last_sold":"2025-12-28","last_ord":"2025-11-18","days_recv":166,"days_sold":128,"days_ord":168,"barcode":"6009900634043","tags":["discontinued_stock"]},{"id":"988450","desc":"MPO VAPES MNI 400 PFS ENRGY DRK 35MG 2ML","vendor":"MPO VAPES","status":"72","listing":"X","rp":"ND","supply":"Standard","soh":10.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-02-06","last_sold":"","last_ord":"2026-02-04","days_recv":88,"days_sold":null,"days_ord":90,"barcode":"6009900634036","tags":["discontinued_stock"]},{"id":"996394","desc":"NORTEC DASHCAM DUAL CAMERA","vendor":"SCHOU","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":4.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-10-05","last_sold":"2025-12-12","last_ord":"2025-10-02","days_recv":212,"days_sold":144,"days_ord":215,"barcode":"5709386367510","tags":["inactive"]},{"id":"921044","desc":"OTIMA 12PC FOOD SAVER COMBO","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":2.0,"dros":0.066,"dsc":30.3,"last_recv":"2025-05-12","last_sold":"2026-04-10","last_ord":"2025-05-02","days_recv":358,"days_sold":25,"days_ord":368,"barcode":"606110196420","tags":["discontinued_stock"]},{"id":"974898","desc":"OTIMA 30PC BIG DEAL COMBO","vendor":"OTIMA","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":1.0,"dros":0.044,"dsc":22.7,"last_recv":"2025-01-05","last_sold":"2026-04-17","last_ord":"2025-01-03","days_recv":485,"days_sold":18,"days_ord":487,"barcode":"746747211933","tags":["inactive"]},{"id":"1004120","desc":"OTIMA 6PC ECO COMBO","vendor":"OTIMA","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":61.0,"dros":1.066,"dsc":57.2,"last_recv":"2026-03-14","last_sold":"2026-04-04","last_ord":"2026-03-10","days_recv":52,"days_sold":31,"days_ord":56,"barcode":"746747346833","tags":["inactive"]},{"id":"993877","desc":"OTIMA 6PC TWO TONE SQUARE COMBO","vendor":"OTIMA","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":19.0,"dros":0.604,"dsc":31.5,"last_recv":"2026-04-19","last_sold":"2026-04-24","last_ord":"2026-04-16","days_recv":16,"days_sold":11,"days_ord":19,"barcode":"746747286870","tags":["inactive"]},{"id":"1002217","desc":"OTIMA 85L STORAGE BOX REGRIND","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":5.0,"dros":0.165,"dsc":30.3,"last_recv":"2026-04-26","last_sold":"2026-05-01","last_ord":"2026-04-24","days_recv":9,"days_sold":4,"days_ord":11,"barcode":"746747277779","tags":["healthy"]},{"id":"961472","desc":"OTIMA BREEZY ICE BUCKET 9L","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":12.0,"dros":0.176,"dsc":68.2,"last_recv":"2026-02-08","last_sold":"2026-04-08","last_ord":"2026-02-06","days_recv":86,"days_sold":27,"days_ord":88,"barcode":"700083448965","tags":["discontinued_stock"]},{"id":"961443","desc":"OTIMA CLOTHES HANGER BLACK 5 PACK","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-04-12","last_sold":"","last_ord":"2026-04-10","days_recv":23,"days_sold":null,"days_ord":25,"barcode":"781718508674","tags":["low_cover"]},{"id":"1007550","desc":"OTIMA COCKTAIL DRINKING BOWL 500ML","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":11.0,"dros":0.143,"dsc":76.9,"last_recv":"2025-09-14","last_sold":"2026-04-27","last_ord":"2025-09-11","days_recv":233,"days_sold":8,"days_ord":236,"barcode":"606110156622","tags":["discontinued_stock"]},{"id":"961450","desc":"OTIMA EGG TRAY 12EGG","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":6.0,"dros":0.088,"dsc":68.2,"last_recv":"2025-11-09","last_sold":"2026-04-29","last_ord":"2025-11-02","days_recv":177,"days_sold":6,"days_ord":184,"barcode":"658325576993","tags":["healthy"]},{"id":"1007555","desc":"OTIMA FIESTA COMBO LARGE JUG&4 WINE CUPS","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.473,"dsc":42.3,"last_recv":"2026-05-03","last_sold":"2026-05-03","last_ord":"2026-05-01","days_recv":2,"days_sold":2,"days_ord":4,"barcode":"658325064117","tags":["healthy"]},{"id":"961475","desc":"OTIMA GEO BOTTLE 750ML","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.165,"dsc":0.0,"last_recv":"2024-11-03","last_sold":"2026-04-13","last_ord":"2025-10-16","days_recv":548,"days_sold":22,"days_ord":201,"barcode":"781718508681","tags":["inactive"]},{"id":"1002560","desc":"OTIMA JUG 1.5L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":109.0,"dros":0.582,"dsc":187.3,"last_recv":"2026-04-26","last_sold":"2026-05-02","last_ord":"2026-04-23","days_recv":9,"days_sold":3,"days_ord":12,"barcode":"700083448958","tags":["healthy"]},{"id":"961471","desc":"OTIMA LARGE MUG 550ML","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.407,"dsc":34.4,"last_recv":"2026-03-21","last_sold":"2026-05-03","last_ord":"2026-03-20","days_recv":45,"days_sold":2,"days_ord":46,"barcode":"658325577020","tags":["healthy"]},{"id":"974888","desc":"OTIMA MICROFRESH MINI 200ML SET","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-01-12","last_sold":"2025-11-14","last_ord":"2025-10-16","days_recv":478,"days_sold":172,"days_ord":201,"barcode":"746747211780","tags":["discontinued_stock"]},{"id":"979243","desc":"OTIMA MICROWAVE COVER 285MM","vendor":"OTIMA","status":"62","listing":"L","rp":"ND","supply":"Stock Transfer","soh":3.0,"dros":0.198,"dsc":15.2,"last_recv":"2026-01-11","last_sold":"2026-04-30","last_ord":"2026-01-09","days_recv":114,"days_sold":5,"days_ord":116,"barcode":"658325576986","tags":["inactive"]},{"id":"961454","desc":"OTIMA MILLA CUPS 500ML","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":104.0,"dros":1.11,"dsc":93.7,"last_recv":"2026-03-08","last_sold":"2026-05-02","last_ord":"2026-03-06","days_recv":58,"days_sold":3,"days_ord":60,"barcode":"700371699864","tags":["healthy"]},{"id":"1008631","desc":"OTIMA RICE SPOON","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":22.0,"dros":0.253,"dsc":87.0,"last_recv":"2026-03-08","last_sold":"2026-04-25","last_ord":"2026-03-06","days_recv":58,"days_sold":10,"days_ord":60,"barcode":"746747346901","tags":["healthy"]},{"id":"926873","desc":"OTIMA ROUND MICROFRESH FOOD SAVER 1L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":451.0,"dros":6.187,"dsc":72.9,"last_recv":"2026-04-26","last_sold":"2026-05-03","last_ord":"2026-04-23","days_recv":9,"days_sold":2,"days_ord":12,"barcode":"700083612649","tags":["hot"]},{"id":"961491","desc":"OTIMA SIENNA SHOT GLASS 10EA","vendor":"OTIMA","status":"05","listing":"L","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.231,"dsc":21.6,"last_recv":"2026-03-21","last_sold":"2026-04-27","last_ord":"2026-03-19","days_recv":45,"days_sold":8,"days_ord":47,"barcode":"606110179218","tags":["inactive"]},{"id":"974899","desc":"OTIMA SLICK WATER BOTTLE 750ML","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":13.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-10-20","last_sold":"2025-07-13","last_ord":"2024-10-18","days_recv":562,"days_sold":296,"days_ord":564,"barcode":"781718076838","tags":["discontinued_stock"]},{"id":"974919","desc":"OTIMA SNAP IT MINI 125ML SET","vendor":"OTIMA","status":"72","listing":"","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.011,"dsc":0.0,"last_recv":"2025-04-22","last_sold":"2026-04-27","last_ord":"2025-10-16","days_recv":378,"days_sold":8,"days_ord":201,"barcode":"746747211773","tags":["inactive"]},{"id":"926863","desc":"OTIMA SNAP IT RECTANG FOOD SAVER 600ML","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":22.0,"dros":0.538,"dsc":40.9,"last_recv":"2026-03-21","last_sold":"2026-04-16","last_ord":"2026-03-19","days_recv":45,"days_sold":19,"days_ord":47,"barcode":"700083612694","tags":["healthy"]},{"id":"926865","desc":"OTIMA SNAP IT RECTANGLE FOOD SAVER 1.2L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":383.0,"dros":6.857,"dsc":55.9,"last_recv":"2026-04-26","last_sold":"2026-05-03","last_ord":"2026-04-23","days_recv":9,"days_sold":2,"days_ord":12,"barcode":"700083073945","tags":["hot"]},{"id":"926864","desc":"OTIMA SNAP IT RECTANGLE FOOD SAVER 2.2L","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":32.0,"dros":0.011,"dsc":2909.1,"last_recv":"2025-11-17","last_sold":"2026-04-09","last_ord":"2025-09-26","days_recv":169,"days_sold":26,"days_ord":221,"barcode":"700083612700","tags":["healthy"]},{"id":"995283","desc":"OTIMA SPICE SHAKER 200ML","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":26.0,"dros":0.165,"dsc":157.6,"last_recv":"2025-07-06","last_sold":"2026-04-25","last_ord":"2025-07-03","days_recv":303,"days_sold":10,"days_ord":306,"barcode":"781718076982","tags":["healthy"]},{"id":"974928","desc":"OTIMA THE PLAYBLOX LUNCHBOX 4EA","vendor":"OTIMA","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":0.0,"dros":0.022,"dsc":0.0,"last_recv":"2025-01-12","last_sold":"2026-02-04","last_ord":"2025-01-08","days_recv":478,"days_sold":90,"days_ord":482,"barcode":"746747211742","tags":["inactive"]},{"id":"993988","desc":"OTIMA VINO GLASS","vendor":"OTIMA","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":14.0,"dros":0.022,"dsc":636.4,"last_recv":"2025-05-25","last_sold":"2026-02-02","last_ord":"2025-05-22","days_recv":345,"days_sold":92,"days_ord":348,"barcode":"781718076968","tags":["phantom"]},{"id":"923471","desc":"OUTFIT BEACH BAG W/ COOLER ASTD","vendor":"SCHOU","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":5.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-01-21","last_sold":"2025-11-27","last_ord":"2024-01-12","days_recv":835,"days_sold":159,"days_ord":844,"barcode":"5709386895105","tags":["discontinued_stock"]},{"id":"1016688","desc":"OUTFIT GAS CARTRIDGE 220GR","vendor":"SCHOU","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":55.0,"dros":0.055,"dsc":1000.0,"last_recv":"2026-03-29","last_sold":"2026-05-01","last_ord":"2026-03-26","days_recv":37,"days_sold":4,"days_ord":40,"barcode":"5709386964672","tags":["healthy"]},{"id":"112754","desc":"PEZ SWEETS ASSORTED 1DISP&3 REFILLS","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":52.0,"dros":0.099,"dsc":525.3,"last_recv":"2025-06-03","last_sold":"2026-04-02","last_ord":"","days_recv":336,"days_sold":33,"days_ord":null,"barcode":"9044400841000","tags":["discontinued_stock"]},{"id":"148142","desc":"PEZ SWEETS FRUIT REFILL 8EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":11.0,"dros":0.121,"dsc":90.9,"last_recv":"2025-10-12","last_sold":"2026-04-25","last_ord":"","days_recv":205,"days_sold":10,"days_ord":null,"barcode":"9044400231009","tags":["healthy"]},{"id":"407344","desc":"PNP BRAAI GRID METAL BOXED 1EA","vendor":"LK PRODUCTS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.033,"dsc":212.1,"last_recv":"2026-03-14","last_sold":"2026-04-12","last_ord":"2026-03-13","days_recv":52,"days_sold":23,"days_ord":53,"barcode":"6001007191825","tags":["healthy"]},{"id":"407344","desc":"PNP BRAAI GRID METAL BOXED 1EA","vendor":"LK PRODUCTS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.033,"dsc":212.1,"last_recv":"2026-03-14","last_sold":"2026-04-12","last_ord":"2026-03-13","days_recv":52,"days_sold":23,"days_ord":53,"barcode":"6001007191825","tags":["healthy"]},{"id":"407343","desc":"PNP BRAAI GRID METAL TOASTER 1EA","vendor":"LK PRODUCTS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.011,"dsc":636.4,"last_recv":"2025-12-07","last_sold":"2026-03-28","last_ord":"2025-12-05","days_recv":149,"days_sold":38,"days_ord":151,"barcode":"","tags":["healthy"]},{"id":"407343","desc":"PNP BRAAI GRID METAL TOASTER 1EA","vendor":"LK PRODUCTS","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":7.0,"dros":0.011,"dsc":636.4,"last_recv":"2025-12-07","last_sold":"2026-03-28","last_ord":"2025-12-05","days_recv":149,"days_sold":38,"days_ord":151,"barcode":"6001007191818","tags":["healthy"]},{"id":"462416","desc":"RITMEESTER CIGARS MINI MOODS 10EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":15.0,"dros":0.099,"dsc":151.5,"last_recv":"2026-04-26","last_sold":"2026-05-02","last_ord":"","days_recv":9,"days_sold":3,"days_ord":null,"barcode":"8710568050035","tags":["healthy"]},{"id":"1015895","desc":"SERANO BEER MIX NUTS & CRACKERS 150GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-21","last_sold":"","last_ord":"","days_recv":45,"days_sold":null,"days_ord":null,"barcode":"5290097022138","tags":["low_cover"]},{"id":"1015893","desc":"SERANO WHISKEY MIX NUTS & CRACKERS 150GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":17.0,"dros":0.033,"dsc":515.2,"last_recv":"2026-03-21","last_sold":"2026-04-26","last_ord":"","days_recv":45,"days_sold":9,"days_ord":null,"barcode":"5290097022152","tags":["healthy"]},{"id":"1015815","desc":"SERANO WINE MIX NUTS & CRACKERS 150GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":20.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-21","last_sold":"","last_ord":"","days_recv":45,"days_sold":null,"days_ord":null,"barcode":"5290097022145","tags":["low_cover"]},{"id":"1016700","desc":"SIP SF SWEET&SOUR LEMONADE CORDIAL 750ML","vendor":"ELEV8R","status":"04","listing":"L","rp":"Y3","supply":"Standard","soh":6.0,"dros":0.0,"dsc":0.0,"last_recv":"2026-03-23","last_sold":"","last_ord":"","days_recv":43,"days_sold":null,"days_ord":null,"barcode":"6009900580845","tags":["low_cover"]},{"id":"107531","desc":"SWISHER SWEET BLACKSTON CHERRY CIGARS","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":18.0,"dros":0.198,"dsc":90.9,"last_recv":"2025-12-02","last_sold":"2026-04-26","last_ord":"","days_recv":154,"days_sold":9,"days_ord":null,"barcode":"25900000417","tags":["healthy"]},{"id":"149474","desc":"SWISHER SWEET CIGAR BLACKSTONE CHE 5EA","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":10.0,"dros":0.044,"dsc":227.3,"last_recv":"2025-12-16","last_sold":"2026-04-22","last_ord":"","days_recv":140,"days_sold":13,"days_ord":null,"barcode":"25900213411","tags":["healthy"]},{"id":"951779","desc":"THE BELGIAN DRK CHOC CHERRY SLAB 100GR","vendor":"CLIPPA SALES","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":22.0,"dros":0.066,"dsc":333.3,"last_recv":"2026-01-04","last_sold":"2026-04-26","last_ord":"","days_recv":121,"days_sold":9,"days_ord":null,"barcode":"5413121363513","tags":["healthy"]},{"id":"951778","desc":"THE BELGIAN DRK CHOC HIM SALT SLAB 100GR","vendor":"CLIPPA SALES","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":15.0,"dros":0.033,"dsc":454.5,"last_recv":"2025-04-15","last_sold":"2026-04-20","last_ord":"","days_recv":385,"days_sold":15,"days_ord":null,"barcode":"5413121362479","tags":["discontinued_stock"]},{"id":"700764","desc":"TTI 11OZ STONEWARE WHITE COFFEE MUG","vendor":"TRAMARCO TRADING","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":39.0,"dros":0.088,"dsc":443.2,"last_recv":"2025-10-26","last_sold":"2026-04-07","last_ord":"2025-10-24","days_recv":191,"days_sold":28,"days_ord":193,"barcode":"6004049013179","tags":["discontinued_stock"]},{"id":"989316","desc":"TTI GLASS TUMBLER 140ML","vendor":"TRAMARCO TRADING","status":"60","listing":"L","rp":"ND","supply":"Stock Transfer","soh":85.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-05-12","last_sold":"2025-08-31","last_ord":"","days_recv":358,"days_sold":247,"days_ord":null,"barcode":"6004049048751","tags":["discontinued_stock"]},{"id":"661445","desc":"TTI HIGH BALL TUMBLERS","vendor":"TRAMARCO TRADING","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":48.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-11-24","last_sold":"","last_ord":"2024-11-22","days_recv":527,"days_sold":null,"days_ord":529,"barcode":"6004049003262","tags":["discontinued_stock"]},{"id":"1002496","desc":"TTI SPRINGBOK KIDDIES SCOOTER TOY342XSPB","vendor":"TRAMARCO TRADING","status":"04","listing":"L","rp":"Y1","supply":"Stock Transfer","soh":5.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-12-29","last_sold":"2026-01-29","last_ord":"2025-12-22","days_recv":127,"days_sold":96,"days_ord":134,"barcode":"6004049047112","tags":["phantom","low_cover"]},{"id":"673423","desc":"TTI TUMBLER CLEAR WHISKEY","vendor":"TRAMARCO TRADING","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":61.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-11-24","last_sold":"2025-08-17","last_ord":"2024-11-22","days_recv":527,"days_sold":261,"days_ord":529,"barcode":"6004049003415","tags":["discontinued_stock"]},{"id":"738536","desc":"TTI WHITE DINNER PLATE 10.5 INCH","vendor":"TRAMARCO TRADING","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":9.0,"dros":0.0,"dsc":0.0,"last_recv":"2025-06-09","last_sold":"2025-12-02","last_ord":"2025-05-30","days_recv":330,"days_sold":154,"days_ord":340,"barcode":"6004049038851","tags":["discontinued_stock"]},{"id":"663648","desc":"TTI ZOMBIE TUMBLER CLEAR","vendor":"TRAMARCO TRADING","status":"72","listing":"X","rp":"ND","supply":"Stock Transfer","soh":23.0,"dros":0.0,"dsc":0.0,"last_recv":"2024-12-15","last_sold":"2025-08-02","last_ord":"2024-12-09","days_recv":506,"days_sold":276,"days_ord":512,"barcode":"6004049003255","tags":["discontinued_stock"]}],"all_vendors":["BOARDMAN BROS","CLIPPA SALES","ELEV8R","HQ FOODS","LK PRODUCTS","LUMOSS","MPO VAPES","OTIMA","SCHOU","TRAMARCO TRADING"],"status_defs":{"02":"Mandatory listing","04":"Active","05":"Allocations only","06":"Temp discontinued","07":"Permanently discontinued","08":"To be deleted","09":"Deleted","60":"Seasonal — temp discontinued","61":"Franchise temp discontinued","62":"Interrupted supply","70":"Franchise temp discontinued","71":"Franchise perm discontinued","72":"Discontinued","73":"Art in cluster, not store","7A":"DC exit code A","7B":"DC exit code B","7C":"DC exit code C","7D":"DC exit code D","7E":"DC exit code E","01":"Pending creation","03":"Local listing","10":"Special order","11":"Direct delivery","50":"Held","51":"Suspended","99":"Unknown"},"status_tier":{"04":"active","05":"active","02":"active","03":"active","06":"temp","60":"temp","61":"temp","62":"temp","70":"temp","07":"discontinued","71":"discontinued","72":"discontinued","7A":"exit","7B":"exit","7C":"exit","7D":"exit","7E":"exit","08":"deleted","09":"deleted","01":"pending","10":"pending","11":"pending","50":"other","51":"other","73":"other","99":"other"}}</script>
+<script>
+(function () {
+  'use strict';
+
+  // ====== DATA ======
+  const D = JSON.parse(document.getElementById('payload').textContent);
+  const STATUS_DEFS = D.status_defs || {};
+  const STATUS_TIER = D.status_tier || {};
+
+  // ====== DOM HELPERS ======
+  const $ = (s, p = document) => p.querySelector(s);
+  const $$ = (s, p = document) => Array.from(p.querySelectorAll(s));
+  const fmt = {
+    int: n => Number(n || 0).toLocaleString('en-US', { maximumFractionDigits: 0 }),
+    dec: (n, d = 1) => Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d }),
+    dsc: n => n == null ? '—' : (n > 9000 ? '∞' : fmt.dec(n, 0)),
+  };
+  const icon = name => '<svg class="icon"><use href="#i-' + name + '"/></svg>';
+  const escapeHTML = s => String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+
+  // ====== STATE ======
+  const state = {
+    client: 'all',
+    search: { actions: '', top: '', all: '' },
+    actionTab: 'oos',
+    statusTier: 'all',
+    sort: 'desc',
+    allLimit: 50,
+  };
+
+  // ====== HEADER + HERO ======
+  $('#mast-meta').textContent = D.meta.store_code + ' · ' + D.meta.store_name;
+  $('#hero-name').textContent = D.meta.store_name;
+  $('#hero-code').textContent = D.meta.store_code;
+  $('#hero-profile').textContent = D.meta.profile;
+  $('#hero-week').textContent = D.meta.week_ending_pretty;
+  $('#footer-meta').textContent = 'Generated ' + D.meta.generated + ' · '
+    + fmt.int(D.summary.total_articles) + ' articles · week ending ' + D.meta.week_ending_pretty;
+
+  // ====== CLIENT FILTER WIRING ======
+  const clientSel = $('#client-filter');
+  clientSel.innerHTML = '<option value="all">All clients</option>'
+    + D.all_vendors.map(v => `<option value="${escapeHTML(v)}">${escapeHTML(v)}</option>`).join('');
+  clientSel.addEventListener('change', () => {
+    state.client = clientSel.value;
+    state.allLimit = 50;
+    clientSel.classList.toggle('active', state.client !== 'all');
+    $('#clear-client').classList.toggle('show', state.client !== 'all');
+    rerenderAll();
+  });
+  $('#clear-client').addEventListener('click', () => {
+    clientSel.value = 'all';
+    state.client = 'all';
+    clientSel.classList.remove('active');
+    $('#clear-client').classList.remove('show');
+    state.allLimit = 50;
+    rerenderAll();
+  });
+
+  // ====== SECTION SEARCH WIRING ======
+  $$('input[data-search]').forEach(input => {
+    let timer;
+    const key = input.dataset.search;
+    const clearBtn = $(`button[data-search-clear="${key}"]`);
+    input.addEventListener('input', e => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        state.search[key] = e.target.value.trim();
+        clearBtn.classList.toggle('show', !!state.search[key]);
+        if (key === 'all') state.allLimit = 50;
+        renderSection(key);
+      }, 130);
+    });
+    clearBtn.addEventListener('click', () => {
+      input.value = '';
+      state.search[key] = '';
+      clearBtn.classList.remove('show');
+      if (key === 'all') state.allLimit = 50;
+      renderSection(key);
+      input.focus();
+    });
+  });
+
+  // ====== TABS WIRING ======
+  $$('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const t = tab.dataset.tab;
+      state.actionTab = t;
+      $$('.tab').forEach(b => b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false'));
+      $$('.tab-panel').forEach(p => {
+        if (p.dataset.tab === t) p.removeAttribute('hidden');
+        else p.setAttribute('hidden', '');
+      });
+    });
+  });
+
+  // ====== FILTER HELPERS ======
+  function matchesText(item, q) {
+    if (!q) return true;
+    q = q.toLowerCase();
+    return (item.desc && item.desc.toLowerCase().includes(q)) ||
+           (item.vendor && item.vendor.toLowerCase().includes(q)) ||
+           String(item.id).includes(q) ||
+           (item.barcode && item.barcode.toLowerCase().includes(q));
+  }
+  function matchesClient(item) {
+    return state.client === 'all' || item.vendor === state.client;
+  }
+
+  // ====== APPLY FILTERS TO LIST ======
+  function filteredItems(items, sectionKey) {
+    let out = items;
+    if (state.client !== 'all') out = out.filter(matchesClient);
+    if (state.search[sectionKey]) out = out.filter(it => matchesText(it, state.search[sectionKey]));
+    return out;
+  }
+
+  // ====== HERO STATS (recompute on client change to reflect filter) ======
+  function renderHero() {
+    const sm = D.summary;
+    let oos = D.kpis.oos, ph = D.kpis.phantom, low = D.kpis.low_cover;
+    let activeCount = sm.active_count;
+    let lostDaily = sm.lost_daily_sales;
+    let phantomUnits = sm.phantom_units;
+    let lowAtRisk = sm.low_cover_at_risk;
+    if (state.client !== 'all') {
+      oos = oos.filter(matchesClient);
+      ph = ph.filter(matchesClient);
+      low = low.filter(matchesClient);
+      activeCount = D.all_products.filter(p => p.status === '04' && matchesClient(p)).length;
+      lostDaily = oos.reduce((s, i) => s + (i.dros || 0), 0);
+      phantomUnits = ph.reduce((s, i) => s + (i.soh || 0), 0);
+      lowAtRisk = low.reduce((s, i) => s + (i.dros || 0), 0);
+    }
+    $('#hero-active-count').textContent = fmt.int(activeCount);
+    $('#kpi-oos').textContent = fmt.int(oos.length);
+    $('#kpi-oos-sub').textContent = fmt.dec(lostDaily, 2) + ' units/day at risk';
+    $('#kpi-phantom').textContent = fmt.int(ph.length);
+    $('#kpi-phantom-sub').textContent = fmt.int(phantomUnits) + ' units to verify';
+    $('#kpi-low').textContent = fmt.int(low.length);
+    $('#kpi-low-sub').textContent = fmt.dec(lowAtRisk, 1) + ' units/day at risk';
+  }
+
+  // ====== CHARTS ======
+  // DSC histogram + donut: filtered by client.
+  // OOS per client: never filtered — comparison view; active client highlighted.
+
+  const TIER_COLOR = {
+    active: 'var(--healthy)',
+    temp: 'var(--warning)',
+    discontinued: 'var(--steel-bright)',
+    exit: 'var(--phantom)',
+    deleted: 'var(--ink-3)',
+    pending: 'var(--mute-2)',
+    other: 'var(--mute-2)',
+  };
+
+  function activeProductsFiltered() {
+    let p = D.all_products.filter(x => x.status === '04');
+    if (state.client !== 'all') p = p.filter(matchesClient);
+    return p;
+  }
+
+  function dscBands(active) {
+    const cfg = [
+      ['0',       'Out',     'crit',   v => v === 0],
+      ['1-14',    '1–14',    'crit',   v => v > 0 && v < 14],
+      ['14-30',   '14–30',   'warn',   v => v >= 14 && v < 30],
+      ['30-90',   '30–90',   'ok',     v => v >= 30 && v < 90],
+      ['90-180',  '90–180',  'ok',     v => v >= 90 && v < 180],
+      ['180-365', '180–365', 'excess', v => v >= 180 && v < 365],
+      ['365+',    '365+',    'excess', v => v >= 365],
+    ];
+    return cfg.map(([band, label, sev, test]) => ({
+      band, label, sev,
+      count: active.filter(p => test(Math.max(0, p.dsc))).length,
+    }));
+  }
+
+  function severityCounts(active) {
+    const oos = active.filter(p => p.tags.includes('oos')).length;
+    const phantom = active.filter(p => p.tags.includes('phantom')).length;
+    const low = active.filter(p => p.tags.includes('low_cover')).length;
+    const healthy = Math.max(0, active.length - oos - phantom - low);
+    return { oos, phantom, low_cover: low, healthy };
+  }
+
+  function renderCharts() {
+    const active = activeProductsFiltered();
+    drawHist(state.client === 'all' ? D.charts.dsc_histogram : dscBands(active));
+    drawDonut(state.client === 'all' ? D.charts.severity : severityCounts(active));
+    drawClientBars('#oos-per-client',   '#oos-pc-meta',   'oos',    fmt.int,             'var(--critical)',    'OOS');
+  }
+
+  function drawHist(hb) {
+    const total = hb.reduce((n, b) => n + b.count, 0);
+    const max = Math.max(...hb.map(b => b.count), 1);
+    $('#hist-meta').textContent = fmt.int(total) + ' active items';
+    $('#hist-bars').innerHTML = hb.map(b =>
+      `<div class="bar ${b.sev}" style="height:${(b.count / max * 100).toFixed(0)}%"
+            title="${b.label} days: ${b.count} items">
+        <span class="v">${b.count}</span>
+      </div>`
+    ).join('');
+    $('#hist-labels').innerHTML = hb.map(b => `<div>${b.label}</div>`).join('');
+  }
+
+  function drawDonut(sev) {
+    const issues = sev.oos + sev.phantom + sev.low_cover;
+    const cx = 59, cy = 59, r = 44, sw = 18;
+    const C = 2 * Math.PI * r;
+    const order = ['oos', 'phantom', 'low_cover'];
+    const colors = { oos: 'var(--critical)', phantom: 'var(--phantom)', low_cover: 'var(--warning)' };
+    const labels = { oos: 'Out of stock', phantom: 'Possible phantom', low_cover: 'Low cover' };
+    let html = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="${sw}"/>`;
+    let offset = 0;
+    if (issues > 0) {
+      for (const k of order) {
+        const v = sev[k]; if (!v) continue;
+        const dash = (v / issues) * C;
+        html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none"
+          stroke="${colors[k]}" stroke-width="${sw}"
+          stroke-dasharray="${dash} ${C - dash}"
+          stroke-dashoffset="${-offset}"
+          stroke-linecap="butt"
+          transform="rotate(-90 ${cx} ${cy})"/>`;
+        offset += dash;
+      }
+    }
+    html += `<text text-anchor="middle" dominant-baseline="middle" x="${cx}" y="${cy - 5}"
+              font-size="22" font-weight="700" fill="var(--ink)" letter-spacing="-1">${issues}</text>`;
+    html += `<text text-anchor="middle" dominant-baseline="middle" x="${cx}" y="${cy + 14}"
+              font-size="9" font-weight="600" fill="var(--mute)">issues</text>`;
+    $('#donut').innerHTML = html;
+    $('#donut-meta').textContent = fmt.int(issues) + ' to action';
+    $('#donut-legend').innerHTML = order.map(k =>
+      `<div>
+        <span class="sw" style="background:${colors[k]}"></span>
+        <span class="label">${labels[k]}</span>
+        <span class="num">${fmt.int(sev[k])}</span>
+      </div>`
+    ).join('');
+  }
+
+  function drawClientBars(barsEl, metaEl, metricKey, formatter, color, unitLabel) {
+    const items = D.charts.vendor_breakdown
+      .map(v => ({ ...v, value: v[metricKey] || 0 }))
+      .filter(v => v.value > 0)
+      .sort((a, b) => b.value - a.value);
+
+    const total = items.reduce((s, v) => s + v.value, 0);
+    if (metaEl) $(metaEl).textContent = formatter(total) + (unitLabel ? ' ' + unitLabel : '');
+
+    if (!items.length) {
+      $(barsEl).innerHTML = `<div class="empty-mini">${icon('check-circle')} No clients with ${unitLabel || 'data'}.</div>`;
+      return;
+    }
+    const max = Math.max(...items.map(v => v.value), 1);
+    $(barsEl).innerHTML = items.map(v => {
+      const w = (v.value / max * 100).toFixed(1);
+      const isHi = state.client !== 'all' && v.name === state.client;
+      return `<div class="vendor-row${isHi ? ' highlight' : ''}" title="${escapeHTML(v.name)}: ${formatter(v.value)} ${unitLabel || ''}">
+        <div class="name">${escapeHTML(v.name)}</div>
+        <div class="track"><span style="width:${w}%;background:${color}"></span></div>
+        <div class="num">${formatter(v.value)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // ====== ITEM RENDERING ======
+  function tagBadges(item) {
+    const tags = item.tags || [];
+    const map = {
+      oos: { c: 'oos', i: 'x-octagon', l: 'OUT OF STOCK' },
+      phantom: { c: 'phantom', i: 'ghost', l: 'POSSIBLE PHANTOM' },
+      low_cover: { c: 'low', i: 'hourglass', l: 'LOW COVER' },
+      hot: { c: 'hot', i: 'flame', l: 'BEST SELLER' },
+      healthy: { c: 'healthy', i: 'check-circle', l: 'HEALTHY' },
+      discontinued_stock: { c: 'disc', i: 'archive', l: 'DISC. STOCK' },
+      inactive: { c: 'inactive', i: 'archive', l: 'INACTIVE' },
+    };
+    return tags.map(t => {
+      const m = map[t]; if (!m) return '';
+      return `<span class="tag ${m.c}">${icon(m.i)}${m.l}</span>`;
+    }).join('');
+  }
+
+  function statusBadge(item) {
+    const s = item.status;
+    const tier = STATUS_TIER[s] || 'other';
+    const desc = STATUS_DEFS[s] || 'Unknown';
+    return `<span class="tag status ${tier}" title="Status ${s}: ${desc}">${s} · ${escapeHTML(desc)}</span>`;
+  }
+
+  function detailGrid(it) {
+    const statusDesc = STATUS_DEFS[it.status] || 'Unknown';
+    const sohCls = it.soh < 0 ? 'crit' : (it.soh === 0 && it.dros > 0) ? 'crit' : '';
+    const dscCls = (it.dsc >= 0 && it.dsc < 14) ? 'crit'
+                 : (it.dsc >= 14 && it.dsc < 30) ? 'warn' : '';
+    const dateCell = (date, days) => date
+      ? `${escapeHTML(date)}${days != null ? ` <span class="age">(${days}d ago)</span>` : ''}`
+      : '—';
+    return `<div class="detail-grid">
+      <div class="detail-cell"><div class="l">Article number</div><div class="v">${it.id}</div></div>
+      <div class="detail-cell"><div class="l">Barcode</div><div class="v ${it.barcode ? '' : 'muted'}">${escapeHTML(it.barcode || '—')}</div></div>
+      <div class="detail-cell"><div class="l">Listing status</div><div class="v">${escapeHTML(it.listing || '—')}</div></div>
+      <div class="detail-cell"><div class="l">Status code</div><div class="v">${it.status} <span class="text">— ${escapeHTML(statusDesc)}</span></div></div>
+      <div class="detail-cell"><div class="l">RP type</div><div class="v ${it.rp ? '' : 'muted'}">${escapeHTML(it.rp || '—')}</div></div>
+      <div class="detail-cell"><div class="l">Source of supply</div><div class="v text ${it.supply ? '' : 'muted'}">${escapeHTML(it.supply || '—')}</div></div>
+      <div class="detail-cell"><div class="l">Stock on hand</div><div class="v ${sohCls}">${fmt.dec(it.soh, 0)} units</div></div>
+      <div class="detail-cell"><div class="l">Daily sales rate</div><div class="v">${fmt.dec(it.dros, 3)} /day</div></div>
+      <div class="detail-cell"><div class="l">Days cover</div><div class="v ${dscCls}">${fmt.dsc(it.dsc)} days</div></div>
+      <div class="detail-cell"><div class="l">Last received</div><div class="v ${it.last_recv ? '' : 'muted'}">${dateCell(it.last_recv, it.days_recv)}</div></div>
+      <div class="detail-cell"><div class="l">Last sold</div><div class="v ${it.last_sold ? '' : 'muted'}">${dateCell(it.last_sold, it.days_sold)}</div></div>
+      <div class="detail-cell"><div class="l">Last ordered</div><div class="v ${it.last_ord ? '' : 'muted'}">${dateCell(it.last_ord, it.days_ord)}</div></div>
+    </div>`;
+  }
+
+  function renderItem(item, idx, primaryTag) {
+    const cls = primaryTag === 'oos' ? 'tag-oos'
+              : primaryTag === 'phantom' ? 'tag-phantom'
+              : primaryTag === 'low_cover' ? 'tag-low'
+              : primaryTag === 'hot' ? 'tag-hot' : '';
+
+    let impact = '';
+    if (primaryTag === 'oos' && item.dros > 0) {
+      impact = `<div class="item-impact crit">${icon('trending-down')}${fmt.dec(item.dros, 2)} units/day lost</div>`;
+    } else if (primaryTag === 'phantom') {
+      const ds = item.days_sold;
+      impact = `<div class="item-impact phantom">${icon('ghost')}${fmt.dec(item.soh, 0)} units · last sale ${ds != null ? ds + 'd ago' : 'unknown'}</div>`;
+    } else if (primaryTag === 'low_cover' && item.dros > 0) {
+      impact = `<div class="item-impact warn">${icon('hourglass')}${fmt.dec(item.dsc, 0)} days left · ${fmt.dec(item.dros, 2)}/day</div>`;
+    } else if (primaryTag === 'hot' && item.dros > 0) {
+      impact = `<div class="item-impact healthy">${icon('flame')}${fmt.dec(item.dros, 2)} units/day</div>`;
+    }
+
+    const sohCls = item.soh < 0 ? 'crit' : (item.soh === 0 && item.dros > 0) ? 'crit' : '';
+    const dscCls = (item.dsc >= 0 && item.dsc < 14) ? 'crit'
+                 : (item.dsc >= 14 && item.dsc < 30) ? 'warn' : '';
+
+    const barcodeHtml = item.barcode
+      ? `<span>·</span><span class="barcode">${icon('barcode')}${escapeHTML(item.barcode)}</span>`
+      : '';
+
+    return `<details class="item ${cls}">
+      <summary>
+        <div class="item-head">
+          ${tagBadges(item)}
+          ${statusBadge(item)}
+          <span class="item-rank">#${idx + 1}</span>
+        </div>
+        <div class="item-desc">${escapeHTML(item.desc)}</div>
+        <div class="item-meta">
+          <span class="vendor">${escapeHTML(item.vendor)}</span>
+          <span>·</span>
+          <span class="article-id">#${item.id}</span>
+          ${barcodeHtml}
+        </div>
+        ${impact}
+        <div class="item-stats">
+          <div class="item-stat"><span class="l">SOH</span><span class="v ${sohCls}">${fmt.dec(item.soh, 0)}</span></div>
+          <div class="item-stat"><span class="l">DROS</span><span class="v">${fmt.dec(item.dros, 2)}</span></div>
+          <div class="item-stat"><span class="l">DSC</span><span class="v ${dscCls}">${fmt.dsc(item.dsc)}d</span></div>
+          ${item.days_sold != null ? `<div class="item-stat"><span class="l">Last sale</span><span class="v">${item.days_sold}d</span></div>` : ''}
+          <div class="item-chevron"></div>
+        </div>
+      </summary>
+      <div class="item-detail">${detailGrid(item)}</div>
+    </details>`;
+  }
+
+  function emptyState(msg, isSearchEmpty) {
+    return `<div class="empty">
+      <div class="icon-wrap">${icon(isSearchEmpty ? 'search-x' : 'check-circle')}</div>
+      <div class="text">${msg}</div>
+    </div>`;
+  }
+
+  // ====== KPI SECTION RENDER ======
+  function renderKpiSection(key, items, primaryTag, summaryFn, defaultLimit = 10) {
+    // For tabbed action items, all 3 share state.search.actions and update
+    // their tab-count badge instead of a section-level count.
+    const isAction = (key === 'oos' || key === 'phantom' || key === 'low');
+    const searchKey = isAction ? 'actions' : key;
+    const query = state.search[searchKey];
+
+    let filtered = items;
+    if (state.client !== 'all') filtered = filtered.filter(matchesClient);
+    if (query) filtered = filtered.filter(it => matchesText(it, query));
+
+    const listEl = $(`#${key === 'top' ? 'top-list' : key + '-list'}`);
+
+    // Count display: tab-count for actions, section count-badge for others
+    if (isAction) {
+      const tcEl = $(`#${key}-tab-count`);
+      tcEl.textContent = (query || state.client !== 'all')
+        ? `${fmt.int(filtered.length)}/${fmt.int(items.length)}`
+        : fmt.int(filtered.length);
+    } else {
+      const cEl = $(`#${key === 'top' ? 'top-count' : key + '-count'}`);
+      if (cEl) {
+        cEl.textContent = (query || state.client !== 'all')
+          ? `${fmt.int(filtered.length)} of ${fmt.int(items.length)}`
+          : fmt.int(filtered.length);
+      }
+    }
+
+    const summaryEl = (isAction || key === 'top') ? $(`#${key}-summary`) : null;
+    if (summaryEl && summaryFn) summaryEl.innerHTML = summaryFn(filtered);
+
+    if (!filtered.length) {
+      const isSearch = query || state.client !== 'all';
+      listEl.innerHTML = emptyState(isSearch ? 'No matches.' : 'Nothing flagged here.', isSearch);
+      const wrap = listEl.parentElement;
+      const oldBtn = wrap.querySelector('.show-more');
+      if (oldBtn) oldBtn.style.display = 'none';
+      return;
+    }
+
+    let limit = defaultLimit;
+    function paint() {
+      const visible = filtered.slice(0, limit);
+      listEl.innerHTML = visible.map((it, i) => renderItem(it, i, primaryTag)).join('');
+      const wrap = listEl.parentElement;
+      let btn = wrap.querySelector('.show-more');
+      if (filtered.length > limit) {
+        if (!btn) {
+          btn = document.createElement('button');
+          btn.className = 'show-more';
+          listEl.after(btn);
+        }
+        btn.innerHTML = `${icon('arrow-down')} Show all ${filtered.length} items`;
+        btn.style.display = 'flex';
+        btn.onclick = () => { limit = filtered.length; paint(); };
+      } else if (btn && limit > defaultLimit) {
+        btn.innerHTML = `${icon('arrow-up')} Show top ${defaultLimit}`;
+        btn.style.display = 'flex';
+        btn.onclick = () => { limit = defaultLimit; paint(); };
+      } else if (btn) {
+        btn.style.display = 'none';
+      }
+    }
+    paint();
+  }
+
+  // ====== ALL PRODUCTS ======
+  function getTierCounts() {
+    let p = D.all_products;
+    if (state.client !== 'all') p = p.filter(matchesClient);
+    const counts = { all: p.length };
+    p.forEach(x => {
+      const t = STATUS_TIER[x.status] || 'other';
+      counts[t] = (counts[t] || 0) + 1;
+    });
+    return counts;
+  }
+
+  function renderStatusChips() {
+    const c = getTierCounts();
+    const chips = [
+      ['all', 'grid', 'All', c.all || 0],
+      ['active', 'check-circle', 'Active', c.active || 0],
+      ['temp', 'clock', 'Temp.', c.temp || 0],
+      ['discontinued', 'archive', 'Discontinued', c.discontinued || 0],
+      ['exit', 'archive', 'Exit', c.exit || 0],
+      ['deleted', 'archive', 'Deleted', c.deleted || 0],
+      ['pending', 'info', 'Pending', c.pending || 0],
+      ['other', 'info', 'Other', c.other || 0],
+    ].filter(([, , , n]) => n > 0);
+    $('#status-chips').innerHTML = chips.map(([k, ic, lbl, n]) =>
+      `<button class="filter-chip" data-tier="${k}" data-active="${state.statusTier === k}">
+        ${icon(ic)}${lbl}<span class="count">${fmt.int(n)}</span>
+      </button>`
+    ).join('');
+    $$('#status-chips .filter-chip').forEach(b => {
+      b.addEventListener('click', () => {
+        state.statusTier = b.dataset.tier;
+        state.allLimit = 50;
+        renderStatusChips();
+        renderSection('all');
+      });
+    });
+  }
+
+  function getFilteredAll() {
+    let p = D.all_products.slice();
+    if (state.client !== 'all') p = p.filter(matchesClient);
+    if (state.search.all) p = p.filter(x => matchesText(x, state.search.all));
+    if (state.statusTier !== 'all') p = p.filter(x => (STATUS_TIER[x.status] || 'other') === state.statusTier);
+
+    const sorts = {
+      desc:      (a, b) => a.desc.localeCompare(b.desc),
+      dros_desc: (a, b) => b.dros - a.dros,
+      dros_asc:  (a, b) => a.dros - b.dros,
+      dsc_asc:   (a, b) => (a.dsc < 0 ? 1e9 : a.dsc) - (b.dsc < 0 ? 1e9 : b.dsc),
+      dsc_desc:  (a, b) => b.dsc - a.dsc,
+      soh_desc:  (a, b) => b.soh - a.soh,
+      status:    (a, b) => a.status.localeCompare(b.status) || a.desc.localeCompare(b.desc),
+    };
+    p.sort(sorts[state.sort] || sorts.desc);
+    return p;
+  }
+
+  function renderAll() {
+    const p = getFilteredAll();
+    $('#all-count').textContent = state.search.all || state.client !== 'all' || state.statusTier !== 'all'
+      ? `${fmt.int(p.length)} of ${fmt.int(D.all_products.length)}`
+      : fmt.int(p.length);
+
+    const list = $('#all-list');
+    if (!p.length) {
+      list.innerHTML = emptyState('No products match these filters.', true);
+      $('#all-more').style.display = 'none';
+      return;
+    }
+    const visible = p.slice(0, state.allLimit);
+    list.innerHTML = visible.map((it, i) => renderItem(it, i, primaryTagOf(it))).join('');
+
+    const more = $('#all-more');
+    if (p.length > state.allLimit) {
+      more.innerHTML = `${icon('arrow-down')} Show ${Math.min(50, p.length - state.allLimit)} more (${p.length - state.allLimit} remaining)`;
+      more.style.display = 'flex';
+      more.onclick = () => { state.allLimit += 50; renderAll(); };
+    } else {
+      more.style.display = 'none';
+    }
+  }
+
+  function primaryTagOf(item) {
+    const tags = item.tags || [];
+    if (tags.includes('oos')) return 'oos';
+    if (tags.includes('phantom')) return 'phantom';
+    if (tags.includes('low_cover')) return 'low_cover';
+    if (tags.includes('hot')) return 'hot';
+    return null;
+  }
+
+  // ====== SECTION DISPATCH ======
+  function renderSection(key) {
+    if (key === 'actions') {
+      renderKpiSection('oos',     D.kpis.oos,       'oos',       oosSummary);
+      renderKpiSection('phantom', D.kpis.phantom,   'phantom',   phantomSummary);
+      renderKpiSection('low',     D.kpis.low_cover, 'low_cover', lowSummary);
+      // Total badge across all 3
+      const q = state.search.actions;
+      const allItems = [...D.kpis.oos, ...D.kpis.phantom, ...D.kpis.low_cover];
+      let filtered = allItems;
+      if (state.client !== 'all') filtered = filtered.filter(matchesClient);
+      if (q) filtered = filtered.filter(it => matchesText(it, q));
+      const totalEl = $('#actions-total-count');
+      if (totalEl) {
+        totalEl.textContent = (q || state.client !== 'all')
+          ? `${fmt.int(filtered.length)} of ${fmt.int(allItems.length)}`
+          : fmt.int(allItems.length);
+      }
+    } else if (key === 'oos' || key === 'phantom' || key === 'low') {
+      // Backward compat — still works if called individually
+      renderSection('actions');
+    } else if (key === 'top') {
+      renderKpiSection('top', D.kpis.top_performers, 'hot', null, 10);
+    } else if (key === 'all') {
+      renderAll();
+    }
+  }
+
+  function uniqueVendors(items) { return new Set(items.map(i => i.vendor)).size; }
+
+  function oosSummary(items) {
+    const lost = items.reduce((s, i) => s + (i.dros || 0), 0);
+    return `<span class="num">${fmt.dec(lost, 2)}</span> units/day in lost sales · <span class="num">${uniqueVendors(items)}</span> clients · sorted by daily sales rate`;
+  }
+  function phantomSummary(items) {
+    const units = items.reduce((s, i) => s + (i.soh || 0), 0);
+    return `<span class="num">${fmt.int(units)}</span> units of dead stock · <span class="num">${uniqueVendors(items)}</span> clients · 60+ days since last sale (excludes never-sold)`;
+  }
+  function lowSummary(items) {
+    const atRisk = items.reduce((s, i) => s + (i.dros || 0), 0);
+    return `<span class="num">${fmt.dec(atRisk, 1)}</span> units/day at risk · <span class="num">${uniqueVendors(items)}</span> clients · under 14 days cover`;
+  }
+
+  // ====== ALL PRODUCTS WIRING ======
+  $('#all-sort').addEventListener('change', e => {
+    state.sort = e.target.value;
+    state.allLimit = 50;
+    renderAll();
+  });
+
+  // ====== MASTER RERENDER ======
+  function rerenderAll() {
+    renderHero();
+    renderCharts();
+    renderSection('actions');
+    renderSection('top');
+    renderStatusChips();
+    renderSection('all');
+  }
+
+  // ====== FAB ======
+  const fab = $('#fab');
+  window.addEventListener('scroll', () => fab.classList.toggle('show', window.scrollY > 600), { passive: true });
+  fab.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+  // ====== INIT ======
+  rerenderAll();
+})();
+</script>
+</body>
+</html>
