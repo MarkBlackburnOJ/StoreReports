@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#1F2024">
+<meta name="theme-color" content="#16539F">
 <title>Stock Action Report</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  /* Brand */
-  --orange: #E8743C;
-  --orange-deep: #C85B25;
-  --orange-bright: #F18A4F;
-  --orange-soft: #FCEBE0;
+  /* Brand — Pick n Pay cobalt (var names kept as --orange* for now) */
+  --orange: #16539F;
+  --orange-deep: #0E3D75;
+  --orange-bright: #1F66C0;
+  --orange-soft: #E4ECF7;
 
   /* Steel + Charcoal */
   --steel: #557585;
@@ -41,14 +41,14 @@
   --text-soft: #3F4651;
 
   /* Severity */
-  --critical: #D64A2C;
-  --critical-deep: #B23A1F;
-  --critical-soft: #FBE9E2;
-  --critical-line: #F2C9BC;
+  --critical: #E31E24;
+  --critical-deep: #B81519;
+  --critical-soft: #FBE3E4;
+  --critical-line: #F2C2C4;
 
-  --phantom: #8B2D14;
-  --phantom-soft: #F4D9CF;
-  --phantom-line: #E9B7A4;
+  --phantom: #9E1B1F;
+  --phantom-soft: #F7DCDD;
+  --phantom-line: #EBC0C2;
 
   --warning: #D69021;
   --warning-deep: #A86E15;
@@ -113,13 +113,13 @@ input, select { font-family: inherit; }
 /* ==================================================================== */
 .masthead {
   position: sticky; top: 0; z-index: 50;
-  background: var(--ink); color: #fff;
+  background: var(--orange); color: #fff;
   padding: 11px 16px;
   display: flex; align-items: center; gap: 12px;
 }
 .brandmark {
   width: 36px; height: 36px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--orange-bright) 0%, var(--orange-deep) 100%);
+  background: linear-gradient(135deg, #EE3D42 0%, var(--critical-deep) 100%);
   border-radius: 9px; display: grid; place-items: center;
   box-shadow: 0 1px 2px rgba(0,0,0,.3) inset, 0 1px 0 rgba(255,255,255,.1);
 }
@@ -244,7 +244,7 @@ input, select { font-family: inherit; }
   width: 3px; background: currentColor; opacity: .85;
 }
 .hero-stat.crit { color: #fff; background: linear-gradient(135deg, var(--critical) 0%, var(--critical-deep) 100%); border-color: rgba(0,0,0,.18); }
-.hero-stat.phantom { color: #fff; background: linear-gradient(135deg, #A0381C 0%, var(--phantom) 100%); border-color: rgba(0,0,0,.18); }
+.hero-stat.phantom { color: #fff; background: linear-gradient(135deg, #BE181D 0%, var(--phantom) 100%); border-color: rgba(0,0,0,.18); }
 .hero-stat.warn { color: var(--ink); background: linear-gradient(135deg, #F2BB47 0%, #D89218 100%); border-color: rgba(0,0,0,.10); }
 .hero-stat.warn::before { background: var(--ink); opacity: .25; }
 
