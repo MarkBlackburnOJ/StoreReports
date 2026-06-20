@@ -209,18 +209,21 @@
     return (r.days_sold!=null) && (r.days_sold>=60);
   }
 
-  // ---- Classification: priority-exclusive (first match wins) ----
-  // Priority resolves the overlaps in the definitions so each article lands in ONE list.
-  // Order: Negative -> Out of stock -> Phantom -> Low cover -> Discontinued.
-  function classify(r){
-    var st = String(r.status||''), soh = num(r.soh), dsc = num(r.dsc), active = (st==='04');
-    if (soh < 0) return 'negative';                              // any status
-    if (active && soh <= 0) return 'oos';                        // soh === 0 here
-    if (active && soh > 0 && isPhantomStale(r)) return 'phantom';
-    if (active && soh > 0 && dsc <= 14) return 'low_cover';
-    if (!active && soh > 0 && DISC[st]) return 'discontinued';
-    return null;                                                 // healthy / no action
+  // ---- Classification: multi-membership ----
+  // An article can match several rules; it appears in every matching list, with chips showing the
+  // others. Completion is keyed by article id, so ticking it off in one list ticks it off everywhere.
+  // cats() returns matches in priority order; cats()[0] is the "primary" (Negative beats Out of stock).
+  function cats(r){
+    var st = String(r.status||''), soh = num(r.soh), dsc = num(r.dsc), dros = num(r.dros), active = (st==='04');
+    var out = [];
+    if (soh < 0) out.push('negative');                                     // any status — count to fix
+    if (active && soh <= 0) out.push('oos');                               // shelf empty (incl. negatives)
+    if (active && soh > 0 && isPhantomStale(r)) out.push('phantom');       // stock but no recent sale
+    if (active && soh > 0 && dsc <= 14 && dros > 0) out.push('low_cover'); // low but still selling
+    if (!active && soh > 0 && DISC[st]) out.push('discontinued');          // inactive but holding stock
+    return out;                                                            // priority order (negative first)
   }
+  function classify(r){ var c = cats(r); return c.length ? c[0] : null; }  // primary tag, or null
 
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
@@ -236,7 +239,7 @@
     { key:'negative', label:'Negative SOH', cta:'Negative on-hand — count needed',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(a.soh)-num(b.soh);} },
-    { key:'discontinued', label:'Discontinued', cta:'Discontinued — clear / return stock',
+    { key:'discontinued', label:'Discontinued', cta:'',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(b.soh)-num(a.soh);} }
   ];
@@ -270,7 +273,7 @@
   function rebuild(){
     var pool = state.client ? ALL.filter(function(r){return r.vendor===state.client;}) : ALL;
     buckets = {oos:[],low_cover:[],phantom:[],negative:[],discontinued:[]};
-    pool.forEach(function(r){ var k=classify(r); if(k) buckets[k].push(r); });
+    pool.forEach(function(r){ cats(r).forEach(function(k){ buckets[k].push(r); }); });
     viewAll = pool.slice();
   }
   function outstanding(key){ var a=buckets[key]||[], n=0; for(var i=0;i<a.length;i++){ if(!done.has(keyOf(a[i]))) n++; } return n; }
@@ -324,16 +327,26 @@
       cell('Supply', esc(r.supply||'—')) +
     '</div>';
   }
+  // In an action list: chips for the item's OTHER lists ("+ Negative SOH").
+  // In All products: chips for every list the item is in (or "No action").
+  function catBadges(r, currentKey){
+    var cs = cats(r);
+    if(currentKey){
+      return cs.filter(function(k){return k!==currentKey;})
+               .map(function(k){ return '<span class="badge red">+ '+esc(CAT[k].label)+'</span>'; }).join('');
+    }
+    return cs.length ? cs.map(function(k){ return '<span class="badge red">'+esc(CAT[k].label)+'</span>'; }).join('')
+                     : '<span class="badge grey">No action</span>';
+  }
   function rowHTML(r, cfg, opts){
     opts = opts || {};
     var id=keyOf(r), isDone=done.has(id), isOpen=(state.open===id);
-    var cat=classify(r);
-    var ctaText = opts.allView ? (cat?CAT[cat].cta:'') : cfg.cta;
-    var badge='';
-    if(opts.showBadge){ badge = cat ? '<span class="badge red">'+esc(CAT[cat].label)+'</span>' : '<span class="badge grey">No action</span>'; }
+    var primary=classify(r);
+    var ctaText = opts.allView ? (primary?CAT[primary].cta:'') : cfg.cta;
+    var badges = catBadges(r, opts.allView ? null : cfg.key);
     var d2 = '<div class="d2">'+
         (r.id?('<span>#'+esc(r.id)+'</span>'):'') + barcodeBit(r) +
-        (r.vendor?('<span class="vend">'+esc(r.vendor)+'</span>'):'') + badge +
+        (r.vendor?('<span class="vend">'+esc(r.vendor)+'</span>'):'') + badges +
       '</div>';
     var detail = isOpen ? ('<div class="detail">'+
         (ctaText?('<div class="cta">'+ICO_ALERT+esc(ctaText)+'</div>'):'')+ detailGrid(r) +'</div>') : '';
@@ -374,7 +387,7 @@
       var rows=sortRows(filterRows(viewAll),ALLCFG);
       headEl.textContent=ALLCFG.head;
       cntEl.textContent=rows.length+' product'+(rows.length===1?'':'s');
-      list.innerHTML = rows.length ? rows.map(function(r){return rowHTML(r,ALLCFG,{showBadge:true,allView:true});}).join('')
+      list.innerHTML = rows.length ? rows.map(function(r){return rowHTML(r,ALLCFG,{allView:true});}).join('')
         : '<div class="empty"><div class="big">No products</div>No items for this client.</div>';
       return;
     }
@@ -410,13 +423,13 @@
   // ---- Glossary ----
   function renderGlossary(){
     var items=[
-      {t:'Out of stock', d:'Active line (status 04) with on-hand 0 — shelf is empty. Raise an order. Listed by lost sales per day.'},
-      {t:'Low cover', d:'Active line with on-hand &gt; 0 and days cover &le; 14 — about to run out. Reorder.'},
+      {t:'Out of stock', d:'Active line (status 04) with on-hand at or below 0 — shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
+      {t:'Low cover', d:'Active line with on-hand &gt; 0, days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. New lines that have never sold are excluded.'},
       {t:'Phantom', d:'Active line with on-hand &gt; 0 but no sale in 60+ days (1900 dates ignored). The system shows stock that may not be on the shelf — verify with a physical count.'},
-      {t:'Negative SOH', d:'On-hand below 0 on any status — an impossible figure. Needs a physical count to correct.'},
+      {t:'Negative SOH', d:'On-hand below 0 on any status — an impossible figure. A rep counts the shelf to correct the system. Takes priority over Out of stock.'},
       {t:'Discontinued', d:'Non-active line (status 72, 07, 71, 70, 06, 60, 61, 08) still holding stock — clear or return it.'}
     ];
-    var html='<p class="gnote">Each article appears in <b>one</b> list only, so nothing is counted twice. When two rules both apply, this priority decides: <b>Negative &rarr; Out of stock &rarr; Phantom &rarr; Low cover &rarr; Discontinued</b>. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
+    var html='<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
     html += items.map(function(g){
       return '<div class="gitem"><div class="gt"><span class="gdot" style="background:var(--red)"></span>'+g.t+'</div><div class="gd">'+g.d+'</div></div>';
     }).join('');
