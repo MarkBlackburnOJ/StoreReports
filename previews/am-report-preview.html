@@ -114,6 +114,7 @@
 (function(){
   var D; try{ D=JSON.parse(document.getElementById('payload').textContent); }catch(e){ document.getElementById('pane').innerHTML='<p>Could not load data.</p>'; return; }
   var meta=D.meta||{}, KSC=D.KSC||[], KPS=D.KPS||[], SITES=D.sites||[], CLIENT_N=D.clients||[], PROD=D.products||[], SC=D.sc||[], PS=D.ps||[], PORT=D.port||{c:[],p:[],w:[]};
+  var CLIENT_MODE=meta.client||'';   // single-client report: payload pre-filtered to one client
   function objSC(a){ a=a||[]; var o={}; for(var i=0;i<KSC.length;i++) o[KSC[i]]=a[i]||0; return o; }
   function objPS(a){ a=a||[]; var o={}; for(var i=0;i<KPS.length;i++) o[KPS[i]]=a[i]||0; return o; }
 
@@ -121,6 +122,7 @@
   var KLAB={oos:'Out of stock',low:'Low Stock Cover',phantom:'Phantom',neg:'Negative SOH',disc:'Discontinued with SOH'};
   var TABS=[{id:'overview',t:'Overview'},{id:'clients',t:'By Client'},{id:'sites',t:'By Site'},{id:'products',t:'By Product'},
             {id:'k_oos',t:'Out of stock',k:'oos'},{id:'k_low',t:'Low Stock Cover',k:'low'},{id:'k_phantom',t:'Phantom',k:'phantom'},{id:'k_neg',t:'Negative SOH',k:'neg'},{id:'k_disc',t:'Discontinued with SOH',k:'disc'}];
+  if(CLIENT_MODE) TABS=TABS.filter(function(t){return t.id!=='clients';});   // single client: no By-Client tab
 
   function nf(x){ return (x==null?0:Math.round(x)).toLocaleString('en-ZA'); }
   function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -185,7 +187,12 @@
   }
 
   // ---------- header / filters (once) ----------
-  document.getElementById('meta').textContent=[meta.sites+' sites',meta.clients+' clients',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)].join('  ·  ');
+  if(CLIENT_MODE){
+    document.querySelector('header h1').textContent=CLIENT_MODE;
+    document.querySelector('header .eyebrow').textContent='Account Manager · Client Report';
+    var fcl=document.getElementById('fClient'); if(fcl&&fcl.parentNode) fcl.parentNode.style.display='none';
+  }
+  document.getElementById('meta').textContent=(CLIENT_MODE?[meta.sites+' sites',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]:[meta.sites+' sites',meta.clients+' clients',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]).join('  ·  ');
   document.getElementById('footer').textContent=['Generated '+(meta.generated||''),nf(objSC(PORT.c).active)+' active lines','lower is better on every KPI','ARIA'].join('  ·  ');
   document.getElementById('tabs').innerHTML=TABS.map(function(tb){return '<button class="tab'+(tb.id==='overview'?' active':'')+'" data-tab="'+tb.id+'">'+esc(tb.t)+'</button>';}).join('');
   var countries=Array.from(new Set(SITES.map(function(s){return s[4];}))).filter(Boolean).sort();
@@ -268,8 +275,10 @@
     var el=document.createElement('div'); el.innerHTML='<div class="h2">Portfolio KPIs <span class="sub">'+esc(CX.label)+'</span></div>'+w+'<div style="height:12px"></div>'+cardsHTML(s)+ctxHTML(s);
     el.appendChild(elH2('Most affected provinces','by items to action'));
     el.appendChild(table(CX.province.slice(), namedCols('Province'), {sort:colIndex(namedCols('Province'),'To action'),limit:MOST}));
-    el.appendChild(elH2('Most affected clients','by items to action'));
-    el.appendChild(table(CX.clients.slice(), namedCols('Client account'), {sort:colIndex(namedCols('Client account'),'To action'),limit:MOST}));
+    if(!CLIENT_MODE){
+      el.appendChild(elH2('Most affected clients','by items to action'));
+      el.appendChild(table(CX.clients.slice(), namedCols('Client account'), {sort:colIndex(namedCols('Client account'),'To action'),limit:MOST}));
+    }
     el.appendChild(elH2('Most affected sites','by items to action'));
     el.appendChild(table(CX.sites.slice(), siteCols(), {sort:colIndex(siteCols(),'To action'),limit:MOST}));
     el.appendChild(elH2('Most affected products','by out of stock'));
