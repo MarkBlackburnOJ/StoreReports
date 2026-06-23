@@ -231,7 +231,7 @@
     { key:'oos', label:'Out of stock', cta:'Out of stock — order needed',
       metric:function(r){return num(r.dros).toFixed(2);}, unit:'/day', head:'Lost / day',
       cmp:function(a,b){return num(b.dros)-num(a.dros);} },
-    { key:'low_cover', label:'Low cover', cta:'Stock running low — order needed',
+    { key:'low_cover', label:'Low Stock Cover', cta:'Stock running low — order needed',
       metric:function(r){return num(r.dsc).toFixed(1);}, unit:'days', head:'Days cover',
       cmp:function(a,b){return num(a.dsc)-num(b.dsc);} },
     { key:'phantom', label:'Phantom', cta:'Missing stock — verify count',
@@ -240,7 +240,7 @@
     { key:'negative', label:'Negative SOH', cta:'Negative on-hand — count needed',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(a.soh)-num(b.soh);} },
-    { key:'discontinued', label:'Discontinued', cta:'',
+    { key:'discontinued', label:'Discontinued with SOH', cta:'',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(b.soh)-num(a.soh);} }
   ];
@@ -433,10 +433,10 @@
   function renderGlossary(){
     var items=[
       {t:'Out of stock', c:'var(--red)', d:'Active line (status 04) with on-hand at or below 0 — shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
-      {t:'Low cover', c:'var(--red)', d:'Active line with days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. An out-of-stock line that&rsquo;s still selling appears here and under Out of stock.'},
+      {t:'Low Stock Cover', c:'var(--red)', d:'Active line with days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. An out-of-stock line that&rsquo;s still selling appears here and under Out of stock.'},
       {t:'Phantom', c:'var(--red)', d:'Active line with on-hand &gt; 0 but no sale in 60+ days (1900 dates ignored). The system shows stock that may not be on the shelf — verify with a physical count.'},
       {t:'Negative SOH', c:'var(--red)', d:'On-hand below 0 on any status — an impossible figure. A rep counts the shelf to correct the system. Takes priority over Out of stock.'},
-      {t:'Discontinued', c:'var(--red)', d:'Non-active line (status 72, 07, 71, 70, 06, 60, 61, 08) still holding stock — clear or return it.'},
+      {t:'Discontinued with SOH', c:'var(--red)', d:'Non-active line (status 72, 07, 71, 70, 06, 60, 61, 08) still holding stock — clear or return it.'},
       {t:'New', c:'var(--blue)', d:'Active line with stock, received in the last 30 days and not yet sold — a new line to get onto the shelf and selling. An indicator, not an action list.'}
     ];
     var html='<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
