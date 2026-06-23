@@ -47,7 +47,8 @@
   .kcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
   .kcard{border:.5px solid var(--line);border-left-width:4px;border-left-style:solid;border-radius:12px;padding:13px 15px;background:var(--card);}
   .kcard .kl{font-size:12px;color:var(--mute);font-weight:600;}
-  .kcard .kv{font-size:29px;font-weight:700;line-height:1;margin:6px 0 9px;letter-spacing:-.01em;}
+  .kcard .kv{font-size:29px;font-weight:700;line-height:1;margin:6px 0 3px;letter-spacing:-.01em;}
+  .kcard .kpct{font-size:11.5px;font-weight:600;color:var(--mute);margin:0 0 9px;}
   .kcard.green{border-left-color:var(--green);background:var(--green-tint);} .kcard.green .kv{color:var(--green-deep);}
   .kcard.amber{border-left-color:var(--amber);background:var(--amber-tint);} .kcard.amber .kv{color:var(--amber-deep);}
   .kcard.red{border-left-color:var(--red);background:var(--red-tint);} .kcard.red .kv{color:var(--red-deep);}
@@ -212,7 +213,9 @@
   // ---------- cards ----------
   function cardHTML(src,key,label){
     var c=src.cur[key]||0,p=src.prev[key]||0,w=src.wk[key]||0,cls=colr(c,p,w);
+    var base=src.cur.base||0, pct=base>0?Math.round(c/base*100):0;
     return '<div class="kcard '+cls+'"><div class="kl">'+esc(label)+'</div><div class="kv">'+nf(c)+'</div>'+
+      '<div class="kpct">'+pct+'% of base</div>'+
       '<div class="dl"><span class="dk">Yesterday</span><span><span class="dv">'+nf(p)+'</span>'+arrow(c,p)+'</span></div>'+
       '<div class="dl"><span class="dk">Last week</span><span><span class="dv">'+nf(w)+'</span>'+arrow(c,w)+'</span></div></div>';
   }
@@ -322,6 +325,7 @@
 
   document.getElementById('glossaryBody').innerHTML=[
     ['Colours (lower is better)','Each KPI is a count of problems, so fewer is better. We compare today with yesterday and with the same day last week. Green = today is lower than both (or already zero); amber = lower than one; red = lower than neither. The same logic colours both the cards and every KPI number in the tables.'],
+    ['% of base','The base is every site-article combination in scope — all statuses, the full range. Each card shows the KPI as a share of that base, so the count has context (e.g. 2% of the range is out of stock). It re-computes as you filter, and each client report uses that client’s base.'],
     ['Out of stock','Active line (status 04) with on-hand at or below 0. Units/day lost = the rate of sale across those empty lines.'],
     ['Low Stock Cover','Active line, days cover ≤ 14 and still selling — about to run out.'],
     ['Phantom','Active line with stock but no sale in 60+ days — likely not on the shelf.'],
