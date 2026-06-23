@@ -46,9 +46,16 @@
 
   .kcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
   .kcard{border:.5px solid var(--line);border-left-width:4px;border-left-style:solid;border-radius:12px;padding:13px 15px;background:var(--card);}
+  .kcard .ktop{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
   .kcard .kl{font-size:12px;color:var(--mute);font-weight:600;}
-  .kcard .kv{font-size:29px;font-weight:700;line-height:1;margin:6px 0 3px;letter-spacing:-.01em;}
-  .kcard .kpct{font-size:11.5px;font-weight:600;color:var(--mute);margin:0 0 9px;}
+  .kcard .info{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--mute);font-size:11px;font-weight:700;line-height:16px;text-align:center;cursor:pointer;padding:0;font-family:inherit;}
+  .kcard .info:hover{color:var(--blue);border-color:var(--blue);}
+  .kcard .kv{font-size:29px;font-weight:700;line-height:1;margin:6px 0 5px;letter-spacing:-.01em;}
+  /* % of base — its own colour scale (green <3%, amber <5%, else red), bordered so it shows on a same-colour card */
+  .kpct{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid;margin:0 0 9px;}
+  .kpct.green{background:var(--green-tint);color:var(--green-text);border-color:var(--green);}
+  .kpct.amber{background:var(--amber-tint);color:var(--amber-deep);border-color:var(--amber);}
+  .kpct.red{background:var(--red-tint);color:var(--red-text);border-color:var(--red);}
   .kcard.green{border-left-color:var(--green);background:var(--green-tint);} .kcard.green .kv{color:var(--green-deep);}
   .kcard.amber{border-left-color:var(--amber);background:var(--amber-tint);} .kcard.amber .kv{color:var(--amber-deep);}
   .kcard.red{border-left-color:var(--red);background:var(--red-tint);} .kcard.red .kv{color:var(--red-deep);}
@@ -108,6 +115,10 @@
 <div class="overlay" id="glossary" hidden>
   <div class="sheet"><h3>How these are calculated <button class="iclose" id="glossaryClose" type="button">&#10005;</button></h3>
   <div class="sheetbody" id="glossaryBody"></div></div>
+</div>
+<div class="overlay" id="cardInfo" hidden>
+  <div class="sheet"><h3><span id="cardInfoTitle">—</span><button class="iclose" id="cardInfoClose" type="button">&#10005;</button></h3>
+  <div class="sheetbody" id="cardInfoBody"></div></div>
 </div>
 
 <script id="payload" type="application/json">__PAYLOAD__</script>
@@ -211,11 +222,15 @@
   document.getElementById('fClient').innerHTML='<option value="">All clients</option>'+cnames.map(function(c){return '<option>'+esc(c)+'</option>';}).join('');
 
   // ---------- cards ----------
+  // % of base has its OWN colour scale (independent of the day-to-day trend colour): green <3%, amber <5%, else red.
+  function pctClr(p){ return p<3?'green':p<5?'amber':'red'; }
   function cardHTML(src,key,label){
     var c=src.cur[key]||0,p=src.prev[key]||0,w=src.wk[key]||0,cls=colr(c,p,w);
     var base=src.cur.base||0, pct=base>0?Math.round(c/base*100):0;
-    return '<div class="kcard '+cls+'"><div class="kl">'+esc(label)+'</div><div class="kv">'+nf(c)+'</div>'+
-      '<div class="kpct">'+pct+'% of base</div>'+
+    return '<div class="kcard '+cls+'"><div class="ktop"><span class="kl">'+esc(label)+'</span>'+
+      '<button class="info" type="button" data-k="'+key+'" aria-label="What is this?" title="What is this?">i</button></div>'+
+      '<div class="kv">'+nf(c)+'</div>'+
+      '<div class="kpct '+pctClr(pct)+'">'+pct+'% of base</div>'+
       '<div class="dl"><span class="dk">Yesterday</span><span><span class="dv">'+nf(p)+'</span>'+arrow(c,p)+'</span></div>'+
       '<div class="dl"><span class="dk">Last week</span><span><span class="dv">'+nf(w)+'</span>'+arrow(c,w)+'</span></div></div>';
   }
@@ -223,7 +238,8 @@
   function ctxHTML(src){
     return '<div class="ctxline"><b>'+nf(src.cur.action)+'</b> items to action '+arrow(src.cur.action,src.prev.action)+' vs yest, '+arrow(src.cur.action,src.wk.action)+' vs last wk'+
       ' &nbsp;&middot;&nbsp; <b>~'+nf(src.cur.lost)+'</b> units/day lost '+arrow(src.cur.lost,src.prev.lost)+
-      ' &nbsp;&middot;&nbsp; <b>'+nf(src.cur.active)+'</b> active lines &nbsp;&middot;&nbsp; <b>'+nf(src.cur.sites)+'</b> sites</div>';
+      ' &nbsp;&middot;&nbsp; <b>'+nf(src.cur.active)+'</b> active lines &nbsp;&middot;&nbsp; <b>'+nf(src.cur.sites)+'</b> sites'+
+      ' &nbsp;&middot;&nbsp; base <b>'+nf(src.cur.base)+'</b> site-article lines</div>';
   }
 
   // ---------- generic table ----------
@@ -274,7 +290,11 @@
       '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> = better than one of them, '+
       '<span class="sw" style="background:var(--red)"></span><b>Red</b> = better than neither (worse or flat on both). '+
       'The card shows today big, with yesterday and last week underneath and the change (▼ fewer is good, ▲ more is bad). The same colours run down every KPI column in the tables. '+
-      'The <b>filters</b> above (Country · Site profile · Province · Client) re-slice everything — cards and all four tables — live. Country defaults to South Africa.</div>';
+      'The <b>filters</b> above (Country · Site profile · Province · Client) re-slice everything — cards and all four tables — live. Country defaults to South Africa.'+
+      '<br><br><b>The “% of base” pill</b> has its <b>own</b> colour scale (separate from the trend colour): it shows the KPI as a share of the full range — every site-article combination in scope (all statuses), shown as the <b>base</b> count on the line below the cards. '+
+      '<span class="sw" style="background:var(--green)"></span><b>Green</b> under 3%, '+
+      '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> 3–5%, '+
+      '<span class="sw" style="background:var(--red)"></span><b>Red</b> 5%+ — so you can see which problems touch a large slice of the range, regardless of the day-to-day trend. Tap the <b>i</b> on any card for what it means. </div>';
     var el=document.createElement('div'); el.innerHTML='<div class="h2">Portfolio KPIs <span class="sub">'+esc(CX.label)+'</span></div>'+w+'<div style="height:12px"></div>'+cardsHTML(s)+ctxHTML(s);
     el.appendChild(elH2('Most affected provinces','by items to action'));
     el.appendChild(table(CX.province.slice(), namedCols('Province'), {sort:colIndex(namedCols('Province'),'To action'),limit:MOST}));
@@ -338,6 +358,25 @@
   document.getElementById('glossaryBtn').addEventListener('click',function(){document.getElementById('glossary').hidden=false;});
   document.getElementById('glossaryClose').addEventListener('click',function(){document.getElementById('glossary').hidden=true;});
   document.getElementById('glossary').addEventListener('click',function(e){if(e.target.id==='glossary')e.target.hidden=true;});
+
+  // ---------- per-card info button ----------
+  var KINFO={
+    oos:'<b>What it counts.</b> Active lines (status 04) where on-hand is 0 or below — the shelf is empty but the line is still expected to sell. <b>The big number</b> is how many site-article lines are out of stock right now; the <b>% of base</b> is that as a share of the full range; <b>units/day lost</b> (on the line below the cards) is the rate of sale being missed. <b>Act:</b> get stock back on the shelf / raise an order.',
+    low:'<b>What it counts.</b> Active lines with 14 days of cover or less that are still selling — about to run out. The <b>%</b> shows how much of the range is at risk of going empty. <b>Act:</b> replenish before they hit zero.',
+    phantom:'<b>What it counts.</b> Active lines that show stock on the system but have not sold in 60+ days — usually the stock is not really on the shelf (lost, misplaced or miscounted). <b>Act:</b> physically check the shelf and correct the on-hand.',
+    neg:'<b>What it counts.</b> Lines with on-hand below 0 — an impossible figure, so a system or count error. <b>Act:</b> a rep counts the shelf so the figure can be corrected.',
+    disc:'<b>What it counts.</b> Lines that are no longer active (discontinued) but still holding stock — capital tied up in dead range. The <b>%</b> shows how much of the range is dead stock. <b>Act:</b> clear or return it.'
+  };
+  document.getElementById('pane').addEventListener('click',function(e){
+    var b=e.target.closest('.info'); if(!b) return;
+    var k=b.getAttribute('data-k');
+    document.getElementById('cardInfoTitle').textContent=KLAB[k]||'KPI';
+    document.getElementById('cardInfoBody').innerHTML='<div class="gitem"><p>'+(KINFO[k]||'')+'</p></div>'+
+      '<div class="gitem"><b>Reading the colours</b><p>The left bar &amp; background show the <b>trend</b> — green = better than yesterday <i>and</i> last week (or zero), amber = better than one, red = neither. The <b>% of base</b> pill has its <b>own</b> scale — green under 3%, amber 3–5%, red 5%+ — so a card can be improving (green trend) yet still touch a large share of the range (red %). They are independent signals.</p></div>';
+    document.getElementById('cardInfo').hidden=false;
+  });
+  document.getElementById('cardInfoClose').addEventListener('click',function(){document.getElementById('cardInfo').hidden=true;});
+  document.getElementById('cardInfo').addEventListener('click',function(e){if(e.target.id==='cardInfo')e.target.hidden=true;});
 
   render();
 })();
