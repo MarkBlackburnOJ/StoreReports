@@ -43,6 +43,7 @@
 
   .writeup{background:var(--blue-tint);border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.6;color:var(--ink);}
   .writeup b{font-weight:700;} .writeup .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 2px;}
+  .note{background:var(--amber-tint);border:.5px solid #EBD9A8;border-radius:9px;padding:9px 13px;font-size:12.5px;color:var(--amber-deep);margin:0 0 10px;line-height:1.5;}
 
   .kcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
   .kcard{border:.5px solid var(--line);border-left-width:4px;border-left-style:solid;border-radius:12px;padding:13px 15px;background:var(--card);}
@@ -56,6 +57,11 @@
   .kpct.green{background:var(--green-tint);color:var(--green-text);border-color:var(--green);}
   .kpct.amber{background:var(--amber-tint);color:var(--amber-deep);border-color:var(--amber);}
   .kpct.red{background:var(--red-tint);color:var(--red-text);border-color:var(--red);}
+  /* small colour reminder shown above every table */
+  .tlegend{font-size:10.5px;color:var(--mute-2);margin:0 0 7px;line-height:1.5;}
+  .tlegend .ld{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:-1px;margin:0 3px 0 9px;}
+  .tlegend .ld:first-child{margin-left:0;}
+  .tlegend .ld.green{background:var(--green);} .tlegend .ld.amber{background:var(--amber);} .tlegend .ld.red{background:var(--red);}
   .kcard.green{border-left-color:var(--green);background:var(--green-tint);} .kcard.green .kv{color:var(--green-deep);}
   .kcard.amber{border-left-color:var(--amber);background:var(--amber-tint);} .kcard.amber .kv{color:var(--amber-deep);}
   .kcard.red{border-left-color:var(--red);background:var(--red-tint);} .kcard.red .kv{color:var(--red-deep);}
@@ -132,7 +138,7 @@
 
   var KPIS=[['oos','Out of stock'],['low','Low Stock Cover'],['phantom','Phantom'],['neg','Negative SOH'],['disc','Discontinued with SOH']];
   var KLAB={oos:'Out of stock',low:'Low Stock Cover',phantom:'Phantom',neg:'Negative SOH',disc:'Discontinued with SOH'};
-  var TABS=[{id:'overview',t:'Overview'},{id:'clients',t:'By Client'},{id:'sites',t:'By Site'},{id:'products',t:'By Product'},
+  var TABS=[{id:'overview',t:'Overview'},{id:'clients',t:'By Client'},{id:'sites',t:'By Site'},{id:'products',t:'By Product'},{id:'siteproduct',t:'Site × Product'},
             {id:'k_oos',t:'Out of stock',k:'oos'},{id:'k_low',t:'Low Stock Cover',k:'low'},{id:'k_phantom',t:'Phantom',k:'phantom'},{id:'k_neg',t:'Negative SOH',k:'neg'},{id:'k_disc',t:'Discontinued with SOH',k:'disc'}];
   if(CLIENT_MODE) TABS=TABS.filter(function(t){return t.id!=='clients';});   // single client: no By-Client tab
 
@@ -177,6 +183,10 @@
     var by={}; rows.forEach(function(r){ var pv=SITES[r[0]][3]||'—'; (by[pv]=by[pv]||[]).push(r); });
     return Object.keys(by).map(function(k){ var g=sumSC(by[k]); return {name:k,cur:g.cur,prev:g.prev,wk:g.wk}; });
   }
+  function rollupProfile(rows){
+    var by={}; rows.forEach(function(r){ var pf=SITES[r[0]][2]||'—'; (by[pf]=by[pf]||[]).push(r); });
+    return Object.keys(by).map(function(k){ var g=sumSC(by[k]); return {name:k,cur:g.cur,prev:g.prev,wk:g.wk}; });
+  }
   function rollupSites(rows){
     var by={}; rows.forEach(function(r){ (by[r[0]]=by[r[0]]||[]).push(r); });
     return Object.keys(by).map(function(k){ var s=SITES[k],g=sumSC(by[k]); return {code:s[0],name:s[1],profile:s[2],province:s[3],cur:g.cur,prev:g.prev,wk:g.wk}; });
@@ -195,7 +205,7 @@
   var CX={};
   function context(){
     var scR=filteredSC(), agg=sumSC(scR);
-    return {agg:agg, province:rollupProvince(scR), clients:rollupClients(scR), sites:rollupSites(scR), products:rollupProducts(filteredPS()), label:lensLabel(agg.cur.sites)};
+    return {agg:agg, province:rollupProvince(scR), profile:rollupProfile(scR), clients:rollupClients(scR), sites:rollupSites(scR), products:rollupProducts(filteredPS()), label:lensLabel(agg.cur.sites)};
   }
 
   // ---------- header / filters (once) ----------
@@ -248,8 +258,9 @@
   function lostCol(lbl){ return {label:lbl||'Units/day lost',get:function(e){return nf(e.cur.lost)+arrow(e.cur.lost,e.prev.lost);},sort:function(e){return e.cur.lost;}}; }
   function table(rows, cols, opts){
     opts=opts||{}; var st={sort:opts.sort,asc:false,q:''};
+    var legend='<div class="tlegend"><b>Colours</b> (per KPI cell, lower is better): <span class="ld green"></span>better than yesterday &amp; last week (or 0) <span class="ld amber"></span>better than one <span class="ld red"></span>neither</div>';
     var tools=opts.search?'<div class="toolbar"><label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A929D" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input type="search" placeholder="'+esc(opts.search)+'"></label><span class="count"></span></div>':'';
-    var html=tools+'<div class="tbl-scroll"><table><thead><tr>'+cols.map(function(c,i){return '<th class="'+(c.l?'l':'')+'" data-i="'+i+'">'+esc(c.label)+'</th>';}).join('')+'</tr></thead><tbody></tbody></table></div>';
+    var html=legend+tools+'<div class="tbl-scroll"><table><thead><tr>'+cols.map(function(c,i){return '<th class="'+(c.l?'l':'')+'" data-i="'+i+'">'+esc(c.label)+'</th>';}).join('')+'</tr></thead><tbody></tbody></table></div>';
     var box=document.createElement('div'); box.innerHTML=html;
     var tbody=box.querySelector('tbody'), thead=box.querySelector('thead'), cnt=box.querySelector('.count'), se=box.querySelector('.search input');
     function draw(){
@@ -298,6 +309,8 @@
     var el=document.createElement('div'); el.innerHTML='<div class="h2">Portfolio KPIs <span class="sub">'+esc(CX.label)+'</span></div>'+w+'<div style="height:12px"></div>'+cardsHTML(s)+ctxHTML(s);
     el.appendChild(elH2('Most affected provinces','by items to action'));
     el.appendChild(table(CX.province.slice(), namedCols('Province'), {sort:colIndex(namedCols('Province'),'To action'),limit:MOST}));
+    el.appendChild(elH2('Most affected site profiles','by items to action'));
+    el.appendChild(table(CX.profile.slice(), namedCols('Site profile'), {sort:colIndex(namedCols('Site profile'),'To action'),limit:MOST}));
     if(!CLIENT_MODE){
       el.appendChild(elH2('Most affected clients','by items to action'));
       el.appendChild(table(CX.clients.slice(), namedCols('Client account'), {sort:colIndex(namedCols('Client account'),'To action'),limit:MOST}));
@@ -311,6 +324,25 @@
   function paneClients(){ var el=document.createElement('div'); el.appendChild(elH2('Clients','('+CX.clients.length+')')); el.appendChild(table(CX.clients.slice(),namedCols('Client account'),{sort:colIndex(namedCols('Client account'),'To action'),search:'Search client',searchKeys:['name']})); return el; }
   function paneSites(){ var el=document.createElement('div'); el.appendChild(elH2('Sites','('+CX.sites.length+')')); el.appendChild(table(CX.sites.slice(),siteCols(),{sort:colIndex(siteCols(),'To action'),search:'Search site code or name',searchKeys:['code','name']})); return el; }
   function paneProducts(){ var el=document.createElement('div'); el.appendChild(elH2('Products','('+CX.products.length+' flagged)')); el.appendChild(table(CX.products.slice(),productCols(),{sort:colIndex(productCols(),'OOS'),search:'Search article or description',searchKeys:['code','name']})); return el; }
+  // every flagged site × article line (the PRODUCTSITE grain). Built lazily — only when this tab is open.
+  function spCols(){ return [
+    {label:'Site',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span> <span class="nm2">'+esc(e.name)+'</span>';},sort:function(e){return e.code;}},
+    {label:'Province',l:true,get:function(e){return '<span class="nm2">'+esc(e.province||'—')+'</span>';},sort:function(e){return e.province||'';}},
+    {label:'Profile',l:true,get:function(e){return '<span class="pill">'+esc(e.profile)+'</span>';},sort:function(e){return e.profile;}},
+    {label:'Article',l:true,get:function(e){return '<span class="code">'+esc(e.article)+'</span>';},sort:function(e){return e.article;}},
+    {label:'Description',l:true,get:function(e){return esc(e.desc);},sort:function(e){return e.desc;}}
+  ].concat(KPICOLS,[{label:'Units/day',get:function(e){return nf(e.cur.lost);},sort:function(e){return e.cur.lost;}}]); }
+  var SP_LIMIT=2000;  // cap painted rows on the full report; search/filters reach the rest
+  function paneSiteProduct(){
+    var rows=filteredPS().map(function(r){ var s=SITES[r[0]],pr=PROD[r[1]]; return {code:s[0],name:s[1],profile:s[2],province:s[3],article:pr[0],desc:pr[1],cur:objPS(r[3]),prev:objPS(r[4]),wk:objPS(r[5])}; });
+    var el=document.createElement('div');
+    el.appendChild(elH2('Site × Product','('+nf(rows.length)+' flagged lines)'));
+    var note=document.createElement('div'); note.className='note';
+    note.innerHTML='Every flagged site-article line in scope. '+(rows.length>SP_LIMIT?'Showing the top '+SP_LIMIT+' by units/day lost — <b>narrow with the filters above or the search</b> to see the rest.':'')+' Use the filters (Country · Profile · Province · Client) and column sort to drill in.';
+    el.appendChild(note);
+    el.appendChild(table(rows,spCols(),{sort:colIndex(spCols(),'Units/day'),limit:SP_LIMIT,search:'Search site code, name or article',searchKeys:['code','name','article','desc']}));
+    return el;
+  }
   function paneKpi(key){
     var el=document.createElement('div');
     el.innerHTML='<div class="h2">'+esc(KLAB[key])+' <span class="sub">'+esc(CX.label)+'</span></div><div class="kcards">'+cardHTML(CX.agg,key,KLAB[key])+'</div>';
@@ -331,7 +363,7 @@
   function render(){
     CX=context();
     var tb=TABS.filter(function(x){return x.id===state.tab;})[0]||TABS[0];
-    var node = tb.k?paneKpi(tb.k):(tb.id==='overview'?paneOverview():tb.id==='clients'?paneClients():tb.id==='sites'?paneSites():paneProducts());
+    var node = tb.k?paneKpi(tb.k):(tb.id==='overview'?paneOverview():tb.id==='clients'?paneClients():tb.id==='sites'?paneSites():tb.id==='siteproduct'?paneSiteProduct():paneProducts());
     var pane=document.getElementById('pane'); pane.innerHTML=''; pane.appendChild(node);
     document.getElementById('lens').textContent=CX.label;
   }
