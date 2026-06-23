@@ -1052,7 +1052,7 @@ footer .brand {
       </div>
       <div class="hero-stat warn">
         <div class="v" id="kpi-low">0</div>
-        <div class="label"><svg class="icon"><use href="#i-hourglass"/></svg>Low cover &lt;14d</div>
+        <div class="label"><svg class="icon"><use href="#i-hourglass"/></svg>Low Stock Cover &lt;14d</div>
         <div class="sub" id="kpi-low-sub">—</div>
       </div>
     </div>
@@ -1124,7 +1124,7 @@ footer .brand {
       </button>
       <button class="tab" data-tab="low" role="tab" aria-selected="false">
         <svg class="icon"><use href="#i-hourglass"/></svg>
-        <span class="tab-label">Low cover</span>
+        <span class="tab-label">Low Stock Cover</span>
         <span class="tab-count" id="low-tab-count">0</span>
       </button>
     </div>
@@ -1415,7 +1415,7 @@ footer .brand {
     const C = 2 * Math.PI * r;
     const order = ['oos', 'phantom', 'low_cover'];
     const colors = { oos: 'var(--critical)', phantom: 'var(--phantom)', low_cover: 'var(--warning)' };
-    const labels = { oos: 'Out of stock', phantom: 'Possible phantom', low_cover: 'Low cover' };
+    const labels = { oos: 'Out of stock', phantom: 'Possible phantom', low_cover: 'Low Stock Cover' };
     let html = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--paper-2)" stroke-width="${sw}"/>`;
     let offset = 0;
     if (issues > 0) {
@@ -1477,10 +1477,10 @@ footer .brand {
     const map = {
       oos: { c: 'oos', i: 'x-octagon', l: 'OUT OF STOCK' },
       phantom: { c: 'phantom', i: 'ghost', l: 'POSSIBLE PHANTOM' },
-      low_cover: { c: 'low', i: 'hourglass', l: 'LOW COVER' },
+      low_cover: { c: 'low', i: 'hourglass', l: 'LOW STOCK COVER' },
       hot: { c: 'hot', i: 'flame', l: 'BEST SELLER' },
       healthy: { c: 'healthy', i: 'check-circle', l: 'HEALTHY' },
-      discontinued_stock: { c: 'disc', i: 'archive', l: 'DISC. STOCK' },
+      discontinued_stock: { c: 'disc', i: 'archive', l: 'DISCONTINUED W/ SOH' },
       inactive: { c: 'inactive', i: 'archive', l: 'INACTIVE' },
     };
     return tags.map(t => {
