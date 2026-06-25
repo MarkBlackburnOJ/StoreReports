@@ -41,7 +41,12 @@
   .h2:first-child{margin-top:2px;}
   .h2 .sub{font-weight:600;text-transform:none;letter-spacing:0;color:var(--mute-2);}
 
-  .writeup{background:var(--blue-tint);border-radius:12px;padding:14px 18px;font-size:13px;line-height:1.6;color:var(--ink);}
+  details.writeup{background:var(--blue-tint);border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink);}
+  details.writeup>summary{padding:12px 18px;font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;}
+  details.writeup>summary::-webkit-details-marker{display:none;}
+  details.writeup>summary::before{content:'\25B8';color:var(--blue);font-size:12px;}
+  details.writeup[open]>summary::before{content:'\25BE';}
+  .writeup-body{padding:0 18px 14px;}
   .writeup b{font-weight:700;} .writeup .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 2px;}
   .note{background:var(--amber-tint);border:.5px solid #EBD9A8;border-radius:9px;padding:9px 13px;font-size:12.5px;color:var(--amber-deep);margin:0 0 10px;line-height:1.5;}
 
@@ -296,7 +301,7 @@
   // ---------- panes ----------
   function paneOverview(){
     var s=CX.agg;
-    var w='<div class="writeup"><b>How to read this.</b> Every KPI is a problem count, so <b>lower is better</b>. Each card and each coloured number compares <b>today</b> with <b>yesterday</b> and with <b>this day last week</b>. '+
+    var w='<details class="writeup"><summary>How to read this</summary><div class="writeup-body">Every KPI is a problem count, so <b>lower is better</b>. Each card and each coloured number compares <b>today</b> with <b>yesterday</b> and with <b>this day last week</b>. '+
       '<span class="sw" style="background:var(--green)"></span><b>Green</b> = better than both (or already zero), '+
       '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> = better than one of them, '+
       '<span class="sw" style="background:var(--red)"></span><b>Red</b> = better than neither (worse or flat on both). '+
@@ -305,7 +310,7 @@
       '<br><br><b>The “% of base” pill</b> has its <b>own</b> colour scale (separate from the trend colour): it shows the KPI as a share of the full range — every site-article combination in scope (all statuses), shown as the <b>base</b> count on the line below the cards. '+
       '<span class="sw" style="background:var(--green)"></span><b>Green</b> under 3%, '+
       '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> 3–5%, '+
-      '<span class="sw" style="background:var(--red)"></span><b>Red</b> 5%+ — so you can see which problems touch a large slice of the range, regardless of the day-to-day trend. Tap the <b>i</b> on any card for what it means. </div>';
+      '<span class="sw" style="background:var(--red)"></span><b>Red</b> 5%+ — so you can see which problems touch a large slice of the range, regardless of the day-to-day trend. Tap the <b>i</b> on any card for what it means. </div></details>';
     var el=document.createElement('div'); el.innerHTML='<div class="h2">Portfolio KPIs <span class="sub">'+esc(CX.label)+'</span></div>'+w+'<div style="height:12px"></div>'+cardsHTML(s)+ctxHTML(s);
     el.appendChild(elH2('Most affected provinces','by items to action'));
     el.appendChild(table(CX.province.slice(), namedCols('Province'), {sort:colIndex(namedCols('Province'),'To action'),limit:MOST}));
