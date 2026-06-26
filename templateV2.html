@@ -69,7 +69,8 @@
   .row.ticking{background:var(--green-tint);}
   .row.ticking .d1{text-decoration:line-through;color:var(--mute);}
   .row.collapsing{opacity:0;overflow:hidden;transform:translateX(12px);transition:max-height .3s ease,opacity .3s ease,transform .3s ease;}
-  @media (prefers-reduced-motion:reduce){.chk,.chk::after,.row,.row.collapsing{transition:none;}}
+  /* Reduced motion: keep the green flash + fade/collapse, drop the bouncy pop and the slide. */
+  @media (prefers-reduced-motion:reduce){.chk::after{transition:none;} .row.collapsing{transform:none;}}
   .row .top{display:flex;align-items:center;gap:11px;padding:11px 14px;}
   .chk{appearance:none;-webkit-appearance:none;width:23px;height:23px;border:2px solid #C2C8D0;border-radius:6px;
     flex-shrink:0;cursor:pointer;position:relative;background:var(--card);margin:0;transition:background .16s ease,border-color .16s ease;}
@@ -483,8 +484,7 @@
     // Untick (from Completed) stays instant.
     if(!c.checked){ done.delete(id); persist(); renderCards(); renderList(); return; }
     var row=c.closest('.row');
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion:reduce)').matches;
-    if(reduce || !row){ commit(); return; }          // accessibility: no animation → commit now
+    if(!row){ commit(); return; }
     if(row.classList.contains('busy')) return;
     // Animate, THEN commit: tick pops + row flashes green + strikes through, then collapses into Completed.
     row.classList.add('busy','ticking');
