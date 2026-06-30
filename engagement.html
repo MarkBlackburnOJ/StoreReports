@@ -69,6 +69,9 @@
   .yes{color:var(--green);font-weight:700;}
   .no{color:var(--red);font-weight:700;}
   .dash{color:var(--soft);}
+  .role{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--line);color:var(--mute);white-space:nowrap;}
+  .role-field{background:var(--tint);color:var(--brand-d);border-color:var(--brand);}
+  .role-internal{color:var(--soft);}
   tbody tr:hover{background:#f8fafc;}
   .empty-row td{color:var(--soft);text-align:center;padding:22px;font-size:13px;}
 
@@ -99,6 +102,7 @@
     <div class="toolbar">
       <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
       <select id="dateFilter" aria-label="Filter by date sent"><option value="">All dates</option></select>
+      <span class="toggle" id="repsOnly"><span>Reps only</span></span>
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
       <span class="count" id="rowcount"></span>
     </div>
@@ -135,7 +139,7 @@ const DATA = __PAYLOAD__;
   const kpiHtml = [];
   const k = (v,l,s,cls) => kpiHtml.push(`<div class="kpi ${cls||''}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s||''}</div></div>`);
   k(pct(S.overall[0],S.overall[1])+'%','Opened overall',`${S.overall[0]} / ${S.overall[1]}`);
-  k(`${S.store[0]}<small> / ${S.store[1]}</small>`,'Store reports',pct(S.store[0],S.store[1])+'% opened');
+  const sr=S.storeRep||S.store; k(`${sr[0]}<small> / ${sr[1]}</small>`,'Reps opened',pct(sr[0],sr[1])+'% of stores');
   k(`${S.client[0]}<small> / ${S.client[1]}</small>`,'Client reports',pct(S.client[0],S.client[1])+'% opened');
   if(S.account[1]===0) k('&ndash;','Account report','not sent');
   else if(S.account[0]>0) k('&#10003;','Account report','opened','ok');
@@ -161,20 +165,20 @@ const DATA = __PAYLOAD__;
 
   // ---- tables ----
   const KINDS = [
-    {key:'store',  label:'Stores',  cols:['scope','rec','sent','opened','first','mins'], head:['Store','Recipient','Sent','Opened','First open','To open']},
-    {key:'client', label:'Clients', cols:['scope','rec','sent','opened','first'],         head:['Client','Recipient','Sent','Opened','First open']},
-    {key:'account',label:'Account', cols:['scope','sent','opened','first'],                head:['Report','Sent','Opened','First open']},
+    {key:'store',  label:'Stores',  cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
+    {key:'client', label:'Clients', cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
+    {key:'account',label:'Account', cols:['scope','sent','opened','first'],                       head:['Report','Sent','Opened','First open']},
   ];
-  // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins]
+  // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role]
   const rowsByKind = {store:[],client:[],account:[]};
   (DATA.reports||[]).forEach(r=>{
     (rowsByKind[r[0]]||(rowsByKind[r[0]]=[])).push({
       scope:r[1]||(r[0]==='account'?'Account portfolio':''), rec:r[2]||'', opened:r[3]===1,
-      sent:r[4]||'', first:r[5]||'', mins:r[6]
+      sent:r[4]||'', first:r[5]||'', mins:r[6], role:r[7]||''
     });
   });
 
-  let tab = KINDS[0].key, unopenedOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '';
+  let tab = KINDS[0].key, unopenedOnly = false, repsOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '';
 
   // Date-sent filter: distinct send dates (the "dd MMM" part of the Sent column), most recent first.
   const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
@@ -193,6 +197,7 @@ const DATA = __PAYLOAD__;
   function currentRows(){
     let rows = (rowsByKind[tab]||[]).slice();
     if(dateSel) rows = rows.filter(r=>dateOf(r.sent)===dateSel);
+    if(repsOnly) rows = rows.filter(r=>r.role==='field');
     if(unopenedOnly) rows = rows.filter(r=>!r.opened);
     if(query){ const q=query.toLowerCase(); rows = rows.filter(r=>(r.scope+' '+r.rec).toLowerCase().includes(q)); }
     if(sortCol){
@@ -227,6 +232,7 @@ const DATA = __PAYLOAD__;
       $('tbody').innerHTML = rows.map(r=>'<tr>'+kd.cols.map(col=>{
         if(col==='scope') return `<td class="scope"></td>`;
         if(col==='rec')   return `<td class="rec"></td>`;
+        if(col==='role'){ const lbl=r.role==='field'?(tab==='client'?'client':'rep'):(r.role||''); return `<td><span class="role role-${r.role||'none'}">${lbl||'—'}</span></td>`; }
         if(col==='opened')return r.opened?'<td class="yes">&#10003;</td>':'<td class="no">&#10007;</td>';
         if(col==='mins')  return `<td class="num">${r.mins==null?'<span class="dash">—</span>':fmtMins(r.mins)}</td>`;
         if(col==='first') return `<td>${r.first?esc(r.first):'<span class="dash">—</span>'}</td>`;
@@ -245,6 +251,7 @@ const DATA = __PAYLOAD__;
 
   $('search').oninput = e=>{ query=e.target.value; render(); };
   $('unopened').onclick = ()=>{ unopenedOnly=!unopenedOnly; $('unopened').classList.toggle('on',unopenedOnly); render(); };
+  $('repsOnly').onclick = ()=>{ repsOnly=!repsOnly; $('repsOnly').classList.toggle('on',repsOnly); render(); };
 
   render();
 })();
