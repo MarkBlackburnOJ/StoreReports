@@ -102,6 +102,9 @@
     <div class="toolbar">
       <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
       <select id="dateFilter" aria-label="Filter by date sent"><option value="">All dates</option></select>
+      <select id="scopeFilter" aria-label="Filter by store"><option value="">All</option></select>
+      <select id="recipFilter" aria-label="Filter by recipient"><option value="">All recipients</option></select>
+      <select id="domainFilter" aria-label="Filter by recipient domain"><option value="">All domains</option></select>
       <span class="toggle" id="repsOnly"><span>Reps only</span></span>
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
       <span class="count" id="rowcount"></span>
@@ -178,7 +181,7 @@ const DATA = __PAYLOAD__;
     });
   });
 
-  let tab = KINDS[0].key, unopenedOnly = false, repsOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '';
+  let tab = KINDS[0].key, unopenedOnly = false, repsOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '', scopeSel = '', recipSel = '', domainSel = '';
 
   // Date-sent filter: distinct send dates (the "dd MMM" part of the Sent column), most recent first.
   const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
@@ -188,15 +191,34 @@ const DATA = __PAYLOAD__;
   $('dateFilter').innerHTML = '<option value="">All dates</option>' + allDates.map(d=>`<option value="${d}">${d}</option>`).join('');
   $('dateFilter').onchange = e=>{ dateSel = e.target.value; render(); };
 
+  // Per-tab filters: store/scope, recipient, recipient-domain — rebuilt when the tab changes.
+  const domainOf = e => { const i=(e||'').lastIndexOf('@'); return i>=0 ? e.slice(i+1).toLowerCase() : ''; };
+  function fillSelect(id, label, vals){
+    $(id).innerHTML = `<option value="">${label}</option>` + vals.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
+  }
+  function rebuildFilters(){
+    const rs = rowsByKind[tab]||[];
+    fillSelect('scopeFilter', tab==='store'?'All stores':tab==='client'?'All clients':'All reports', [...new Set(rs.map(r=>r.scope).filter(Boolean))].sort());
+    fillSelect('recipFilter', 'All recipients', [...new Set(rs.map(r=>r.rec).filter(Boolean))].sort());
+    fillSelect('domainFilter', 'All domains', [...new Set(rs.map(r=>domainOf(r.rec)).filter(Boolean))].sort());
+    scopeSel = recipSel = domainSel = '';
+  }
+  $('scopeFilter').onchange = e=>{ scopeSel = e.target.value; render(); };
+  $('recipFilter').onchange = e=>{ recipSel = e.target.value; render(); };
+  $('domainFilter').onchange = e=>{ domainSel = e.target.value; render(); };
+
   $('tabs').innerHTML = KINDS.map(kd=>{
     const n = (rowsByKind[kd.key]||[]).length;
     return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
   }).join('');
-  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;sortCol=null;render();});
+  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;sortCol=null;rebuildFilters();render();});
 
   function currentRows(){
     let rows = (rowsByKind[tab]||[]).slice();
     if(dateSel) rows = rows.filter(r=>dateOf(r.sent)===dateSel);
+    if(scopeSel) rows = rows.filter(r=>r.scope===scopeSel);
+    if(recipSel) rows = rows.filter(r=>r.rec===recipSel);
+    if(domainSel) rows = rows.filter(r=>domainOf(r.rec)===domainSel);
     if(repsOnly) rows = rows.filter(r=>r.role==='field');
     if(unopenedOnly) rows = rows.filter(r=>!r.opened);
     if(query){ const q=query.toLowerCase(); rows = rows.filter(r=>(r.scope+' '+r.rec).toLowerCase().includes(q)); }
@@ -253,6 +275,7 @@ const DATA = __PAYLOAD__;
   $('unopened').onclick = ()=>{ unopenedOnly=!unopenedOnly; $('unopened').classList.toggle('on',unopenedOnly); render(); };
   $('repsOnly').onclick = ()=>{ repsOnly=!repsOnly; $('repsOnly').classList.toggle('on',repsOnly); render(); };
 
+  rebuildFilters();
   render();
 })();
 </script>
