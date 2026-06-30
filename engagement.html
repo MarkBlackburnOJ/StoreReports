@@ -51,6 +51,8 @@
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
   .toolbar input[type=search]{flex:1;min-width:180px;font:inherit;font-size:14px;padding:8px 12px;
     border:1px solid var(--line);border-radius:8px;background:var(--paper);}
+  .toolbar select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);
+    border-radius:8px;background:var(--paper);color:var(--ink);cursor:pointer;}
   .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--mute);cursor:pointer;
     border:1px solid var(--line);border-radius:20px;padding:6px 13px;user-select:none;}
   .toggle.on{background:#fdeaea;border-color:#f3c0c0;color:var(--red);}
@@ -96,6 +98,7 @@
     <div class="tabs" id="tabs"></div>
     <div class="toolbar">
       <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
+      <select id="dateFilter" aria-label="Filter by date sent"><option value="">All dates</option></select>
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
       <span class="count" id="rowcount"></span>
     </div>
@@ -171,7 +174,15 @@ const DATA = __PAYLOAD__;
     });
   });
 
-  let tab = KINDS[0].key, unopenedOnly = false, sortCol = null, sortDir = 1, query = '';
+  let tab = KINDS[0].key, unopenedOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '';
+
+  // Date-sent filter: distinct send dates (the "dd MMM" part of the Sent column), most recent first.
+  const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
+  const dateOf = s => s ? s.slice(0, s.lastIndexOf(' ')) : '';
+  const dkey = d => { const p=d.split(' '); return (MON[p[1]]||0)*100 + (parseInt(p[0],10)||0); };
+  const allDates = [...new Set((DATA.reports||[]).map(r=>dateOf(r[4])).filter(Boolean))].sort((a,b)=>dkey(b)-dkey(a));
+  $('dateFilter').innerHTML = '<option value="">All dates</option>' + allDates.map(d=>`<option value="${d}">${d}</option>`).join('');
+  $('dateFilter').onchange = e=>{ dateSel = e.target.value; render(); };
 
   $('tabs').innerHTML = KINDS.map(kd=>{
     const n = (rowsByKind[kd.key]||[]).length;
@@ -181,6 +192,7 @@ const DATA = __PAYLOAD__;
 
   function currentRows(){
     let rows = (rowsByKind[tab]||[]).slice();
+    if(dateSel) rows = rows.filter(r=>dateOf(r.sent)===dateSel);
     if(unopenedOnly) rows = rows.filter(r=>!r.opened);
     if(query){ const q=query.toLowerCase(); rows = rows.filter(r=>(r.scope+' '+r.rec).toLowerCase().includes(q)); }
     if(sortCol){
