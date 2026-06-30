@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#16539F">
+<title>Account Manager — Daily Report</title>
+<style>
+  :root{
+    --blue:#16539F; --blue-deep:#0E3D75; --blue-tint:#E4ECF7;
+    --red:#E31E24; --red-deep:#C2161B; --red-text:#A32D2D; --red-tint:#FCEBEB;
+    --amber:#C98A1A; --amber-deep:#8A5A07; --amber-tint:#FBF1DC;
+    --green:#1E8E3E; --green-deep:#157233; --green-text:#1B6E33; --green-tint:#E6F4EA;
+    --ink:#1F2024; --mute:#6B7480; --mute-2:#8A929D;
+    --paper:#F4F6F8; --card:#FFFFFF; --line:#E3E7EC; --line-soft:#ECEEF1; --shell:#EAECEF;
+  }
+  *{box-sizing:border-box;-webkit-text-size-adjust:100%;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--shell);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45;}
+  .wrap{max-width:1180px;margin:0 auto;background:var(--paper);min-height:100vh;box-shadow:0 0 30px rgba(0,0,0,.05);}
+
+  header{background:var(--blue);color:#fff;padding:20px 26px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+  header .eyebrow{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.65);}
+  header h1{font-size:23px;font-weight:700;margin:5px 0 0;letter-spacing:-.01em;}
+  header .meta{font-size:12.5px;color:rgba(255,255,255,.8);margin-top:5px;}
+  .ibtn{border:0;background:rgba(255,255,255,.16);color:#fff;height:36px;padding:0 14px;border-radius:9px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;}
+
+  .tabs{display:flex;gap:2px;padding:0 14px;background:var(--blue-deep);overflow-x:auto;}
+  .tab{border:0;background:none;color:rgba(255,255,255,.72);font-family:inherit;font-size:13px;font-weight:600;padding:11px 13px;cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+  .tab.active{color:#fff;border-bottom-color:#fff;}
+
+  .filterbar{display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding:12px 24px;background:var(--card);border-bottom:.5px solid var(--line);}
+  .filterbar label{font-size:12px;color:var(--mute);font-weight:600;}
+  .filterbar select{height:34px;border:.5px solid var(--line);border-radius:8px;background:var(--paper);font-family:inherit;font-size:13px;color:var(--ink);padding:0 8px;margin-left:6px;max-width:210px;}
+  .filterbar .clear{font-size:12px;color:var(--blue);cursor:pointer;background:none;border:0;font-family:inherit;}
+  .lens{font-size:12px;color:var(--mute-2);margin-left:auto;}
+
+  .pane{padding:18px 24px 40px;display:none;}
+  .pane.active{display:block;}
+  .h2{font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--mute);margin:22px 0 10px;}
+  .h2:first-child{margin-top:2px;}
+  .h2 .sub{font-weight:600;text-transform:none;letter-spacing:0;color:var(--mute-2);}
+
+  details.writeup{background:var(--blue-tint);border-radius:12px;font-size:13px;line-height:1.6;color:var(--ink);}
+  details.writeup>summary{padding:12px 18px;font-weight:700;cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;}
+  details.writeup>summary::-webkit-details-marker{display:none;}
+  details.writeup>summary::before{content:'\25B8';color:var(--blue);font-size:12px;}
+  details.writeup[open]>summary::before{content:'\25BE';}
+  .writeup-body{padding:0 18px 14px;}
+  .writeup b{font-weight:700;} .writeup .sw{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:-1px;margin:0 2px;}
+  .note{background:var(--amber-tint);border:.5px solid #EBD9A8;border-radius:9px;padding:9px 13px;font-size:12.5px;color:var(--amber-deep);margin:0 0 10px;line-height:1.5;}
+
+  .kcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;}
+  .kcard{border:.5px solid var(--line);border-left-width:4px;border-left-style:solid;border-radius:12px;padding:13px 15px;background:var(--card);}
+  .kcard .ktop{display:flex;justify-content:space-between;align-items:flex-start;gap:6px;}
+  .kcard .kl{font-size:12px;color:var(--mute);font-weight:600;}
+  .kcard .info{flex:none;width:18px;height:18px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--mute);font-size:11px;font-weight:700;line-height:16px;text-align:center;cursor:pointer;padding:0;font-family:inherit;}
+  .kcard .info:hover{color:var(--blue);border-color:var(--blue);}
+  .kcard .kv{font-size:29px;font-weight:700;line-height:1;margin:6px 0 5px;letter-spacing:-.01em;}
+  /* % of base — its own colour scale (green <3%, amber <5%, else red), bordered so it shows on a same-colour card */
+  .kpct{display:inline-block;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;border:1px solid;margin:0 0 9px;}
+  .kpct.green{background:var(--green-tint);color:var(--green-text);border-color:var(--green);}
+  .kpct.amber{background:var(--amber-tint);color:var(--amber-deep);border-color:var(--amber);}
+  .kpct.red{background:var(--red-tint);color:var(--red-text);border-color:var(--red);}
+  /* small colour reminder shown above every table */
+  .tlegend{font-size:10.5px;color:var(--mute-2);margin:0 0 7px;line-height:1.5;}
+  .tlegend .ld{display:inline-block;width:9px;height:9px;border-radius:2px;vertical-align:-1px;margin:0 3px 0 9px;}
+  .tlegend .ld:first-child{margin-left:0;}
+  .tlegend .ld.green{background:var(--green);} .tlegend .ld.amber{background:var(--amber);} .tlegend .ld.red{background:var(--red);}
+  .kcard.green{border-left-color:var(--green);background:var(--green-tint);} .kcard.green .kv{color:var(--green-deep);}
+  .kcard.amber{border-left-color:var(--amber);background:var(--amber-tint);} .kcard.amber .kv{color:var(--amber-deep);}
+  .kcard.red{border-left-color:var(--red);background:var(--red-tint);} .kcard.red .kv{color:var(--red-deep);}
+  .dl{display:flex;justify-content:space-between;font-size:11.5px;padding:2px 0;}
+  .dl .dk{color:var(--mute);} .dl .dv{font-weight:600;} .dl .dn{font-weight:700;margin-left:5px;}
+  .good{color:var(--green-text);} .bad{color:var(--red-text);} .flat{color:var(--mute-2);}
+
+  .ctxline{margin:12px 0 2px;font-size:13px;background:var(--card);border:.5px solid var(--line);border-radius:10px;padding:11px 15px;line-height:1.7;}
+  .ctxline b{font-weight:700;}
+
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:4px 0 12px;}
+  .search{display:flex;align-items:center;gap:7px;background:var(--card);border:.5px solid var(--line);border-radius:9px;padding:0 11px;height:36px;flex:1;min-width:180px;}
+  .search input{border:0;outline:0;background:none;flex:1;font-family:inherit;font-size:13.5px;color:var(--ink);min-width:0;}
+  .count{font-size:12px;color:var(--mute-2);}
+  .tbl-scroll{overflow-x:auto;background:var(--card);border:.5px solid var(--line);border-radius:12px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  thead th{position:sticky;top:0;background:#F0F2F5;text-align:right;padding:9px 11px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--mute);cursor:pointer;white-space:nowrap;border-bottom:1px solid var(--line);}
+  thead th.l{text-align:left;}
+  thead th.sorted::after{content:" \25BE";color:var(--blue);} thead th.asc::after{content:" \25B4";color:var(--blue);}
+  tbody td{padding:7px 11px;text-align:right;border-top:.5px solid var(--line-soft);white-space:nowrap;}
+  tbody td.l{text-align:left;} tbody tr:hover{background:#F7FAFF;}
+  .code{font-weight:700;color:var(--blue-deep);} .nm2{color:var(--mute);}
+  .chip{display:inline-block;min-width:30px;padding:2px 7px;border-radius:6px;font-weight:700;font-size:12px;}
+  .chip.green{background:var(--green-tint);color:var(--green-text);}
+  .chip.amber{background:var(--amber-tint);color:var(--amber-deep);}
+  .chip.red{background:var(--red-tint);color:var(--red-text);}
+  .arrow{font-size:11px;font-weight:700;margin-left:4px;} .pill{display:inline-block;font-size:11px;padding:1px 8px;border-radius:999px;background:#EEF0F3;color:var(--mute);}
+
+  footer{padding:18px 24px 30px;text-align:center;font-size:11.5px;color:var(--mute-2);}
+  .overlay{position:fixed;inset:0;background:rgba(20,25,33,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px;}
+  .overlay[hidden]{display:none;}
+  .sheet{background:var(--paper);max-width:560px;width:100%;max-height:86vh;border-radius:14px;display:flex;flex-direction:column;}
+  .sheet h3{margin:0;padding:16px 20px;border-bottom:.5px solid var(--line);font-size:15px;}
+  .sheetbody{overflow:auto;padding:6px 20px 22px;}
+  .gitem{padding:11px 0;border-bottom:.5px solid var(--line-soft);} .gitem b{font-size:13.5px;} .gitem p{margin:4px 0 0;font-size:12.5px;color:var(--mute);line-height:1.5;}
+  .iclose{float:right;border:0;background:#EEF0F3;width:28px;height:28px;border-radius:50%;cursor:pointer;color:var(--mute);font-size:15px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div><div class="eyebrow">Account Manager &middot; Daily Report</div><h1>Portfolio stock health</h1><div class="meta" id="meta">—</div></div>
+    <button class="ibtn" id="glossaryBtn" type="button">How it's calculated</button>
+  </header>
+  <div class="tabs" id="tabs"></div>
+  <div class="filterbar">
+    <label>Country<select id="fCountry"></select></label>
+    <label>Site profile<select id="fProfile"></select></label>
+    <label>Province<select id="fProvince"></select></label>
+    <label>Client<select id="fClient"></select></label>
+    <button class="clear" id="fClear" type="button">Clear filters</button>
+    <span class="lens" id="lens"></span>
+  </div>
+  <div class="pane active" id="pane"></div>
+  <footer id="footer">—</footer>
+</div>
+<div class="overlay" id="glossary" hidden>
+  <div class="sheet"><h3>How these are calculated <button class="iclose" id="glossaryClose" type="button">&#10005;</button></h3>
+  <div class="sheetbody" id="glossaryBody"></div></div>
+</div>
+<div class="overlay" id="cardInfo" hidden>
+  <div class="sheet"><h3><span id="cardInfoTitle">—</span><button class="iclose" id="cardInfoClose" type="button">&#10005;</button></h3>
+  <div class="sheetbody" id="cardInfoBody"></div></div>
+</div>
+
+<script id="payload" type="application/json">{"meta":{"current":"2026-06-29","previous":"2026-06-28","weekago":"2026-06-22","sites":67,"clients":1,"products":24,"generated":"30 Jun 2026 at 13:51","client":"TRAMONTINA"},"KSC":["oos","low","phantom","neg","disc","new","action","lost","active","sites","base"],"KPS":["oos","low","phantom","neg","disc","lost"],"sites":[["EC05","Uitenhage","Corporate Store","Eastern cape","South Africa"],["EC07","Garden Route Mall","Corporate Store","Western cape","South Africa"],["EC16","Hyper Moffet","Corporate Store","Eastern cape","South Africa"],["EC24","PnP EM Mthatha Mall","Corporate Store","Eastern cape","South Africa"],["EF01","Family Fountains Mall","Franchisee Store","Eastern cape","South Africa"],["EF02","Family Oudtshoorn","Franchisee Store","Western cape","South Africa"],["EF18","PnP EM Mdantsane City","Franchisee Store","Eastern cape","South Africa"],["EF23","Family Graaff-Reinet","Franchisee Store","Eastern cape","South Africa"],["EF34","Family Walker Drive","Franchisee Store","Eastern cape","South Africa"],["GC07","The Glen","Corporate Store","Gauteng","South Africa"],["GC12","Rosebank","Corporate Store","Gauteng","South Africa"],["GC53","Clearwater Mall","Corporate Store","Gauteng","South Africa"],["GC84","Springs Mall","Corporate Store","Gauteng","South Africa"],["GF04","Family Brackenhurst","Franchisee Store","Gauteng","South Africa"],["GF05","Family Witpoortjie","Franchisee Store","Gauteng","South Africa"],["GF06","Family Honey Junction","Franchisee Store","Gauteng","South Africa"],["GF09","Family Oakfields","Franchisee Store","Gauteng","South Africa"],["GF21","Family Elspark","Franchisee Store","Gauteng","South Africa"],["GF24","Family Lambton","Franchisee Store","Gauteng","South Africa"],["GF28","Family Vanderbijl","Franchisee Store","Gauteng","South Africa"],["GF44","Family Upington","Franchisee Store","Northern cape","South Africa"],["GF47","Family Kroonstad","Franchisee Store","Free state","South Africa"],["GF55","Family Piet Retief","Franchisee Store","Mpumalanga","South Africa"],["GF56","Family Hazelpark","Franchisee Store","Gauteng","South Africa"],["GF84","Family Songloed","Franchisee Store","North west","South Africa"],["GF87","PnP EM Protea Boulevard","Franchisee Store","Gauteng","South Africa"],["GF93","Family Ferndale on Republic","Franchisee Store","Gauteng","South Africa"],["GF96","Family Epsom Downs","Franchisee Store","Gauteng","South Africa"],["GG20","PnP EM Piet Retief Dowt","Franchisee Store","Mpumalanga","South Africa"],["GG24","PnP EM Dobsonville","Franchisee Store","Gauteng","South Africa"],["GH01","Family Wolmaransstad","Franchisee Store","North west","South Africa"],["GH09","PnP EM Birch Acre's","Franchisee Store","Gauteng","South Africa"],["GM33","Mini Market Viljoenskroon","Franchisee Store","North west","South Africa"],["HC11","Hyper Wonderpark","Corporate Store","Gauteng","South Africa"],["KF09","Family Dundee","Franchisee Store","Kwazulu-natal","South Africa"],["KF41","Family Estcourt","Franchisee Store","Kwazulu-natal","South Africa"],["KF46","Family St. Johns Village","Franchisee Store","Kwazulu-natal","South Africa"],["KT03","Family Mbabane","Franchisee Store","Swaziland","Swaziland"],["KT05","Family Mashayitafula","Franchisee Store","Swaziland","Swaziland"],["KT07","Family Nhlangano","Franchisee Store","Swaziland","Swaziland"],["KT08","Family Crescent","Franchisee Store","Swaziland","Swaziland"],["NC05","Savannah","Corporate Store","Limpopo","South Africa"],["NC22","Mall at Reds","Corporate Store","Gauteng","South Africa"],["NC37","Ilanga Mall","Corporate Store","Mpumalanga","South Africa"],["NC62","Olympus","Corporate Store","Gauteng","South Africa"],["NC68","PnP EM Kwagga Plaza","Corporate Store","Mpumalanga","South Africa"],["NC81","Midwater Middleburg","Corporate Store","Mpumalanga","South Africa"],["NC90","PnP EM One on Mutual","Corporate Store","Gauteng","South Africa"],["NF13","Family Barberton","Franchisee Store","Mpumalanga","South Africa"],["NF16","Family Lydenburg","Franchisee Store","Mpumalanga","South Africa"],["NF24","Family Mafikeng Crossing","Franchisee Store","North west","South Africa"],["NF43","Family Brits Mall","Franchisee Store","North west","South Africa"],["NF47","Family Harties","Franchisee Store","North west","South Africa"],["NF51","Family Thaba Mall","Franchisee Store","Limpopo","South Africa"],["NF66","PnP EM Steelpoort","Franchisee Store","Limpopo","South Africa"],["NF72","Family Modimolle","Franchisee Store","Limpopo","South Africa"],["WC04","Kenilworth","Corporate Store","Western cape","South Africa"],["WC05","Hyper Somerset Mall","Corporate Store","Western cape","South Africa"],["WC21","Constantia","Corporate Store","Western cape","South Africa"],["WC34","Tokai","Corporate Store","Western cape","South Africa"],["WC44","Hyper Brackenfell","Corporate Store","Western cape","South Africa"],["WC72","Table Bay Mall","Corporate Store","Western cape","South Africa"],["WD24","Local Steenberg","Corporate Store","Western cape","South Africa"],["WF03","Family Parow","Franchisee Store","Western cape","South Africa"],["WF06","Family Vredenburg","Franchisee Store","Western cape","South Africa"],["WF13","Family Observatory","Franchisee Store","Western cape","South Africa"],["ZC18","PHI","Corporate Store","Zambia","Zambia"]],"clients":["TRAMONTINA"],"products":[["935183","TRAMONTINA ROCH FRY PAN SET 2PC 20/24CM"],["921655","TRAMONTINA 4PC UTENSILS SET GREY"],["793978","TRAMONTINA TABLE FORK SET 3PC"],["793979","TRAMONTINA TABLE SPOON SET 3PC"],["910039","TRAMONTINA UTILITA PIZZA CUTTER"],["793330","TRAMONTINA STEAK KNIFE SET 3PCE"],["793331","TRAMONTINA MEAT KNIFE"],["793976","TRAMONTINA KNIFE SET 8PC"],["793977","TRAMONTINA TABLEWARE SET 16PC"],["884514","TRAMONTINA 3PC KNIVES SET B/PACK 1EA"],["910038","TRAMONTINA UTILITA GRATER"],["917684","TRAMONTINA 7PC KNIFE SET"],["918017","TRAMONTINA MULTI USE TRAY"],["884515","TRAMONTINA 25PC TABLEWARE SET BLACK 1EA"],["910040","TRAMONTINA UTILITA PEELER"],["793972","TRAMONTINA BREAD KNIFE"],["793973","TRAMONTINA KNIFE SET 3PC"],["793974","TRAMONTINA CHEFS KNIFE"],["793980","TRAMONTINA PAIRING KNIFE"],["884517","TRAMONTINA 3PC P/SET(18/22CM/SPATUL) 1EA"],["910037","TRAMONTINA UTILITA MASHER"],["793962","TRAMONTINA TOMATO KNIFE"],["884513","TRAMONTINA 4PC UTENSILS SET 1EA"],["793975","TRAMONTINA TABLEWARE SET 12PC"]],"sc":[[0,0,[0,0,0,0,2,0,2,0,0,1,5],[0,0,0,0,2,0,2,0,0,1,5],[0,0,0,0,2,0,2,0,0,1,5]],[1,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[2,0,[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2]],[3,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[4,0,[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8]],[5,0,[0,0,7,0,21,0,28,0,15,1,36],[0,0,7,0,21,0,28,0,15,1,36],[0,0,7,0,21,0,28,0,15,1,36]],[6,0,[0,0,0,0,5,0,5,0,0,1,5],[0,0,0,0,5,0,5,0,0,1,5],[0,0,0,0,5,0,5,0,0,1,5]],[7,0,[0,0,0,0,5,0,5,0,0,1,5],[0,0,0,0,5,0,5,0,0,1,5],[0,0,0,0,5,0,5,0,0,1,5]],[8,0,[0,0,0,3,0,0,3,0,0,1,3],[0,0,0,3,0,0,3,0,0,1,3],[0,0,0,3,0,0,3,0,0,1,3]],[9,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[10,0,[0,0,0,0,0,0,0,0,0,0,0],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[11,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[12,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[13,0,[5,5,8,0,6,0,19,0,21,1,27],[5,5,8,0,6,0,19,0,21,1,27],[7,7,8,0,6,0,21,0,23,1,29]],[14,0,[0,0,0,0,19,0,19,0,0,1,22],[0,0,0,0,19,0,19,0,0,1,22],[0,0,0,0,19,0,19,0,0,1,22]],[15,0,[0,0,9,0,6,0,15,0,16,1,22],[0,0,9,0,6,0,15,0,16,1,22],[0,0,9,0,6,0,15,0,16,1,22]],[16,0,[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2]],[17,0,[0,0,0,0,2,0,2,0,0,1,4],[0,0,0,0,2,0,2,0,0,1,4],[0,0,0,0,2,0,2,0,0,1,4]],[18,0,[0,0,0,0,15,0,15,0,2,1,17],[0,0,0,0,15,0,15,0,2,1,17],[0,0,0,0,15,0,15,0,2,1,17]],[19,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[20,0,[0,0,5,0,6,0,11,0,11,1,17],[0,0,5,0,6,0,11,0,11,1,17],[0,0,5,0,6,0,11,0,11,1,17]],[21,0,[0,0,0,0,7,0,7,0,0,1,7],[0,0,0,0,7,0,7,0,0,1,7],[0,0,0,0,7,0,7,0,0,1,7]],[22,0,[0,0,0,0,10,0,10,0,0,1,15],[0,0,0,0,10,0,10,0,0,1,15],[0,0,0,0,12,0,12,0,0,1,15]],[23,0,[0,0,2,0,13,0,15,0,2,1,15],[0,0,2,0,13,0,15,0,2,1,15],[0,0,2,0,17,0,19,0,2,1,19]],[24,0,[0,0,3,0,9,0,12,0,6,1,15],[0,0,3,0,9,0,12,0,6,1,15],[0,0,3,0,9,0,12,0,6,1,15]],[25,0,[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8]],[26,0,[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8],[0,0,0,0,8,0,8,0,0,1,8]],[27,0,[4,4,0,0,0,0,4,0,8,1,8],[4,4,2,0,0,0,6,0,8,1,8],[4,4,2,0,0,0,6,0,8,1,8]],[28,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[29,0,[0,0,2,0,17,0,19,0,2,1,19],[0,0,2,0,17,0,19,0,2,1,19],[0,0,2,0,17,0,19,0,2,1,19]],[30,0,[2,2,11,0,3,0,16,0,23,1,26],[2,2,11,0,3,0,16,0,23,1,26],[2,2,11,0,3,0,16,0,23,1,26]],[31,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[32,0,[0,0,0,0,9,0,9,0,0,1,9],[0,0,0,0,9,0,9,0,0,1,9],[0,0,0,0,9,0,9,0,0,1,9]],[33,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[34,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[35,0,[0,0,3,0,8,0,11,0,6,1,14],[0,0,3,0,8,0,11,0,6,1,14],[0,0,3,0,8,0,11,0,6,1,14]],[36,0,[0,0,0,0,11,0,11,0,0,1,11],[0,0,0,0,11,0,11,0,0,1,11],[0,0,0,0,11,0,11,0,0,1,11]],[37,0,[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1]],[38,0,[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1]],[39,0,[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1],[0,0,0,0,1,0,1,0,0,1,1]],[40,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[41,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[42,0,[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2]],[43,0,[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,2,0,2,0,0,1,2],[0,0,0,0,0,0,0,0,0,0,0]],[44,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[45,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[46,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[47,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[48,0,[4,4,0,0,0,0,4,0,8,1,11],[4,4,0,0,0,0,4,0,8,1,11],[4,4,0,0,0,0,4,0,8,1,11]],[49,0,[0,0,0,0,13,0,13,0,0,1,13],[0,0,0,0,13,0,13,0,0,1,13],[0,0,0,0,13,0,13,0,0,1,13]],[50,0,[0,0,0,0,4,0,4,0,0,1,4],[0,0,0,0,4,0,4,0,0,1,4],[0,0,0,0,4,0,4,0,0,1,4]],[51,0,[0,0,0,0,20,0,20,0,0,1,20],[0,0,0,0,20,0,20,0,0,1,20],[0,0,0,0,20,0,20,0,0,1,20]],[52,0,[0,0,0,0,4,0,4,0,0,1,4],[0,0,0,0,4,0,4,0,0,1,4],[0,0,0,0,4,0,4,0,0,1,4]],[53,0,[2,2,0,0,2,0,4,0,4,1,6],[2,2,0,0,2,0,4,0,4,1,6],[2,2,0,0,2,0,4,0,4,1,6]],[54,0,[0,0,5,0,0,0,5,0,5,1,5],[0,0,5,0,0,0,5,0,5,1,5],[0,0,5,0,0,0,5,0,5,1,5]],[55,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[56,0,[0,0,0,0,0,0,0,0,0,1,2],[0,0,0,0,0,0,0,0,0,1,2],[0,0,0,0,0,0,0,0,0,1,2]],[57,0,[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3],[0,0,0,0,3,0,3,0,0,1,3]],[58,0,[0,0,0,0,0,0,0,0,0,1,5],[0,0,0,0,0,0,0,0,0,1,5],[0,0,0,0,0,0,0,0,0,1,5]],[59,0,[0,0,0,3,0,0,3,0,0,1,3],[0,0,0,3,0,0,3,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[60,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[61,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]],[62,0,[0,0,0,0,0,0,0,0,0,1,16],[0,0,0,0,0,0,0,0,0,1,16],[0,0,0,0,0,0,0,0,0,1,16]],[63,0,[3,3,0,0,0,0,3,0,3,1,3],[3,3,0,0,0,0,3,0,3,1,3],[3,3,0,0,0,0,3,0,3,1,3]],[64,0,[0,0,0,0,7,0,7,0,0,1,7],[0,0,0,0,7,0,7,0,0,1,7],[0,0,0,0,7,0,7,0,0,1,7]],[65,0,[0,0,0,0,2,0,2,0,3,1,5],[0,0,0,0,2,0,2,0,3,1,5],[0,0,0,0,2,0,2,0,3,1,5]],[66,0,[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3],[0,0,0,0,0,0,0,0,0,1,3]]],"ps":[[0,0,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[1,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[2,0,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[3,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[4,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[4,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[4,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[5,5,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[5,6,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[5,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[5,8,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[5,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[5,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[5,9,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[5,10,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[5,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[5,11,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[5,12,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[6,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[6,13,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[7,5,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[7,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[8,2,0,[0,0,0,3,0,0],[0,0,0,3,0,0],[0,0,0,3,0,0]],[9,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[13,15,0,[3,3,0,0,0,0],[3,3,0,0,0,0],[3,3,0,0,0,0]],[13,16,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[13,17,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[13,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[13,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[13,9,0,[0,0,0,0,0,0],[0,0,0,0,0,0],[2,2,0,0,0,0]],[13,4,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[13,14,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[14,5,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[14,6,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[14,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[14,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[14,18,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[14,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[14,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[15,6,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[15,15,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[15,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[15,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[15,18,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[16,12,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[17,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[18,5,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[18,15,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[18,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[18,19,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[18,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[18,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[19,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[20,15,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[20,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[20,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[20,13,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[21,15,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[21,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[21,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,13,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,19,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,20,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[22,14,0,[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,2,0]],[23,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[23,8,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[23,9,0,[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,2,0]],[23,19,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[23,10,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[23,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[23,14,0,[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,2,0]],[23,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[24,15,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[24,16,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[24,17,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[24,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[25,21,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[25,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[25,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[26,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[26,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[26,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[27,20,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[27,10,0,[0,0,0,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[27,14,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[28,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[29,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[29,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[29,19,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[29,20,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[29,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[29,4,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[29,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[29,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[30,6,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[30,15,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[30,7,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[30,3,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[30,9,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[30,13,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[31,15,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[32,15,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[32,17,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[32,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[33,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[34,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[35,7,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[35,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[35,22,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[35,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[36,6,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[36,17,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[36,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[36,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[37,23,0,[0,0,0,0,1,0],[0,0,0,0,1,0],[0,0,0,0,1,0]],[38,23,0,[0,0,0,0,1,0],[0,0,0,0,1,0],[0,0,0,0,1,0]],[39,23,0,[0,0,0,0,1,0],[0,0,0,0,1,0],[0,0,0,0,1,0]],[40,8,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[42,11,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[43,12,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,0,0]],[44,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[45,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[46,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[47,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[48,20,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[48,14,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[49,16,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[49,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[49,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[49,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[49,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[50,20,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[50,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[51,21,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[51,15,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[51,17,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[51,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[51,20,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[51,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[51,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[51,14,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[52,10,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[52,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[53,19,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[53,10,0,[2,2,0,0,0,0],[2,2,0,0,0,0],[2,2,0,0,0,0]],[54,7,0,[0,0,3,0,0,0],[0,0,3,0,0,0],[0,0,3,0,0,0]],[54,4,0,[0,0,2,0,0,0],[0,0,2,0,0,0],[0,0,2,0,0,0]],[55,2,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[57,1,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[59,1,0,[0,0,0,3,0,0],[0,0,0,3,0,0],[0,0,0,0,0,0]],[63,7,0,[3,3,0,0,0,0],[3,3,0,0,0,0],[3,3,0,0,0,0]],[64,7,0,[0,0,0,0,3,0],[0,0,0,0,3,0],[0,0,0,0,3,0]],[64,11,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[64,12,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]],[65,4,0,[0,0,0,0,2,0],[0,0,0,0,2,0],[0,0,0,0,2,0]]],"port":{"c":[20,20,55,6,306,0,387,0,135,66,504],"p":[20,20,57,6,306,0,389,0,135,67,507],"w":[22,22,57,3,310,0,392,0,137,66,511]}}</script>
+<script>
+(function(){
+  var D; try{ D=JSON.parse(document.getElementById('payload').textContent); }catch(e){ document.getElementById('pane').innerHTML='<p>Could not load data.</p>'; return; }
+  var meta=D.meta||{}, KSC=D.KSC||[], KPS=D.KPS||[], SITES=D.sites||[], CLIENT_N=D.clients||[], PROD=D.products||[], SC=D.sc||[], PS=D.ps||[], PORT=D.port||{c:[],p:[],w:[]};
+  var CLIENT_MODE=meta.client||'';   // single-client report: payload pre-filtered to one client
+  function objSC(a){ a=a||[]; var o={}; for(var i=0;i<KSC.length;i++) o[KSC[i]]=a[i]||0; return o; }
+  function objPS(a){ a=a||[]; var o={}; for(var i=0;i<KPS.length;i++) o[KPS[i]]=a[i]||0; return o; }
+
+  var KPIS=[['oos','Out of stock'],['low','Low Stock Cover'],['phantom','Phantom'],['neg','Negative SOH'],['disc','Discontinued with SOH']];
+  var KLAB={oos:'Out of stock',low:'Low Stock Cover',phantom:'Phantom',neg:'Negative SOH',disc:'Discontinued with SOH'};
+  var TABS=[{id:'overview',t:'Overview'},{id:'clients',t:'By Client'},{id:'sites',t:'By Site'},{id:'products',t:'By Product'},{id:'siteproduct',t:'Site × Product'},
+            {id:'k_oos',t:'Out of stock',k:'oos'},{id:'k_low',t:'Low Stock Cover',k:'low'},{id:'k_phantom',t:'Phantom',k:'phantom'},{id:'k_neg',t:'Negative SOH',k:'neg'},{id:'k_disc',t:'Discontinued with SOH',k:'disc'}];
+  if(CLIENT_MODE) TABS=TABS.filter(function(t){return t.id!=='clients';});   // single client: no By-Client tab
+
+  function nf(x){ return (x==null?0:Math.round(x)).toLocaleString('en-ZA'); }
+  function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  function pdate(iso){ if(!iso)return '—'; var p=String(iso).split('-'); if(p.length!==3)return iso; var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; return (+p[2])+' '+(mo[(+p[1])-1]||''); }
+  // lower = better. cur 0 = clear (green). else green/amber/red by how many of {yesterday,last week} we improved on.
+  function colr(c,p,w){ if(c<=0) return 'green'; var imp=(c<p?1:0)+(c<w?1:0); return imp===2?'green':imp===1?'amber':'red'; }
+  function arrow(c,b){ var d=c-b; if(d===0) return '<span class="arrow flat">—</span>'; var g=d<0; return '<span class="arrow '+(g?'good':'bad')+'">'+(g?'▼':'▲')+nf(Math.abs(d))+'</span>'; }
+
+  var state={tab:'overview', country:'', profile:'', province:'', client:''};
+
+  // ---------- re-slicing engine: everything derives from the base grains + active filters ----------
+  function scPass(r){ var s=SITES[r[0]];
+    if(state.country  && s[4]!==state.country)  return false;
+    if(state.profile  && s[2]!==state.profile)  return false;
+    if(state.province && s[3]!==state.province) return false;
+    if(state.client   && CLIENT_N[r[1]]!==state.client) return false;
+    return true; }
+  function psPass(r){ var s=SITES[r[0]];
+    if(state.country  && s[4]!==state.country)  return false;
+    if(state.profile  && s[2]!==state.profile)  return false;
+    if(state.province && s[3]!==state.province) return false;
+    if(state.client   && CLIENT_N[r[2]]!==state.client) return false;
+    return true; }
+  function filteredSC(){ return SC.filter(scPass); }
+  function filteredPS(){ return PS.filter(psPass); }
+  function addArr(acc,a){ for(var i=0;i<acc.length;i++) acc[i]+=(a[i]||0); }
+  function zero(n){ var z=[]; for(var i=0;i<n;i++) z.push(0); return z; }
+
+  // sum a list of sc rows -> {cur,prev,wk} objects; .sites overwritten with DISTINCT site count
+  function sumSC(rows){
+    var c=zero(KSC.length),p=zero(KSC.length),w=zero(KSC.length),seen={},n=0;
+    for(var i=0;i<rows.length;i++){ var r=rows[i]; addArr(c,r[2]); addArr(p,r[3]); addArr(w,r[4]); if(!seen[r[0]]){seen[r[0]]=1;n++;} }
+    var O={cur:objSC(c),prev:objSC(p),wk:objSC(w)}; O.cur.sites=O.prev.sites=O.wk.sites=n; return O;
+  }
+  function rollupClients(rows){
+    var by={}; rows.forEach(function(r){ (by[r[1]]=by[r[1]]||[]).push(r); });
+    return Object.keys(by).map(function(k){ var g=sumSC(by[k]); return {name:CLIENT_N[k],cur:g.cur,prev:g.prev,wk:g.wk}; });
+  }
+  function rollupProvince(rows){
+    var by={}; rows.forEach(function(r){ var pv=SITES[r[0]][3]||'—'; (by[pv]=by[pv]||[]).push(r); });
+    return Object.keys(by).map(function(k){ var g=sumSC(by[k]); return {name:k,cur:g.cur,prev:g.prev,wk:g.wk}; });
+  }
+  function rollupProfile(rows){
+    var by={}; rows.forEach(function(r){ var pf=SITES[r[0]][2]||'—'; (by[pf]=by[pf]||[]).push(r); });
+    return Object.keys(by).map(function(k){ var g=sumSC(by[k]); return {name:k,cur:g.cur,prev:g.prev,wk:g.wk}; });
+  }
+  function rollupSites(rows){
+    var by={}; rows.forEach(function(r){ (by[r[0]]=by[r[0]]||[]).push(r); });
+    return Object.keys(by).map(function(k){ var s=SITES[k],g=sumSC(by[k]); return {code:s[0],name:s[1],profile:s[2],province:s[3],cur:g.cur,prev:g.prev,wk:g.wk}; });
+  }
+  // products derive from the product x site grain -> they now respond to every filter
+  function rollupProducts(rows){
+    var by={}; rows.forEach(function(r){ (by[r[1]]=by[r[1]]||[]).push(r); });
+    return Object.keys(by).map(function(k){
+      var grp=by[k],c=zero(KPS.length),p=zero(KPS.length),w=zero(KPS.length),seen={},n=0;
+      for(var i=0;i<grp.length;i++){ var r=grp[i]; addArr(c,r[3]); addArr(p,r[4]); addArr(w,r[5]); if(!seen[r[0]]){seen[r[0]]=1;n++;} }
+      var P=PROD[k]; var o={code:P[0],name:P[1],cur:objPS(c),prev:objPS(p),wk:objPS(w)}; o.cur.sites=o.prev.sites=o.wk.sites=n; return o;
+    });
+  }
+  function lensLabel(n){ var a=[]; if(state.country)a.push(state.country); if(state.client)a.push(state.client); if(state.profile)a.push(state.profile); if(state.province)a.push(state.province); return (a.length?a.join(' · '):'Whole portfolio')+' ('+nf(n)+' sites)'; }
+
+  var CX={};
+  function context(){
+    var scR=filteredSC(), agg=sumSC(scR);
+    return {agg:agg, province:rollupProvince(scR), profile:rollupProfile(scR), clients:rollupClients(scR), sites:rollupSites(scR), products:rollupProducts(filteredPS()), label:lensLabel(agg.cur.sites)};
+  }
+
+  // ---------- header / filters (once) ----------
+  if(CLIENT_MODE){
+    document.querySelector('header h1').textContent=CLIENT_MODE;
+    document.querySelector('header .eyebrow').textContent='Account Manager · Client Report';
+    var fcl=document.getElementById('fClient'); if(fcl&&fcl.parentNode) fcl.parentNode.style.display='none';
+  }
+  document.getElementById('meta').textContent=(CLIENT_MODE?[meta.sites+' sites',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]:[meta.sites+' sites',meta.clients+' clients',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]).join('  ·  ');
+  document.getElementById('footer').textContent=['Generated '+(meta.generated||''),nf(objSC(PORT.c).active)+' active lines','lower is better on every KPI','ARIA'].join('  ·  ');
+  document.getElementById('tabs').innerHTML=TABS.map(function(tb){return '<button class="tab'+(tb.id==='overview'?' active':'')+'" data-tab="'+tb.id+'">'+esc(tb.t)+'</button>';}).join('');
+  var countries=Array.from(new Set(SITES.map(function(s){return s[4];}))).filter(Boolean).sort();
+  var hasSA=countries.indexOf('South Africa')>=0; state.country=hasSA?'South Africa':'';
+  document.getElementById('fCountry').innerHTML='<option value="">All countries</option>'+countries.map(function(c){return '<option'+(c===state.country?' selected':'')+'>'+esc(c)+'</option>';}).join('');
+  var profs=Array.from(new Set(SITES.map(function(s){return s[2];}))).filter(Boolean).sort();
+  document.getElementById('fProfile').innerHTML='<option value="">All profiles</option>'+profs.map(function(p){return '<option>'+esc(p)+'</option>';}).join('');
+  // Province options follow the selected Country
+  function fillProvince(){
+    var c=state.country, provs=Array.from(new Set(SITES.filter(function(s){return !c||s[4]===c;}).map(function(s){return s[3];}))).filter(Boolean).sort();
+    document.getElementById('fProvince').innerHTML='<option value="">All provinces</option>'+provs.map(function(p){return '<option>'+esc(p)+'</option>';}).join('');
+  }
+  fillProvince();
+  var cnames=CLIENT_N.slice().sort();
+  document.getElementById('fClient').innerHTML='<option value="">All clients</option>'+cnames.map(function(c){return '<option>'+esc(c)+'</option>';}).join('');
+
+  // ---------- cards ----------
+  // % of base has its OWN colour scale (independent of the day-to-day trend colour): green <3%, amber <5%, else red.
+  function pctClr(p){ return p<3?'green':p<5?'amber':'red'; }
+  function cardHTML(src,key,label){
+    var c=src.cur[key]||0,p=src.prev[key]||0,w=src.wk[key]||0,cls=colr(c,p,w);
+    var base=src.cur.base||0, pct=base>0?Math.round(c/base*100):0;
+    return '<div class="kcard '+cls+'"><div class="ktop"><span class="kl">'+esc(label)+'</span>'+
+      '<button class="info" type="button" data-k="'+key+'" aria-label="What is this?" title="What is this?">i</button></div>'+
+      '<div class="kv">'+nf(c)+'</div>'+
+      '<div class="kpct '+pctClr(pct)+'">'+pct+'% of base</div>'+
+      '<div class="dl"><span class="dk">Yesterday</span><span><span class="dv">'+nf(p)+'</span>'+arrow(c,p)+'</span></div>'+
+      '<div class="dl"><span class="dk">Last week</span><span><span class="dv">'+nf(w)+'</span>'+arrow(c,w)+'</span></div></div>';
+  }
+  function cardsHTML(src){ return '<div class="kcards">'+KPIS.map(function(kp){return cardHTML(src,kp[0],kp[1]);}).join('')+'</div>'; }
+  function ctxHTML(src){
+    return '<div class="ctxline"><b>'+nf(src.cur.action)+'</b> items to action '+arrow(src.cur.action,src.prev.action)+' vs yest, '+arrow(src.cur.action,src.wk.action)+' vs last wk'+
+      ' &nbsp;&middot;&nbsp; <b>~'+nf(src.cur.lost)+'</b> units/day lost '+arrow(src.cur.lost,src.prev.lost)+
+      ' &nbsp;&middot;&nbsp; <b>'+nf(src.cur.active)+'</b> active lines &nbsp;&middot;&nbsp; <b>'+nf(src.cur.sites)+'</b> sites'+
+      ' &nbsp;&middot;&nbsp; base <b>'+nf(src.cur.base)+'</b> site-article lines</div>';
+  }
+
+  // ---------- generic table ----------
+  function kpiCol(key,lab){ return {label:lab||key.toUpperCase(),get:function(e){return '<span class="chip '+colr(e.cur[key],e.prev[key],e.wk[key])+'">'+nf(e.cur[key])+'</span>';},sort:function(e){return e.cur[key];}}; }
+  function actCol(){ return {label:'To action',get:function(e){return nf(e.cur.action)+arrow(e.cur.action,e.prev.action);},sort:function(e){return e.cur.action;}}; }
+  function lostCol(lbl){ return {label:lbl||'Units/day lost',get:function(e){return nf(e.cur.lost)+arrow(e.cur.lost,e.prev.lost);},sort:function(e){return e.cur.lost;}}; }
+  function table(rows, cols, opts){
+    opts=opts||{}; var st={sort:opts.sort,asc:false,q:''};
+    var legend='<div class="tlegend"><b>Colours</b> (per KPI cell, lower is better): <span class="ld green"></span>better than yesterday &amp; last week (or 0) <span class="ld amber"></span>better than one <span class="ld red"></span>neither</div>';
+    var tools=opts.search?'<div class="toolbar"><label class="search"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#8A929D" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input type="search" placeholder="'+esc(opts.search)+'"></label><span class="count"></span></div>':'';
+    var html=legend+tools+'<div class="tbl-scroll"><table><thead><tr>'+cols.map(function(c,i){return '<th class="'+(c.l?'l':'')+'" data-i="'+i+'">'+esc(c.label)+'</th>';}).join('')+'</tr></thead><tbody></tbody></table></div>';
+    var box=document.createElement('div'); box.innerHTML=html;
+    var tbody=box.querySelector('tbody'), thead=box.querySelector('thead'), cnt=box.querySelector('.count'), se=box.querySelector('.search input');
+    function draw(){
+      var rs=rows.slice();
+      if(st.q){ var q=st.q.toLowerCase(); rs=rs.filter(function(e){return (opts.searchKeys||[]).some(function(k){return String(e[k]||'').toLowerCase().indexOf(q)>=0;});}); }
+      if(st.sort!=null){ var c=cols[st.sort]; rs.sort(function(a,b){ var x=c.sort(a),y=c.sort(b); if(typeof x==='string'){x=x.toLowerCase();y=String(y).toLowerCase();return st.asc?(x<y?-1:x>y?1:0):(x>y?-1:x<y?1:0);} return st.asc?(x-y):(y-x); }); }
+      if(opts.limit) rs=rs.slice(0,opts.limit);
+      tbody.innerHTML=rs.map(function(e){return '<tr>'+cols.map(function(c){return '<td class="'+(c.l?'l':'')+'">'+c.get(e)+'</td>';}).join('')+'</tr>';}).join('');
+      if(cnt) cnt.textContent=rows.length+' rows'+(opts.limit&&rows.length>opts.limit?' (most affected '+opts.limit+')':'');
+      thead.querySelectorAll('th').forEach(function(th){th.classList.remove('sorted','asc'); if(+th.getAttribute('data-i')===st.sort) th.classList.add(st.asc?'asc':'sorted');});
+    }
+    thead.addEventListener('click',function(e){var th=e.target.closest('th');if(!th)return;var i=+th.getAttribute('data-i');if(st.sort===i)st.asc=!st.asc;else{st.sort=i;st.asc=false;}draw();});
+    if(se) se.addEventListener('input',function(e){st.q=e.target.value.trim();draw();});
+    draw(); return box;
+  }
+
+  var KPICOLS=[kpiCol('oos','OOS'),kpiCol('low','Low'),kpiCol('phantom','Phantom'),kpiCol('neg','Neg'),kpiCol('disc','Disc')];
+  function namedCols(label){ return [{label:label,l:true,get:function(e){return '<span class="code">'+esc(e.name)+'</span>';},sort:function(e){return e.name;}},
+    {label:'Sites',get:function(e){return nf(e.cur.sites);},sort:function(e){return e.cur.sites;}}].concat(KPICOLS,[actCol(),lostCol()]); }
+  function siteCols(){ return [{label:'Site',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span> <span class="nm2">'+esc(e.name)+'</span>';},sort:function(e){return e.code;}},
+    {label:'Province',l:true,get:function(e){return '<span class="nm2">'+esc(e.province||'—')+'</span>';},sort:function(e){return e.province||'';}},
+    {label:'Profile',l:true,get:function(e){return '<span class="pill">'+esc(e.profile)+'</span>';},sort:function(e){return e.profile;}},actCol()].concat(KPICOLS,[
+    {label:'Units/day',get:function(e){return nf(e.cur.lost);},sort:function(e){return e.cur.lost;}}]); }
+  function productCols(){ return [{label:'Article',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span>';},sort:function(e){return e.code;}},
+    {label:'Description',l:true,get:function(e){return esc(e.name);},sort:function(e){return e.name;}},
+    {label:'Sites',get:function(e){return nf(e.cur.sites);},sort:function(e){return e.cur.sites;}}].concat(KPICOLS,[
+    {label:'Units/day',get:function(e){return nf(e.cur.lost);},sort:function(e){return e.cur.lost;}}]); }
+
+  function elH2(t,sub){ var d=document.createElement('div'); d.className='h2'; d.innerHTML=esc(t)+(sub?' <span class="sub">'+esc(sub)+'</span>':''); return d; }
+  function colIndex(cols,label){ for(var i=0;i<cols.length;i++) if(cols[i].label===label) return i; return 0; }
+  var MOST=10;
+
+  // ---------- panes ----------
+  function paneOverview(){
+    var s=CX.agg;
+    var w='<details class="writeup"><summary>How to read this</summary><div class="writeup-body">Every KPI is a problem count, so <b>lower is better</b>. Each card and each coloured number compares <b>today</b> with <b>yesterday</b> and with <b>this day last week</b>. '+
+      '<span class="sw" style="background:var(--green)"></span><b>Green</b> = better than both (or already zero), '+
+      '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> = better than one of them, '+
+      '<span class="sw" style="background:var(--red)"></span><b>Red</b> = better than neither (worse or flat on both). '+
+      'The card shows today big, with yesterday and last week underneath and the change (▼ fewer is good, ▲ more is bad). The same colours run down every KPI column in the tables. '+
+      'The <b>filters</b> above (Country · Site profile · Province · Client) re-slice everything — cards and all four tables — live. Country defaults to South Africa.'+
+      '<br><br><b>The “% of base” pill</b> has its <b>own</b> colour scale (separate from the trend colour): it shows the KPI as a share of the full range — every site-article combination in scope (all statuses), shown as the <b>base</b> count on the line below the cards. '+
+      '<span class="sw" style="background:var(--green)"></span><b>Green</b> under 3%, '+
+      '<span class="sw" style="background:var(--amber)"></span><b>Amber</b> 3–5%, '+
+      '<span class="sw" style="background:var(--red)"></span><b>Red</b> 5%+ — so you can see which problems touch a large slice of the range, regardless of the day-to-day trend. Tap the <b>i</b> on any card for what it means. </div></details>';
+    var el=document.createElement('div'); el.innerHTML='<div class="h2">Portfolio KPIs <span class="sub">'+esc(CX.label)+'</span></div>'+w+'<div style="height:12px"></div>'+cardsHTML(s)+ctxHTML(s);
+    el.appendChild(elH2('Most affected provinces','by items to action'));
+    el.appendChild(table(CX.province.slice(), namedCols('Province'), {sort:colIndex(namedCols('Province'),'To action'),limit:MOST}));
+    el.appendChild(elH2('Most affected site profiles','by items to action'));
+    el.appendChild(table(CX.profile.slice(), namedCols('Site profile'), {sort:colIndex(namedCols('Site profile'),'To action'),limit:MOST}));
+    if(!CLIENT_MODE){
+      el.appendChild(elH2('Most affected clients','by items to action'));
+      el.appendChild(table(CX.clients.slice(), namedCols('Client account'), {sort:colIndex(namedCols('Client account'),'To action'),limit:MOST}));
+    }
+    el.appendChild(elH2('Most affected sites','by items to action'));
+    el.appendChild(table(CX.sites.slice(), siteCols(), {sort:colIndex(siteCols(),'To action'),limit:MOST}));
+    el.appendChild(elH2('Most affected products','by out of stock'));
+    el.appendChild(table(CX.products.slice(), productCols(), {sort:colIndex(productCols(),'OOS'),limit:MOST}));
+    return el;
+  }
+  function paneClients(){ var el=document.createElement('div'); el.appendChild(elH2('Clients','('+CX.clients.length+')')); el.appendChild(table(CX.clients.slice(),namedCols('Client account'),{sort:colIndex(namedCols('Client account'),'To action'),search:'Search client',searchKeys:['name']})); return el; }
+  function paneSites(){ var el=document.createElement('div'); el.appendChild(elH2('Sites','('+CX.sites.length+')')); el.appendChild(table(CX.sites.slice(),siteCols(),{sort:colIndex(siteCols(),'To action'),search:'Search site code or name',searchKeys:['code','name']})); return el; }
+  function paneProducts(){ var el=document.createElement('div'); el.appendChild(elH2('Products','('+CX.products.length+' flagged)')); el.appendChild(table(CX.products.slice(),productCols(),{sort:colIndex(productCols(),'OOS'),search:'Search article or description',searchKeys:['code','name']})); return el; }
+  // every flagged site × article line (the PRODUCTSITE grain). Built lazily — only when this tab is open.
+  function spCols(){ return [
+    {label:'Site',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span> <span class="nm2">'+esc(e.name)+'</span>';},sort:function(e){return e.code;}},
+    {label:'Province',l:true,get:function(e){return '<span class="nm2">'+esc(e.province||'—')+'</span>';},sort:function(e){return e.province||'';}},
+    {label:'Profile',l:true,get:function(e){return '<span class="pill">'+esc(e.profile)+'</span>';},sort:function(e){return e.profile;}},
+    {label:'Article',l:true,get:function(e){return '<span class="code">'+esc(e.article)+'</span>';},sort:function(e){return e.article;}},
+    {label:'Description',l:true,get:function(e){return esc(e.desc);},sort:function(e){return e.desc;}}
+  ].concat(KPICOLS,[{label:'Units/day',get:function(e){return nf(e.cur.lost);},sort:function(e){return e.cur.lost;}}]); }
+  var SP_LIMIT=2000;  // cap painted rows on the full report; search/filters reach the rest
+  function paneSiteProduct(){
+    var rows=filteredPS().map(function(r){ var s=SITES[r[0]],pr=PROD[r[1]]; return {code:s[0],name:s[1],profile:s[2],province:s[3],article:pr[0],desc:pr[1],cur:objPS(r[3]),prev:objPS(r[4]),wk:objPS(r[5])}; });
+    var el=document.createElement('div');
+    el.appendChild(elH2('Site × Product','('+nf(rows.length)+' flagged lines)'));
+    var note=document.createElement('div'); note.className='note';
+    note.innerHTML='Every flagged site-article line in scope. '+(rows.length>SP_LIMIT?'Showing the top '+SP_LIMIT+' by units/day lost — <b>narrow with the filters above or the search</b> to see the rest.':'')+' Use the filters (Country · Profile · Province · Client) and column sort to drill in.';
+    el.appendChild(note);
+    el.appendChild(table(rows,spCols(),{sort:colIndex(spCols(),'Units/day'),limit:SP_LIMIT,search:'Search site code, name or article',searchKeys:['code','name','article','desc']}));
+    return el;
+  }
+  function paneKpi(key){
+    var el=document.createElement('div');
+    el.innerHTML='<div class="h2">'+esc(KLAB[key])+' <span class="sub">'+esc(CX.label)+'</span></div><div class="kcards">'+cardHTML(CX.agg,key,KLAB[key])+'</div>';
+    var sc=[{label:'Site',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span> <span class="nm2">'+esc(e.name)+'</span>';},sort:function(e){return e.code;}},
+            {label:'Province',l:true,get:function(e){return '<span class="nm2">'+esc(e.province||'—')+'</span>';},sort:function(e){return e.province||'';}},
+            {label:'Profile',l:true,get:function(e){return '<span class="pill">'+esc(e.profile)+'</span>';},sort:function(e){return e.profile;}},
+            kpiCol(key,KLAB[key]),actCol()];
+    el.appendChild(elH2('Most affected sites','for '+KLAB[key]));
+    el.appendChild(table(CX.sites.slice(),sc,{sort:3,limit:50}));
+    var pc=[{label:'Article',l:true,get:function(e){return '<span class="code">'+esc(e.code)+'</span>';},sort:function(e){return e.code;}},
+            {label:'Description',l:true,get:function(e){return esc(e.name);},sort:function(e){return e.name;}},
+            {label:'Sites',get:function(e){return nf(e.cur.sites);},sort:function(e){return e.cur.sites;}},kpiCol(key,KLAB[key])];
+    el.appendChild(elH2('Most affected products','for '+KLAB[key]));
+    el.appendChild(table(CX.products.slice(),pc,{sort:3,limit:50}));
+    return el;
+  }
+
+  function render(){
+    CX=context();
+    var tb=TABS.filter(function(x){return x.id===state.tab;})[0]||TABS[0];
+    var node = tb.k?paneKpi(tb.k):(tb.id==='overview'?paneOverview():tb.id==='clients'?paneClients():tb.id==='sites'?paneSites():tb.id==='siteproduct'?paneSiteProduct():paneProducts());
+    var pane=document.getElementById('pane'); pane.innerHTML=''; pane.appendChild(node);
+    document.getElementById('lens').textContent=CX.label;
+  }
+
+  document.getElementById('tabs').addEventListener('click',function(e){var t=e.target.closest('.tab');if(!t)return;state.tab=t.getAttribute('data-tab');document.querySelectorAll('.tab').forEach(function(x){x.classList.toggle('active',x===t);});render();});
+  document.getElementById('fCountry').addEventListener('change',function(e){state.country=e.target.value;state.province='';fillProvince();document.getElementById('fProvince').value='';render();});
+  document.getElementById('fProfile').addEventListener('change',function(e){state.profile=e.target.value;render();});
+  document.getElementById('fProvince').addEventListener('change',function(e){state.province=e.target.value;render();});
+  document.getElementById('fClient').addEventListener('change',function(e){state.client=e.target.value;render();});
+  document.getElementById('fClear').addEventListener('click',function(){state.country=(hasSA?'South Africa':'');state.profile='';state.province='';state.client='';document.getElementById('fCountry').value=state.country;document.getElementById('fProfile').value='';fillProvince();document.getElementById('fProvince').value='';document.getElementById('fClient').value='';render();});
+
+  document.getElementById('glossaryBody').innerHTML=[
+    ['Colours (lower is better)','Each KPI is a count of problems, so fewer is better. We compare today with yesterday and with the same day last week. Green = today is lower than both (or already zero); amber = lower than one; red = lower than neither. The same logic colours both the cards and every KPI number in the tables.'],
+    ['% of base','The base is every site-article combination in scope — all statuses, the full range. Each card shows the KPI as a share of that base, so the count has context (e.g. 2% of the range is out of stock). It re-computes as you filter, and each client report uses that client’s base.'],
+    ['Out of stock','Active line (status 04) with on-hand at or below 0. Units/day lost = the rate of sale across those empty lines.'],
+    ['Low Stock Cover','Active line, days cover ≤ 14 and still selling — about to run out.'],
+    ['Phantom','Active line with stock but no sale in 60+ days — likely not on the shelf.'],
+    ['Negative SOH','On-hand below 0 — impossible figure; a rep counts the shelf to correct the system.'],
+    ['Discontinued with SOH','Non-active line still holding stock — clear or return it.'],
+    ['Filters','Country, Site profile, Province and Client re-slice everything live — the cards and all four tables (Province, Client, Site, Product). Country defaults to South Africa; the Province list follows the chosen Country.'],
+    ['Flagged products','The product list is built from article × site lines that have at least one problem, so it is the problem list — healthy lines are not shown.'],
+    ['Periods','Today = each vendor’s latest date; yesterday = that date − 1; last week = that date − 7. Data updates daily.']
+  ].map(function(g){return '<div class="gitem"><b>'+g[0]+'</b><p>'+g[1]+'</p></div>';}).join('');
+  document.getElementById('glossaryBtn').addEventListener('click',function(){document.getElementById('glossary').hidden=false;});
+  document.getElementById('glossaryClose').addEventListener('click',function(){document.getElementById('glossary').hidden=true;});
+  document.getElementById('glossary').addEventListener('click',function(e){if(e.target.id==='glossary')e.target.hidden=true;});
+
+  // ---------- per-card info button ----------
+  var KINFO={
+    oos:'<b>What it counts.</b> Active lines (status 04) where on-hand is 0 or below — the shelf is empty but the line is still expected to sell. <b>The big number</b> is how many site-article lines are out of stock right now; the <b>% of base</b> is that as a share of the full range; <b>units/day lost</b> (on the line below the cards) is the rate of sale being missed. <b>Act:</b> get stock back on the shelf / raise an order.',
+    low:'<b>What it counts.</b> Active lines with 14 days of cover or less that are still selling — about to run out. The <b>%</b> shows how much of the range is at risk of going empty. <b>Act:</b> replenish before they hit zero.',
+    phantom:'<b>What it counts.</b> Active lines that show stock on the system but have not sold in 60+ days — usually the stock is not really on the shelf (lost, misplaced or miscounted). <b>Act:</b> physically check the shelf and correct the on-hand.',
+    neg:'<b>What it counts.</b> Lines with on-hand below 0 — an impossible figure, so a system or count error. <b>Act:</b> a rep counts the shelf so the figure can be corrected.',
+    disc:'<b>What it counts.</b> Lines that are no longer active (discontinued) but still holding stock — capital tied up in dead range. The <b>%</b> shows how much of the range is dead stock. <b>Act:</b> clear or return it.'
+  };
+  document.getElementById('pane').addEventListener('click',function(e){
+    var b=e.target.closest('.info'); if(!b) return;
+    var k=b.getAttribute('data-k');
+    document.getElementById('cardInfoTitle').textContent=KLAB[k]||'KPI';
+    document.getElementById('cardInfoBody').innerHTML='<div class="gitem"><p>'+(KINFO[k]||'')+'</p></div>'+
+      '<div class="gitem"><b>Reading the colours</b><p>The left bar &amp; background show the <b>trend</b> — green = better than yesterday <i>and</i> last week (or zero), amber = better than one, red = neither. The <b>% of base</b> pill has its <b>own</b> scale — green under 3%, amber 3–5%, red 5%+ — so a card can be improving (green trend) yet still touch a large share of the range (red %). They are independent signals.</p></div>';
+    document.getElementById('cardInfo').hidden=false;
+  });
+  document.getElementById('cardInfoClose').addEventListener('click',function(){document.getElementById('cardInfo').hidden=true;});
+  document.getElementById('cardInfo').addEventListener('click',function(e){if(e.target.id==='cardInfo')e.target.hidden=true;});
+
+  render();
+})();
+</script>
+<script>(function(){var EP="https://aria-feedback.outerjoin.workers.dev/e",ID="tramontina-2026-06-30-d2b0bf3a",TOK="74a4cf4046d6373d75167d6b07b1955a3da7b22acd2bfb345f27c0c85da6bf85",EXP=1783014717,KIND="client",SCOPE="TRAMONTINA";function send(ev){try{navigator.sendBeacon(EP,JSON.stringify(ev));}catch(e){}}try{if(!sessionStorage.getItem('aria_open_'+ID)){sessionStorage.setItem('aria_open_'+ID,'1');send({type:'open',kind:KIND,reportId:ID,scope:SCOPE,exp:EXP,tok:TOK,ts:Date.now()});}}catch(e){}})();</script>
+</body>
+</html>
