@@ -10,6 +10,7 @@
     --ink:#1f2937; --mute:#6b7280; --soft:#9aa3af; --line:#e5e7eb;
     --paper:#eef1f4; --card:#ffffff; --tint:#e7eef8;
     --unopen:#fdecec; --unopen-line:#f5cccc;
+    --opened:#e9f7ee; --opened-line:#c7e8d2;
     --radius:12px; --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
@@ -101,6 +102,9 @@
   tbody tr.row-unopened{background:var(--unopen);}
   tbody tr.row-unopened:hover{background:#fbe0e0;}
   tbody tr.row-unopened td{border-bottom-color:var(--unopen-line);}
+  tbody tr.row-opened{background:var(--opened);}
+  tbody tr.row-opened:hover{background:#dff0e4;}
+  tbody tr.row-opened td{border-bottom-color:var(--opened-line);}
   .empty-row td{color:var(--soft);text-align:center;padding:22px;font-size:13px;}
 
   footer{color:var(--mute);font-size:12px;line-height:1.6;margin-top:8px;}
@@ -190,7 +194,7 @@ const DATA = __PAYLOAD__;
   const KINDS = [
     {key:'store',  label:'Stores',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
     {key:'client', label:'Clients',     cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
-    {key:'account',label:'Account',     cols:['scope','sent','opened','first'],                       head:['Report','Sent','Opened','First open']},
+    {key:'account',label:'Account',     cols:['scope','rec','role','sent','opened','first'],           head:['Report','Recipient','Role','Sent','Opened','First open']},
     {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
   ];
   // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role]
@@ -270,10 +274,10 @@ const DATA = __PAYLOAD__;
   // ---- filtering ----
   function sourceRows(){ return (tab==='reps') ? (rowsByKind.store||[]) : (rowsByKind[tab]||[]); }
 
-  function passes(r){
+  function passesF(r, useScope){
     const d=msDate.selected(), s=msScope.selected(), rc=msRecip.selected(), dm=msDomain.selected();
     if(d.size  && !d.has(dateOf(r.sent))) return false;
-    if(s.size  && !s.has(r.scope)) return false;
+    if(useScope && s.size && !s.has(r.scope)) return false;
     if(rc.size && !rc.has(r.rec)) return false;
     if(dm.size && !dm.has(domainOf(r.rec))) return false;
     if(repsOnly && r.role!=='field') return false;
@@ -281,6 +285,7 @@ const DATA = __PAYLOAD__;
     if(query){ const q=query.toLowerCase(); if(!((r.scope+' '+r.rec).toLowerCase().includes(q))) return false; }
     return true;
   }
+  function passes(r){ return passesF(r, true); }   // scope multi-select applies to the table only
   function filteredRows(){ return sourceRows().filter(passes); }
 
   // Reps / store: group the (filtered) store rows by store → distinct field recipients + report/open counts.
@@ -318,6 +323,8 @@ const DATA = __PAYLOAD__;
       k(sent?pct(opened,sent)+'%':'–','Opened',`${opened} / ${sent}`);
       k(un,'Unopened',un?'awaiting open':'all opened',un?'bad':'ok');
       k(field.length?pct(fo,field.length)+'%':'–','Reps opened',field.length?`${fo} / ${field.length}`:'no reps');
+      const cr=(rowsByKind.client||[]).filter(x=>passesF(x,false)), cro=cr.filter(r=>r.opened).length;
+      k(cr.length?pct(cro,cr.length)+'%':'–','Client reports',cr.length?`${cro} / ${cr.length} opened`:'none sent');
       k(median==null?'–':fmtMins(median),'Median to open','first open');
     }
     $('kpis').innerHTML=cards.join('');
@@ -398,7 +405,7 @@ const DATA = __PAYLOAD__;
     if(rows2.length===0){
       $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">Nothing to show here.</td></tr>`;
     } else {
-      $('tbody').innerHTML = rows2.map(r=>`<tr class="${r.opened?'':'row-unopened'}">`+kd.cols.map(col=>{
+      $('tbody').innerHTML = rows2.map(r=>`<tr class="${r.opened?'row-opened':'row-unopened'}">`+kd.cols.map(col=>{
         if(col==='scope') return `<td class="scope"></td>`;
         if(col==='rec')   return `<td class="rec"></td>`;
         if(col==='role'){ const lbl=r.role==='field'?(tab==='client'?'client':'rep'):(r.role||''); return `<td><span class="role role-${r.role||'none'}">${lbl||'—'}</span></td>`; }
