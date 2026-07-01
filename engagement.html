@@ -53,6 +53,8 @@
     border:1px solid var(--line);border-radius:8px;background:var(--paper);}
   .toolbar select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);
     border-radius:8px;background:var(--paper);color:var(--ink);cursor:pointer;}
+  .toolbar input.recip{flex:0 1 200px;min-width:120px;font:inherit;font-size:13px;padding:8px 10px;
+    border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);}
   .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--mute);cursor:pointer;
     border:1px solid var(--line);border-radius:20px;padding:6px 13px;user-select:none;}
   .toggle.on{background:#fdeaea;border-color:#f3c0c0;color:var(--red);}
@@ -103,7 +105,8 @@
       <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
       <select id="dateFilter" aria-label="Filter by date sent"><option value="">All dates</option></select>
       <select id="scopeFilter" aria-label="Filter by store"><option value="">All</option></select>
-      <select id="recipFilter" aria-label="Filter by recipient"><option value="">All recipients</option></select>
+      <input type="search" id="recipFilter" class="recip" list="recipList" placeholder="All recipients" aria-label="Search recipient" autocomplete="off">
+      <datalist id="recipList"></datalist>
       <select id="domainFilter" aria-label="Filter by recipient domain"><option value="">All domains</option></select>
       <span class="toggle" id="repsOnly"><span>Reps only</span></span>
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
@@ -196,15 +199,19 @@ const DATA = __PAYLOAD__;
   function fillSelect(id, label, vals){
     $(id).innerHTML = `<option value="">${label}</option>` + vals.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
   }
+  function fillDatalist(listId, vals){
+    $(listId).innerHTML = vals.map(v=>`<option value="${v.replace(/"/g,'&quot;')}"></option>`).join('');
+  }
   function rebuildFilters(){
     const rs = rowsByKind[tab]||[];
     fillSelect('scopeFilter', tab==='store'?'All stores':tab==='client'?'All clients':'All reports', [...new Set(rs.map(r=>r.scope).filter(Boolean))].sort());
-    fillSelect('recipFilter', 'All recipients', [...new Set(rs.map(r=>r.rec).filter(Boolean))].sort());
+    fillDatalist('recipList', [...new Set(rs.map(r=>r.rec).filter(Boolean))].sort());
+    $('recipFilter').value = '';
     fillSelect('domainFilter', 'All domains', [...new Set(rs.map(r=>domainOf(r.rec)).filter(Boolean))].sort());
     scopeSel = recipSel = domainSel = '';
   }
   $('scopeFilter').onchange = e=>{ scopeSel = e.target.value; render(); };
-  $('recipFilter').onchange = e=>{ recipSel = e.target.value; render(); };
+  $('recipFilter').oninput = e=>{ recipSel = e.target.value; render(); };
   $('domainFilter').onchange = e=>{ domainSel = e.target.value; render(); };
 
   $('tabs').innerHTML = KINDS.map(kd=>{
@@ -217,7 +224,7 @@ const DATA = __PAYLOAD__;
     let rows = (rowsByKind[tab]||[]).slice();
     if(dateSel) rows = rows.filter(r=>dateOf(r.sent)===dateSel);
     if(scopeSel) rows = rows.filter(r=>r.scope===scopeSel);
-    if(recipSel) rows = rows.filter(r=>r.rec===recipSel);
+    if(recipSel){ const rq=recipSel.toLowerCase(); rows = rows.filter(r=>r.rec.toLowerCase().includes(rq)); }
     if(domainSel) rows = rows.filter(r=>domainOf(r.rec)===domainSel);
     if(repsOnly) rows = rows.filter(r=>r.role==='field');
     if(unopenedOnly) rows = rows.filter(r=>!r.opened);
