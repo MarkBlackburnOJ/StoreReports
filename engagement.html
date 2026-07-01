@@ -107,6 +107,22 @@
   tbody tr.row-opened td{border-bottom-color:var(--opened-line);}
   .empty-row td{color:var(--soft);text-align:center;padding:22px;font-size:13px;}
 
+  /* Reps matrix (rep x rolling dates) */
+  .ch{display:inline-block;padding:2px 7px;border-radius:6px;font-size:11.5px;font-weight:600;white-space:nowrap;}
+  .ch-red{background:#fdecec;color:#b42318;}
+  .ch-yellow{background:#fdf3d3;color:#7a5c00;}
+  .ch-green{background:#e3f5ea;color:#12703a;}
+  #tblwrap.scrollbox{overflow:auto;max-height:72vh;border:1px solid var(--line);border-radius:8px;}
+  table.matrix td{white-space:nowrap;}
+  table.matrix td.num,table.matrix th.num{text-align:center;}
+  table.matrix thead th{position:sticky;background:var(--card);z-index:3;}
+  table.matrix thead tr:first-child th{top:0;height:34px;}
+  table.matrix thead tr.mx-total th{top:34px;background:var(--tint);color:var(--brand-d);font-weight:600;z-index:2;}
+  table.matrix th.mx-rep,table.matrix td.mx-rep{position:sticky;left:0;background:var(--card);z-index:1;font-weight:600;min-width:150px;border-right:1px solid var(--line);}
+  table.matrix thead tr:first-child th.mx-rep{z-index:4;}
+  table.matrix thead tr.mx-total th.mx-rep{z-index:3;background:var(--tint);}
+  table.matrix .mx-tot{border-left:2px solid var(--line);}
+
   footer{color:var(--mute);font-size:12px;line-height:1.6;margin-top:8px;}
   footer b{color:var(--ink);font-weight:600;}
   .gloss{font-size:12px;color:var(--mute);}
@@ -143,10 +159,12 @@
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
       <span class="count" id="rowcount"></span>
     </div>
-    <table>
-      <thead id="thead"></thead>
-      <tbody id="tbody"></tbody>
-    </table>
+    <div id="tblwrap">
+      <table id="tbl">
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
   </div>
 
   <footer>
@@ -195,6 +213,7 @@ const DATA = __PAYLOAD__;
     {key:'store',  label:'Stores',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
     {key:'client', label:'Clients',     cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
     {key:'account',label:'Account',     cols:['scope','rec','role','sent','opened','first'],           head:['Report','Recipient','Role','Sent','Opened','First open']},
+    {key:'repmx',  label:'Reps',        cols:[], head:[]},
     {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
   ];
   // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role]
@@ -300,6 +319,77 @@ const DATA = __PAYLOAD__;
     return [...m.values()].map(o=>({store:o.store, reps:o.reps.size, reports:o.reports, opened:o.opened, openpct:pct(o.opened,o.reports)}));
   }
 
+  // ---- Reps matrix (distinct reps x rolling dates; cell = opened/sent + %, colour-banded) ----
+  const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const isoLabel = iso => { const p=String(iso).split('-'); return p.length===3 ? p[2]+' '+(MONTHS[(+p[1])-1]||'') : String(iso); };
+  const chiclet = (o,s) => { if(!s) return '<span class="dash">—</span>'; const p=Math.round(o*100/s); const cls=p>=90?'ch-green':p>=60?'ch-yellow':'ch-red'; return `<span class="ch ${cls}">${o}/${s} · ${p}%</span>`; };
+  const bandPct = (o,s) => s>0 ? o/s : -1;   // reps/cells with nothing sent sink to the bottom on sort
+
+  function repMatrix(){
+    const rq=query.toLowerCase(), rc=msRecip.selected(), dm=msDomain.selected(), ds=msDate.selected();
+    const src=(DATA.repDaily||[]).filter(x=>{
+      const rep=x[0];
+      if(rc.size && !rc.has(rep)) return false;
+      if(dm.size && !dm.has(domainOf(rep))) return false;
+      if(ds.size && !ds.has(isoLabel(x[1]))) return false;
+      if(rq && !rep.toLowerCase().includes(rq)) return false;
+      return true;
+    });
+    const dates=[...new Set(src.map(x=>x[1]))].sort();       // iso ascending → oldest to newest, left to right
+    const reps =[...new Set(src.map(x=>x[0]))];
+    const cell={};                                            // rep -> iso -> [opened, sent]
+    src.forEach(x=>{ (cell[x[0]]=cell[x[0]]||{})[x[1]]=[x[3], x[2]]; });
+    const total={};                                          // rep -> [opened, sent]
+    reps.forEach(rp=>{ let o=0,s=0; dates.forEach(d=>{ const c=cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); total[rp]=[o,s]; });
+    return {dates, reps, cell, total};
+  }
+
+  function renderRepKpis(reps, total){
+    let o=0,s=0,g=0,y=0,rd=0;
+    reps.forEach(rp=>{ const t=total[rp]; o+=t[0]; s+=t[1]; if(t[1]>0){ const p=Math.round(t[0]*100/t[1]); if(p>=90)g++; else if(p>=60)y++; else rd++; } });
+    const cards=[
+      ['', 'Reps', reps.length, 'in view'],
+      ['', 'Open rate', s?Math.round(o*100/s)+'%':'–', o+' / '+s],
+      ['ok', '≥ 90%', g, 'reps'],
+      ['', '60–90%', y, 'reps'],
+      ['bad', '< 60%', rd, 'reps'],
+    ];
+    $('kpis').innerHTML = cards.map(c=>`<div class="kpi ${c[0]}"><div class="v">${c[2]}</div><div class="l">${c[1]}</div><div class="s">${c[3]||''}</div></div>`).join('');
+  }
+
+  function renderRepMatrix(){
+    const {dates, reps, cell, total} = repMatrix();
+    renderRepKpis(reps, total);
+    const arr = c => sortCol===c ? `<span class="arr">${sortDir>0?'▲':'▼'}</span>` : '';
+    let list=reps.slice();
+    if(sortCol==='rep') list.sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-sortDir:a.toLowerCase()>b.toLowerCase()?sortDir:0);
+    else if(sortCol==='total') list.sort((a,b)=>(bandPct(total[a][0],total[a][1])-bandPct(total[b][0],total[b][1]))*sortDir);
+    else if(sortCol) list.sort((a,b)=>{ const ca=cell[a][sortCol], cb=cell[b][sortCol]; return ((ca?bandPct(ca[0],ca[1]):-1)-(cb?bandPct(cb[0],cb[1]):-1))*sortDir; });
+    else list.sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-1:1);
+
+    const head = '<tr><th class="mx-rep" data-c="rep">Rep '+arr('rep')+'</th>'
+      + dates.map(d=>`<th class="num" data-c="${d}">${isoLabel(d)} ${arr(d)}</th>`).join('')
+      + `<th class="num mx-tot" data-c="total">Total ${arr('total')}</th></tr>`;
+    let go=0, gs=0;
+    const totCells = dates.map(d=>{ let o=0,s=0; reps.forEach(rp=>{ const c=cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); return `<th class="num">${chiclet(o,s)}</th>`; }).join('');
+    reps.forEach(rp=>{ go+=total[rp][0]; gs+=total[rp][1]; });
+    const totRow = `<tr class="mx-total"><th class="mx-rep">All reps</th>${totCells}<th class="num mx-tot">${chiclet(go,gs)}</th></tr>`;
+    $('thead').innerHTML = head + totRow;
+    bindSort();
+
+    if(list.length===0){
+      $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${dates.length+2}">No rep data in range.</td></tr>`;
+    } else {
+      $('tbody').innerHTML = list.map(rp=>{
+        const tds=dates.map(d=>{ const c=cell[rp][d]; return `<td class="num">${c?chiclet(c[0],c[1]):'<span class="dash">—</span>'}</td>`; }).join('');
+        return `<tr><td class="mx-rep"></td>${tds}<td class="num mx-tot">${chiclet(total[rp][0],total[rp][1])}</td></tr>`;
+      }).join('');
+      const trs=$('tbody').querySelectorAll('tr');
+      list.forEach((rp,i)=>{ const c=trs[i].querySelector('td.mx-rep'); if(c) c.textContent=rp; });
+    }
+    $('rowcount').textContent = `${list.length} rep${list.length===1?'':'s'}`;
+  }
+
   // ---- KPI cards (recompute from the filtered rows) ----
   function renderKpis(rows){
     const cards=[];
@@ -332,6 +422,14 @@ const DATA = __PAYLOAD__;
 
   // ---- per-tab filter option lists (rebuilt on tab change) ----
   function rebuildFilters(){
+    if(tab==='repmx'){
+      const rd = DATA.repDaily||[];
+      msDate.set([...new Set(rd.map(x=>isoLabel(x[1])))].sort((a,b)=>dkey(b)-dkey(a)), 'All dates');
+      msScope.set([], 'All');
+      msRecip.set([...new Set(rd.map(x=>x[0]))].sort(), 'All reps');
+      msDomain.set([...new Set(rd.map(x=>domainOf(x[0])).filter(Boolean))].sort(), 'All domains');
+      return;
+    }
     const rs = sourceRows();
     const dates =[...new Set(rs.map(r=>dateOf(r.sent)).filter(Boolean))].sort((a,b)=>dkey(b)-dkey(a));
     const stores=[...new Set(rs.map(r=>r.scope).filter(Boolean))].sort();
@@ -345,13 +443,15 @@ const DATA = __PAYLOAD__;
 
   // ---- tabs ----
   $('tabs').innerHTML = KINDS.map(kd=>{
-    const n = kd.key==='reps' ? new Set((rowsByKind.store||[]).map(r=>r.scope||'—')).size : (rowsByKind[kd.key]||[]).length;
+    const n = kd.key==='reps' ? new Set((rowsByKind.store||[]).map(r=>r.scope||'—')).size
+            : kd.key==='repmx' ? new Set((DATA.repDaily||[]).map(x=>x[0])).size
+            : (rowsByKind[kd.key]||[]).length;
     return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
   }).join('');
   $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ tab=b.dataset.k; sortCol=null; rebuildFilters(); render(); });
 
   function bindSort(){
-    $('thead').querySelectorAll('th').forEach(th=>th.onclick=()=>{
+    $('thead').querySelectorAll('th[data-c]').forEach(th=>th.onclick=()=>{
       const c=th.dataset.c; if(sortCol===c) sortDir=-sortDir; else { sortCol=c; sortDir=1; } render();
     });
   }
@@ -364,10 +464,13 @@ const DATA = __PAYLOAD__;
   }
 
   function render(){
-    const rows = filteredRows();
-    renderKpis(rows);
     const kd = KINDS.find(k=>k.key===tab);
     $('tabs').querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.k===tab));
+    $('tblwrap').classList.toggle('scrollbox', tab==='repmx');
+    $('tbl').classList.toggle('matrix', tab==='repmx');
+    if(tab==='repmx'){ renderRepMatrix(); return; }
+    const rows = filteredRows();
+    renderKpis(rows);
 
     if(tab==='reps'){
       let agg = repsAgg(rows);
