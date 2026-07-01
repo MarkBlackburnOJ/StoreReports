@@ -9,6 +9,7 @@
     --brand:#16539F; --brand-d:#0f3e78; --red:#E31E24; --green:#1E8E3E;
     --ink:#1f2937; --mute:#6b7280; --soft:#9aa3af; --line:#e5e7eb;
     --paper:#eef1f4; --card:#ffffff; --tint:#e7eef8;
+    --unopen:#fdecec; --unopen-line:#f5cccc;
     --radius:12px; --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   }
   *{box-sizing:border-box}
@@ -17,10 +18,15 @@
   a{color:var(--brand)}
 
   header.mast{background:var(--brand);color:#fff;border-radius:0 0 var(--radius) var(--radius);
-    padding:22px 24px;margin-bottom:18px;}
+    padding:22px 24px;margin-bottom:14px;}
   .mast h1{margin:0;font-size:20px;font-weight:700;letter-spacing:.2px;}
   .mast .eyebrow{font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.66);}
   .mast .sub{font-size:13px;color:rgba(255,255,255,.82);margin-top:5px;}
+
+  .asof{display:flex;align-items:center;gap:9px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+    border-radius:var(--radius);padding:11px 15px;margin-bottom:18px;font-size:13.5px;font-weight:600;}
+  .asof::before{content:"\1F553";font-size:15px;filter:grayscale(.1);}
+  .asof b{color:#7c2d12;}
 
   .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
   .kpi{background:var(--card);border-radius:var(--radius);padding:15px 16px;border:1px solid var(--line);}
@@ -49,16 +55,33 @@
   .tab .c{color:var(--soft);font-weight:400;font-size:12px;}
 
   .toolbar{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;}
-  .toolbar input[type=search]{flex:1;min-width:180px;font:inherit;font-size:14px;padding:8px 12px;
+  .toolbar input[type=search]#search{flex:1;min-width:170px;font:inherit;font-size:14px;padding:8px 12px;
     border:1px solid var(--line);border-radius:8px;background:var(--paper);}
-  .toolbar select{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);
-    border-radius:8px;background:var(--paper);color:var(--ink);cursor:pointer;}
-  .toolbar input.recip{flex:0 1 200px;min-width:120px;font:inherit;font-size:13px;padding:8px 10px;
-    border:1px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);}
   .toggle{display:inline-flex;align-items:center;gap:7px;font-size:13px;color:var(--mute);cursor:pointer;
     border:1px solid var(--line);border-radius:20px;padding:6px 13px;user-select:none;}
   .toggle.on{background:#fdeaea;border-color:#f3c0c0;color:var(--red);}
   .count{font-size:12px;color:var(--soft);margin-left:auto;}
+
+  /* multi-select checkbox dropdown */
+  .ms{position:relative;display:inline-block;}
+  .ms-btn{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
+    background:var(--paper);color:var(--ink);cursor:pointer;white-space:nowrap;max-width:210px;
+    overflow:hidden;text-overflow:ellipsis;}
+  .ms-btn.active{border-color:var(--brand);color:var(--brand-d);background:var(--tint);font-weight:600;}
+  .ms-panel{position:absolute;z-index:30;top:calc(100% + 4px);left:0;min-width:210px;max-width:300px;
+    background:var(--card);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 28px rgba(15,62,120,.16);
+    padding:8px;display:flex;flex-direction:column;gap:7px;}
+  .ms-panel[hidden]{display:none;}
+  .ms-search{font:inherit;font-size:13px;padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--paper);}
+  .ms-actions{display:flex;gap:12px;font-size:12px;padding:0 2px;}
+  .ms-actions a{color:var(--brand);cursor:pointer;text-decoration:none;}
+  .ms-actions a:hover{text-decoration:underline;}
+  .ms-list{overflow-y:auto;max-height:240px;display:flex;flex-direction:column;}
+  .ms-opt{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:pointer;font-size:13px;color:var(--ink);}
+  .ms-opt:hover{background:var(--paper);}
+  .ms-opt input{margin:0;flex:none;}
+  .ms-opt span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .ms-empty{color:var(--soft);font-size:12px;padding:8px 6px;}
 
   table{width:100%;border-collapse:collapse;}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);font-size:13px;}
@@ -75,6 +98,9 @@
   .role-field{background:var(--tint);color:var(--brand-d);border-color:var(--brand);}
   .role-internal{color:var(--soft);}
   tbody tr:hover{background:#f8fafc;}
+  tbody tr.row-unopened{background:var(--unopen);}
+  tbody tr.row-unopened:hover{background:#fbe0e0;}
+  tbody tr.row-unopened td{border-bottom-color:var(--unopen-line);}
   .empty-row td{color:var(--soft);text-align:center;padding:22px;font-size:13px;}
 
   footer{color:var(--mute);font-size:12px;line-height:1.6;margin-top:8px;}
@@ -91,6 +117,8 @@
     <div class="sub" id="sub"></div>
   </header>
 
+  <div class="asof" id="asof"></div>
+
   <div class="kpis" id="kpis"></div>
 
   <div class="panel">
@@ -103,11 +131,10 @@
     <div class="tabs" id="tabs"></div>
     <div class="toolbar">
       <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
-      <select id="dateFilter" aria-label="Filter by date sent"><option value="">All dates</option></select>
-      <select id="scopeFilter" aria-label="Filter by store"><option value="">All</option></select>
-      <input type="search" id="recipFilter" class="recip" list="recipList" placeholder="All recipients" aria-label="Search recipient" autocomplete="off">
-      <datalist id="recipList"></datalist>
-      <select id="domainFilter" aria-label="Filter by recipient domain"><option value="">All domains</option></select>
+      <span class="ms-host" id="msDate"></span>
+      <span class="ms-host" id="msScope"></span>
+      <span class="ms-host" id="msRecip"></span>
+      <span class="ms-host" id="msDomain"></span>
       <span class="toggle" id="repsOnly"><span>Reps only</span></span>
       <span class="toggle" id="unopened"><span>Unopened only</span></span>
       <span class="count" id="rowcount"></span>
@@ -122,7 +149,8 @@
     <div class="gloss">
       <b>What “opened” means:</b> the report page loaded in the recipient’s browser and fired its tracking beacon.
       A report opened on several devices counts once. Email preview panes or blocked images can make a real open go
-      uncounted, so treat the rate as a floor. Times are <b>SAST</b>. Source: <code>dbo.vReportEngagement</code>.
+      uncounted, so treat the rate as a floor. The <b>KPI cards and table both reflect the active filters</b>;
+      unopened rows are tinted red. Times are <b>SAST</b>. Source: <code>dbo.vReportEngagement</code>.
     </div>
     <div id="gen" style="margin-top:10px;"></div>
   </footer>
@@ -136,26 +164,16 @@ const DATA = __PAYLOAD__;
   const esc = s => (s==null?'':String(s));
   const pct = (o,s) => s>0 ? Math.round(o*100/s) : 0;
   const fmtMins = m => m==null ? '' : (m<60 ? m+'m' : Math.floor(m/60)+'h '+(m%60)+'m');
+  const domainOf = e => { const i=(e||'').lastIndexOf('@'); return i>=0 ? e.slice(i+1).toLowerCase() : ''; };
 
-  // ---- header + KPIs ----
-  $('sub').textContent = (DATA.meta.windowLabel||'') ;
+  // ---- header ----
+  $('sub').textContent = DATA.meta.windowLabel || '';
+  $('asof').innerHTML = 'Snapshot as of <b>' + esc(DATA.meta.generated) + ' (SAST)</b> &mdash; report opens are counted up to this moment.';
   $('gen').innerHTML = 'Generated ' + esc(DATA.meta.generated) + ' &middot; ARIA ' + esc(DATA.meta.version);
 
-  const S = DATA.summary;
-  const kpiHtml = [];
-  const k = (v,l,s,cls) => kpiHtml.push(`<div class="kpi ${cls||''}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s||''}</div></div>`);
-  k(pct(S.overall[0],S.overall[1])+'%','Opened overall',`${S.overall[0]} / ${S.overall[1]}`);
-  const sr=S.storeRep||S.store; k(`${sr[0]}<small> / ${sr[1]}</small>`,'Reps opened',pct(sr[0],sr[1])+'% of stores');
-  k(`${S.client[0]}<small> / ${S.client[1]}</small>`,'Client reports',pct(S.client[0],S.client[1])+'% opened');
-  if(S.account[1]===0) k('&ndash;','Account report','not sent');
-  else if(S.account[0]>0) k('&#10003;','Account report','opened','ok');
-  else k('&#10007;','Account report','not opened','bad');
-  k(S.medianMins==null?'&ndash;':fmtMins(S.medianMins),'Median time to open','first open');
-  $('kpis').innerHTML = kpiHtml.join('');
-
-  // ---- trend ----
-  const t = DATA.trend||[];
-  $('trendHint').textContent = t.length ? `last ${t.length} day${t.length===1?'':'s'}` : '';
+  // ---- trend (historical; not affected by the table filters) ----
+  const t = DATA.trend || [];
+  $('trendHint').textContent = t.length ? `last ${t.length} day${t.length===1?'':'s'} (all reports)` : '';
   const maxRate = Math.max(10, ...t.map(d=>pct(d[2],d[1])));
   $('trend').innerHTML = t.map(d=>{
     const r = pct(d[2],d[1]);
@@ -163,17 +181,17 @@ const DATA = __PAYLOAD__;
     const cls = d[1]===0 ? 'bar empty' : 'bar';
     return `<div class="${cls}" style="height:${h}%" title="${d[0]}: ${d[2]}/${d[1]} opened (${r}%)"></div>`;
   }).join('');
-  // sparse x labels (first, middle, last) to avoid clutter
   $('trendX').innerHTML = t.map((d,i)=>{
     const show = i===0 || i===t.length-1 || i===Math.floor(t.length/2);
     return `<span>${show ? d[0].slice(5) : ''}</span>`;
   }).join('');
 
-  // ---- tables ----
+  // ---- data prep ----
   const KINDS = [
-    {key:'store',  label:'Stores',  cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
-    {key:'client', label:'Clients', cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
-    {key:'account',label:'Account', cols:['scope','sent','opened','first'],                       head:['Report','Sent','Opened','First open']},
+    {key:'store',  label:'Stores',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
+    {key:'client', label:'Clients',     cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
+    {key:'account',label:'Account',     cols:['scope','sent','opened','first'],                       head:['Report','Sent','Opened','First open']},
+    {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
   ];
   // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role]
   const rowsByKind = {store:[],client:[],account:[]};
@@ -184,81 +202,203 @@ const DATA = __PAYLOAD__;
     });
   });
 
-  let tab = KINDS[0].key, unopenedOnly = false, repsOnly = false, sortCol = null, sortDir = 1, query = '', dateSel = '', scopeSel = '', recipSel = '', domainSel = '';
-
-  // Date-sent filter: distinct send dates (the "dd MMM" part of the Sent column), most recent first.
+  // date helpers (the "dd MMM" part of the Sent column)
   const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
   const dateOf = s => s ? s.slice(0, s.lastIndexOf(' ')) : '';
   const dkey = d => { const p=d.split(' '); return (MON[p[1]]||0)*100 + (parseInt(p[0],10)||0); };
-  const allDates = [...new Set((DATA.reports||[]).map(r=>dateOf(r[4])).filter(Boolean))].sort((a,b)=>dkey(b)-dkey(a));
-  $('dateFilter').innerHTML = '<option value="">All dates</option>' + allDates.map(d=>`<option value="${d}">${d}</option>`).join('');
-  $('dateFilter').onchange = e=>{ dateSel = e.target.value; render(); };
 
-  // Per-tab filters: store/scope, recipient, recipient-domain — rebuilt when the tab changes.
-  const domainOf = e => { const i=(e||'').lastIndexOf('@'); return i>=0 ? e.slice(i+1).toLowerCase() : ''; };
-  function fillSelect(id, label, vals){
-    $(id).innerHTML = `<option value="">${label}</option>` + vals.map(v=>`<option value="${v.replace(/"/g,'&quot;')}">${v}</option>`).join('');
-  }
-  function fillDatalist(listId, vals){
-    $(listId).innerHTML = vals.map(v=>`<option value="${v.replace(/"/g,'&quot;')}"></option>`).join('');
-  }
-  function rebuildFilters(){
-    const rs = rowsByKind[tab]||[];
-    fillSelect('scopeFilter', tab==='store'?'All stores':tab==='client'?'All clients':'All reports', [...new Set(rs.map(r=>r.scope).filter(Boolean))].sort());
-    fillDatalist('recipList', [...new Set(rs.map(r=>r.rec).filter(Boolean))].sort());
-    $('recipFilter').value = '';
-    fillSelect('domainFilter', 'All domains', [...new Set(rs.map(r=>domainOf(r.rec)).filter(Boolean))].sort());
-    scopeSel = recipSel = domainSel = '';
-  }
-  $('scopeFilter').onchange = e=>{ scopeSel = e.target.value; render(); };
-  $('recipFilter').oninput = e=>{ recipSel = e.target.value; render(); };
-  $('domainFilter').onchange = e=>{ domainSel = e.target.value; render(); };
+  // ---- filter state ----
+  let tab = 'store', sortCol = null, sortDir = 1, query = '';
+  let repsOnly = false, unopenedOnly = false;
 
-  $('tabs').innerHTML = KINDS.map(kd=>{
-    const n = (rowsByKind[kd.key]||[]).length;
-    return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
-  }).join('');
-  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{tab=b.dataset.k;sortCol=null;rebuildFilters();render();});
+  // ---- multi-select checkbox dropdown ----
+  const MSes = [];
+  function closeAll(){ MSes.forEach(p=>{ p.hidden = true; }); }
+  document.addEventListener('click', closeAll);
 
-  function currentRows(){
-    let rows = (rowsByKind[tab]||[]).slice();
-    if(dateSel) rows = rows.filter(r=>dateOf(r.sent)===dateSel);
-    if(scopeSel) rows = rows.filter(r=>r.scope===scopeSel);
-    if(recipSel){ const rq=recipSel.toLowerCase(); rows = rows.filter(r=>r.rec.toLowerCase().includes(rq)); }
-    if(domainSel) rows = rows.filter(r=>domainOf(r.rec)===domainSel);
-    if(repsOnly) rows = rows.filter(r=>r.role==='field');
-    if(unopenedOnly) rows = rows.filter(r=>!r.opened);
-    if(query){ const q=query.toLowerCase(); rows = rows.filter(r=>(r.scope+' '+r.rec).toLowerCase().includes(q)); }
-    if(sortCol){
-      rows.sort((a,b)=>{
-        let x=a[sortCol], y=b[sortCol];
-        if(sortCol==='mins'){ x = x==null?Infinity:x; y = y==null?Infinity:y; }  // unopened sink to the bottom (asc)
-        if(sortCol==='opened'){ x = x?1:0; y = y?1:0; }
-        return (x>y?1:x<y?-1:0)*sortDir;
+  function MultiSelect(host, allLabel, opts){
+    opts = opts || {};
+    const state = { values:[], sel:new Set(), all:allLabel, onChange:opts.onChange||(()=>{}) };
+    const wrap = document.createElement('div'); wrap.className = 'ms';
+    const btn = document.createElement('button'); btn.type='button'; btn.className='ms-btn';
+    const panel = document.createElement('div'); panel.className='ms-panel'; panel.hidden=true;
+    let search=null;
+    if(opts.searchable){ search=document.createElement('input'); search.type='search'; search.className='ms-search'; search.placeholder='Search…'; panel.appendChild(search); }
+    const actions=document.createElement('div'); actions.className='ms-actions';
+    const aAll=document.createElement('a'); aAll.textContent='Select all';
+    const aClear=document.createElement('a'); aClear.textContent='Clear';
+    actions.append(aAll,aClear); panel.appendChild(actions);
+    const list=document.createElement('div'); list.className='ms-list'; panel.appendChild(list);
+    wrap.append(btn,panel); host.appendChild(wrap);
+    MSes.push(panel);
+
+    function label(){
+      const n=state.sel.size;
+      btn.textContent = (n===0 ? state.all : n+' selected') + '  ▾';
+      btn.classList.toggle('active', n>0);
+    }
+    function draw(){
+      const q=(search && search.value || '').toLowerCase();
+      const vis=state.values.filter(v=>!q || v.toLowerCase().includes(q));
+      if(vis.length===0){ list.innerHTML='<div class="ms-empty">No matches</div>'; return; }
+      list.innerHTML='';
+      vis.forEach(v=>{
+        const row=document.createElement('label'); row.className='ms-opt';
+        const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=state.sel.has(v);
+        cb.onchange=()=>{ if(cb.checked) state.sel.add(v); else state.sel.delete(v); label(); state.onChange(); };
+        const sp=document.createElement('span'); sp.textContent=v;
+        row.append(cb,sp); list.appendChild(row);
       });
     }
-    return rows;
+    btn.onclick=e=>{ e.stopPropagation(); const willOpen=panel.hidden; closeAll(); panel.hidden=!willOpen; if(!panel.hidden){ draw(); if(search) search.focus(); } };
+    panel.onclick=e=>e.stopPropagation();
+    if(search) search.oninput=draw;
+    aAll.onclick=()=>{ const q=(search&&search.value||'').toLowerCase(); state.values.filter(v=>!q||v.toLowerCase().includes(q)).forEach(v=>state.sel.add(v)); draw(); label(); state.onChange(); };
+    aClear.onclick=()=>{ state.sel.clear(); draw(); label(); state.onChange(); };
+
+    return {
+      set(values, allLabel){ state.values=values; state.sel.clear(); if(allLabel) state.all=allLabel; if(search) search.value=''; label(); if(!panel.hidden) draw(); },
+      selected(){ return state.sel; }
+    };
+  }
+
+  const msDate  = MultiSelect($('msDate'),  'All dates',      {onChange:render});
+  const msScope = MultiSelect($('msScope'), 'All stores',     {searchable:true, onChange:render});
+  const msRecip = MultiSelect($('msRecip'), 'All recipients', {searchable:true, onChange:render});
+  const msDomain= MultiSelect($('msDomain'),'All domains',    {onChange:render});
+
+  // ---- filtering ----
+  function sourceRows(){ return (tab==='reps') ? (rowsByKind.store||[]) : (rowsByKind[tab]||[]); }
+
+  function passes(r){
+    const d=msDate.selected(), s=msScope.selected(), rc=msRecip.selected(), dm=msDomain.selected();
+    if(d.size  && !d.has(dateOf(r.sent))) return false;
+    if(s.size  && !s.has(r.scope)) return false;
+    if(rc.size && !rc.has(r.rec)) return false;
+    if(dm.size && !dm.has(domainOf(r.rec))) return false;
+    if(repsOnly && r.role!=='field') return false;
+    if(unopenedOnly && r.opened) return false;
+    if(query){ const q=query.toLowerCase(); if(!((r.scope+' '+r.rec).toLowerCase().includes(q))) return false; }
+    return true;
+  }
+  function filteredRows(){ return sourceRows().filter(passes); }
+
+  // Reps / store: group the (filtered) store rows by store → distinct field recipients + report/open counts.
+  function repsAgg(rows){
+    const m=new Map();
+    rows.forEach(r=>{
+      const s=r.scope||'—'; let o=m.get(s);
+      if(!o){ o={store:s, reps:new Set(), reports:0, opened:0}; m.set(s,o); }
+      o.reports++; if(r.opened) o.opened++;
+      if(r.role==='field' && r.rec) o.reps.add(r.rec);
+    });
+    return [...m.values()].map(o=>({store:o.store, reps:o.reps.size, reports:o.reports, opened:o.opened, openpct:pct(o.opened,o.reports)}));
+  }
+
+  // ---- KPI cards (recompute from the filtered rows) ----
+  function renderKpis(rows){
+    const cards=[];
+    const k=(v,l,s,cls)=>cards.push(`<div class="kpi ${cls||''}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s||''}</div></div>`);
+    if(tab==='reps'){
+      const stores=new Set(rows.map(r=>r.scope||'—')).size;
+      const reps=new Set(); rows.forEach(r=>{ if(r.role==='field'&&r.rec) reps.add(r.rec); });
+      const reports=rows.length, opened=rows.filter(r=>r.opened).length;
+      const avg = stores ? Math.round(reps.size/stores*10)/10 : 0;
+      k(stores,'Stores','in view');
+      k(reps.size,'Reps','distinct field recipients');
+      k(avg,'Avg reps / store','');
+      k(reports,'Reports','sent in view');
+      k(reports?pct(opened,reports)+'%':'–','Open rate',`${opened} / ${reports}`);
+    } else {
+      const sent=rows.length, opened=rows.filter(r=>r.opened).length, un=sent-opened;
+      const field=rows.filter(r=>r.role==='field'), fo=field.filter(r=>r.opened).length;
+      const mins=rows.filter(r=>r.opened && r.mins!=null).map(r=>r.mins).sort((a,b)=>a-b);
+      const median=mins.length ? mins[Math.floor((mins.length-1)/2)] : null;
+      k(sent,'Sent','in view');
+      k(sent?pct(opened,sent)+'%':'–','Opened',`${opened} / ${sent}`);
+      k(un,'Unopened',un?'awaiting open':'all opened',un?'bad':'ok');
+      k(field.length?pct(fo,field.length)+'%':'–','Reps opened',field.length?`${fo} / ${field.length}`:'no reps');
+      k(median==null?'–':fmtMins(median),'Median to open','first open');
+    }
+    $('kpis').innerHTML=cards.join('');
+  }
+
+  // ---- per-tab filter option lists (rebuilt on tab change) ----
+  function rebuildFilters(){
+    const rs = sourceRows();
+    const dates =[...new Set(rs.map(r=>dateOf(r.sent)).filter(Boolean))].sort((a,b)=>dkey(b)-dkey(a));
+    const stores=[...new Set(rs.map(r=>r.scope).filter(Boolean))].sort();
+    const recs  =[...new Set(rs.map(r=>r.rec).filter(Boolean))].sort();
+    const doms  =[...new Set(rs.map(r=>domainOf(r.rec)).filter(Boolean))].sort();
+    msDate.set(dates, 'All dates');
+    msScope.set(stores, tab==='client'?'All clients':tab==='account'?'All reports':'All stores');
+    msRecip.set(recs, 'All recipients');
+    msDomain.set(doms, 'All domains');
+  }
+
+  // ---- tabs ----
+  $('tabs').innerHTML = KINDS.map(kd=>{
+    const n = kd.key==='reps' ? new Set((rowsByKind.store||[]).map(r=>r.scope||'—')).size : (rowsByKind[kd.key]||[]).length;
+    return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
+  }).join('');
+  $('tabs').querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ tab=b.dataset.k; sortCol=null; rebuildFilters(); render(); });
+
+  function bindSort(){
+    $('thead').querySelectorAll('th').forEach(th=>th.onclick=()=>{
+      const c=th.dataset.c; if(sortCol===c) sortDir=-sortDir; else { sortCol=c; sortDir=1; } render();
+    });
+  }
+  function headHtml(kd, numericCols){
+    return '<tr>' + kd.head.map((h,i)=>{
+      const col=kd.cols[i];
+      const arr = sortCol===col ? `<span class="arr">${sortDir>0?'▲':'▼'}</span>` : '';
+      return `<th data-c="${col}" class="${numericCols.includes(col)?'num':''}">${h} ${arr}</th>`;
+    }).join('') + '</tr>';
   }
 
   function render(){
+    const rows = filteredRows();
+    renderKpis(rows);
     const kd = KINDS.find(k=>k.key===tab);
     $('tabs').querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.k===tab));
-    // header
-    $('thead').innerHTML = '<tr>' + kd.head.map((h,i)=>{
-      const col = kd.cols[i];
-      const numeric = (col==='mins');
-      const arr = sortCol===col ? `<span class="arr">${sortDir>0?'▲':'▼'}</span>` : '';
-      return `<th data-c="${col}" class="${numeric?'num':''}">${h} ${arr}</th>`;
-    }).join('') + '</tr>';
-    $('thead').querySelectorAll('th').forEach(th=>th.onclick=()=>{
-      const c=th.dataset.c; if(sortCol===c) sortDir=-sortDir; else {sortCol=c;sortDir=1;} render();
-    });
-    // body
-    const rows = currentRows();
-    if(rows.length===0){
+
+    if(tab==='reps'){
+      let agg = repsAgg(rows);
+      if(sortCol){ agg.sort((a,b)=>{ let x=a[sortCol],y=b[sortCol]; if(typeof x==='string'){x=x.toLowerCase();y=(y||'').toLowerCase();} return (x>y?1:x<y?-1:0)*sortDir; }); }
+      $('thead').innerHTML = headHtml(kd, ['reps','reports','opened','openpct']);
+      bindSort();
+      if(agg.length===0){
+        $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">Nothing to show here.</td></tr>`;
+      } else {
+        $('tbody').innerHTML = agg.map(a=>'<tr>'+kd.cols.map(col=>{
+          if(col==='store')  return '<td class="scope"></td>';
+          if(col==='openpct')return `<td class="num">${a.openpct}%</td>`;
+          return `<td class="num">${a[col]}</td>`;
+        }).join('')+'</tr>').join('');
+        const trs=$('tbody').querySelectorAll('tr');
+        agg.forEach((a,i)=>{ const sc=trs[i].querySelector('td.scope'); if(sc) sc.textContent=a.store; });
+      }
+      $('rowcount').textContent = `${agg.length} store${agg.length===1?'':'s'}`;
+      return;
+    }
+
+    // per-report tabs (store / client / account)
+    let rows2 = rows.slice();
+    if(sortCol){
+      rows2.sort((a,b)=>{
+        let x=a[sortCol], y=b[sortCol];
+        if(sortCol==='mins'){ x = x==null?Infinity:x; y = y==null?Infinity:y; }
+        if(sortCol==='opened'){ x = x?1:0; y = y?1:0; }
+        if(typeof x==='string'){ x=x.toLowerCase(); y=(y||'').toLowerCase(); }
+        return (x>y?1:x<y?-1:0)*sortDir;
+      });
+    }
+    $('thead').innerHTML = headHtml(kd, ['mins']);
+    bindSort();
+    if(rows2.length===0){
       $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">Nothing to show here.</td></tr>`;
     } else {
-      $('tbody').innerHTML = rows.map(r=>'<tr>'+kd.cols.map(col=>{
+      $('tbody').innerHTML = rows2.map(r=>`<tr class="${r.opened?'':'row-unopened'}">`+kd.cols.map(col=>{
         if(col==='scope') return `<td class="scope"></td>`;
         if(col==='rec')   return `<td class="rec"></td>`;
         if(col==='role'){ const lbl=r.role==='field'?(tab==='client'?'client':'rep'):(r.role||''); return `<td><span class="role role-${r.role||'none'}">${lbl||'—'}</span></td>`; }
@@ -267,15 +407,14 @@ const DATA = __PAYLOAD__;
         if(col==='first') return `<td>${r.first?esc(r.first):'<span class="dash">—</span>'}</td>`;
         return `<td>${esc(r[col])}</td>`;
       }).join('')+'</tr>').join('');
-      // fill text-content safely (avoid HTML injection from scope/recipient)
       const trs = $('tbody').querySelectorAll('tr');
-      rows.forEach((r,i)=>{
+      rows2.forEach((r,i)=>{
         const tr = trs[i];
         const sc = tr.querySelector('td.scope'); if(sc) sc.textContent = r.scope;
         const rc = tr.querySelector('td.rec');   if(rc) rc.textContent = r.rec || '—';
       });
     }
-    $('rowcount').textContent = `${rows.length} shown`;
+    $('rowcount').textContent = `${rows2.length} shown`;
   }
 
   $('search').oninput = e=>{ query=e.target.value; render(); };
