@@ -41,11 +41,15 @@
   .panel h2{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--ink);}
   .panel h2 .hint{font-weight:400;color:var(--soft);font-size:12px;margin-left:6px;}
 
-  .trend{display:flex;align-items:flex-end;gap:5px;height:96px;}
-  .trend .bar{flex:1;min-width:6px;background:var(--brand);border-radius:3px 3px 0 0;position:relative;opacity:.88;
+  .trend{display:flex;align-items:flex-end;gap:5px;height:96px;padding-top:18px;}
+  .trend .bar{flex:1;min-width:6px;background:var(--brand);border-radius:3px 3px 0 0;position:relative;opacity:.9;
     transition:opacity .12s;cursor:default;}
   .trend .bar:hover{opacity:1;}
   .trend .bar.empty{background:var(--line);}
+  .trend .bar.b-green{background:var(--green);}
+  .trend .bar.b-yellow{background:#E0A800;}
+  .trend .bar.b-red{background:var(--red);}
+  .trend .bar .blab{position:absolute;top:-16px;left:-3px;right:-3px;text-align:center;font-size:10px;font-weight:600;color:var(--ink);white-space:nowrap;}
   .trend-x{display:flex;gap:5px;margin-top:6px;}
   .trend-x span{flex:1;text-align:center;font-size:10px;color:var(--soft);overflow:hidden;white-space:nowrap;}
 
@@ -193,24 +197,34 @@ const DATA = __PAYLOAD__;
   $('asof').innerHTML = 'Snapshot as of <b>' + esc(DATA.meta.generated) + ' (SAST)</b> &mdash; report opens are counted up to this moment.';
   $('gen').innerHTML = 'Generated ' + esc(DATA.meta.generated) + ' &middot; ARIA ' + esc(DATA.meta.version);
 
-  // ---- trend (historical; not affected by the table filters) ----
-  const t = DATA.trend || [];
-  $('trendHint').textContent = t.length ? `last ${t.length} day${t.length===1?'':'s'} (all reports)` : '';
-  const maxRate = Math.max(10, ...t.map(d=>pct(d[2],d[1])));
-  $('trend').innerHTML = t.map(d=>{
-    const r = pct(d[2],d[1]);
-    const h = Math.max(3, Math.round(r/maxRate*100));
-    const cls = d[1]===0 ? 'bar empty' : 'bar';
-    return `<div class="${cls}" style="height:${h}%" title="${d[0]}: ${d[2]}/${d[1]} opened (${r}%)"></div>`;
-  }).join('');
-  $('trendX').innerHTML = t.map((d,i)=>{
-    const show = i===0 || i===t.length-1 || i===Math.floor(t.length/2);
-    return `<span>${show ? d[0].slice(5) : ''}</span>`;
-  }).join('');
+  // ---- trend chart: open-rate per day, computed from the CURRENTLY FILTERED data of the active tab,
+  //      colour-banded like the chiclets, with a % data label on each bar. Rendered from render(). ----
+  function trendData(){
+    if(tab==='repmx'){
+      const m = repMatrix();
+      return m.dates.map(d=>{ let o=0,s=0; m.reps.forEach(rp=>{ const c=m.cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); return [isoLabel(d), s, o]; });
+    }
+    const map={};
+    filteredRows().forEach(r=>{ const d=dateOf(r.sent); if(!d) return; const e=map[d]||(map[d]=[0,0]); e[0]++; if(r.opened)e[1]++; });
+    return Object.keys(map).sort((a,b)=>dkey(a)-dkey(b)).map(d=>[d, map[d][0], map[d][1]]);   // [label, sent, opened]
+  }
+  function renderTrend(){
+    const data = trendData();
+    $('trendHint').textContent = data.length ? `${data.length} day${data.length===1?'':'s'} · reflects filters` : '';
+    const rate = d => d[1]>0 ? Math.round(d[2]*100/d[1]) : 0;
+    const maxRate = Math.max(10, ...data.map(rate));
+    $('trend').innerHTML = data.map(d=>{
+      const p = rate(d);
+      const h = d[1]===0 ? 3 : Math.max(8, Math.round(p/maxRate*100));
+      const band = d[1]===0 ? 'empty' : p>=90 ? 'b-green' : p>=60 ? 'b-yellow' : 'b-red';
+      return `<div class="bar ${band}" style="height:${h}%" title="${d[0]}: ${d[2]}/${d[1]} opened (${p}%)"><span class="blab">${d[1]?p+'%':''}</span></div>`;
+    }).join('');
+    $('trendX').innerHTML = data.map(d=>`<span>${d[0]}</span>`).join('');
+  }
 
   // ---- data prep ----
   const KINDS = [
-    {key:'store',  label:'Stores',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
+    {key:'store',  label:'Detail',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
     {key:'client', label:'Clients',     cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
     {key:'account',label:'Account',     cols:['scope','rec','role','sent','opened','first'],           head:['Report','Recipient','Role','Sent','Opened','First open']},
     {key:'repmx',  label:'Reps',        cols:[], head:[]},
@@ -229,6 +243,7 @@ const DATA = __PAYLOAD__;
   const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
   const dateOf = s => s ? s.slice(0, s.lastIndexOf(' ')) : '';
   const dkey = d => { const p=d.split(' '); return (MON[p[1]]||0)*100 + (parseInt(p[0],10)||0); };
+  const timeKey = s => { if(!s) return -1; const p=s.split(' '); const t=(p[2]||'0:0').split(':'); return dkey(p[0]+' '+p[1])*1440 + (+t[0]||0)*60 + (+t[1]||0); };
 
   // ---- filter state ----
   let tab = 'store', sortCol = null, sortDir = 1, query = '';
@@ -468,6 +483,7 @@ const DATA = __PAYLOAD__;
     $('tabs').querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.k===tab));
     $('tblwrap').classList.toggle('scrollbox', tab==='repmx');
     $('tbl').classList.toggle('matrix', tab==='repmx');
+    renderTrend();
     if(tab==='repmx'){ renderRepMatrix(); return; }
     const rows = filteredRows();
     renderKpis(rows);
@@ -482,7 +498,7 @@ const DATA = __PAYLOAD__;
       } else {
         $('tbody').innerHTML = agg.map(a=>'<tr>'+kd.cols.map(col=>{
           if(col==='store')  return '<td class="scope"></td>';
-          if(col==='openpct')return `<td class="num">${a.openpct}%</td>`;
+          if(col==='openpct'){ const p=a.openpct, cls=p>=90?'ch-green':p>=60?'ch-yellow':'ch-red'; return `<td class="num"><span class="ch ${cls}">${p}%</span></td>`; }
           return `<td class="num">${a[col]}</td>`;
         }).join('')+'</tr>').join('');
         const trs=$('tbody').querySelectorAll('tr');
@@ -496,12 +512,15 @@ const DATA = __PAYLOAD__;
     let rows2 = rows.slice();
     if(sortCol){
       rows2.sort((a,b)=>{
-        let x=a[sortCol], y=b[sortCol];
-        if(sortCol==='mins'){ x = x==null?Infinity:x; y = y==null?Infinity:y; }
-        if(sortCol==='opened'){ x = x?1:0; y = y?1:0; }
-        if(typeof x==='string'){ x=x.toLowerCase(); y=(y||'').toLowerCase(); }
+        let x, y;
+        if(sortCol==='sent' || sortCol==='first'){ x=timeKey(a[sortCol]); y=timeKey(b[sortCol]); }
+        else if(sortCol==='mins'){ x=a.mins==null?Infinity:a.mins; y=b.mins==null?Infinity:b.mins; }
+        else if(sortCol==='opened'){ x=a.opened?1:0; y=b.opened?1:0; }
+        else { x=a[sortCol]; y=b[sortCol]; if(typeof x==='string'){ x=x.toLowerCase(); y=(y||'').toLowerCase(); } }
         return (x>y?1:x<y?-1:0)*sortDir;
       });
+    } else {
+      rows2.sort((a,b)=> timeKey(b.sent) - timeKey(a.sent));   // default: latest Sent first
     }
     $('thead').innerHTML = headHtml(kd, ['mins']);
     bindSort();
