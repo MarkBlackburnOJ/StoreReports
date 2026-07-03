@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 
-# Serialize deployments so overlapping pushes queue instead of failing ("Deployment failed, try again later").
+# Serialize deployments so overlapping pushes queue/cancel instead of failing.
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -20,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.d3.outputs.page_url || steps.d2.outputs.page_url || steps.d1.outputs.page_url }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -30,6 +30,25 @@ jobs:
         uses: actions/upload-pages-artifact@v3
         with:
           path: '.'
-      - name: Deploy to GitHub Pages
-        id: deployment
+      # GitHub Pages' CDN sync fails transiently ("Deployment failed, try again later") on this large,
+      # frequently-updated site. Retry the deploy up to 3x, ONLY on failure, so a transient sync error
+      # becomes a success rather than a "Run failed" email. A clean deploy runs attempt 1 only.
+      - name: Deploy to GitHub Pages (attempt 1)
+        id: d1
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Pause before retry
+        if: steps.d1.outcome == 'failure'
+        run: sleep 30
+      - name: Deploy to GitHub Pages (attempt 2)
+        id: d2
+        if: steps.d1.outcome == 'failure'
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Pause before final retry
+        if: steps.d1.outcome == 'failure' && steps.d2.outcome == 'failure'
+        run: sleep 45
+      - name: Deploy to GitHub Pages (attempt 3)
+        id: d3
+        if: steps.d1.outcome == 'failure' && steps.d2.outcome == 'failure'
         uses: actions/deploy-pages@v4
