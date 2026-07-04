@@ -244,13 +244,13 @@
       cmp:function(a,b){return num(a.dsc)-num(b.dsc);} },
     { key:'phantom', label:'Phantom', cta:'Missing stock — verify count',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
-      cmp:function(a,b){return num(b.soh)-num(a.soh);} },
+      cmp:function(a,b){return (num(b.soh_value)-num(a.soh_value)) || (num(b.soh)-num(a.soh));} },  // by stock value (MAKRO); falls back to on-hand for PNP
     { key:'negative', label:'Negative SOH', cta:'Negative on-hand — count needed',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(a.soh)-num(b.soh);} },
     { key:'discontinued', label:'Discontinued with SOH', cta:'',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
-      cmp:function(a,b){return num(b.soh)-num(a.soh);} }
+      cmp:function(a,b){return (num(b.soh_value)-num(a.soh_value)) || (num(b.soh)-num(a.soh));} }  // by stock value (MAKRO); falls back to on-hand for PNP
   ];
   var CAT = {}; CATS.forEach(function(c){ CAT[c.key]=c; });
   var PRIORITY = ['negative','oos','phantom','low_cover','discontinued'];
