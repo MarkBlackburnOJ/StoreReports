@@ -332,7 +332,7 @@
   (function(){
     var logo=document.getElementById('channelLogo'); if(!logo) return;
     var base='https://MarkBlackburnOJ.github.io/StoreReports/assets/';
-    logo.src = base + (IS_MAKRO ? 'makro-logo.png' : 'pnp-logo.png');
+    logo.src = base + (IS_MAKRO ? 'makro-logo.png' : 'pnp-logo.png') + '?v=2';   // ?v bumps on logo change to bust caches
     logo.alt = IS_MAKRO ? 'Makro' : 'Pick n Pay';
     logo.onerror = function(){ logo.style.display='none'; };   // never leave a broken-image box
     logo.removeAttribute('hidden');
