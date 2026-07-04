@@ -30,6 +30,9 @@
   .ibtn{border:0;background:rgba(255,255,255,.16);color:#fff;width:36px;height:36px;border-radius:10px;
     display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
   .ibtn:active{background:rgba(255,255,255,.28);}
+  .hright{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .brand{height:22px;width:auto;max-width:118px;object-fit:contain;background:#fff;border-radius:7px;
+    padding:5px 8px;box-shadow:0 1px 2px rgba(0,0,0,.18);display:block;}
 
   /* Client filter */
   .filterbar{padding:12px 14px 2px;}
@@ -148,9 +151,12 @@
         <div class="name" id="storeName">—</div>
         <div class="meta" id="storeMeta">—</div>
       </div>
-      <button class="ibtn" id="glossaryBtn" type="button" aria-label="How these are calculated">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
-      </button>
+      <div class="hright">
+        <img id="channelLogo" class="brand" alt="" hidden>
+        <button class="ibtn" id="glossaryBtn" type="button" aria-label="How these are calculated">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8h.01"></path></svg>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -234,6 +240,28 @@
   }
   function classify(r){ var c = cats(r); return c.length ? c[0] : null; }  // primary tag, or null
 
+  // ---- Which optional detail fields to show: hide any field the data source doesn't populate for this
+  // report (e.g. MAKRO has no Listing / RP / Supply / received-ordered dates, but does carry a Stock value).
+  // A field appears only if at least one line carries it — so PNP is unchanged and MAKRO drops the empties.
+  var SHOW = (function(){
+    function anyVal(get){ for(var i=0;i<ALL.length;i++){ if(get(ALL[i])) return true; } return false; }
+    function anyPos(get){ for(var i=0;i<ALL.length;i++){ if(num(get(ALL[i]))>0) return true; } return false; }
+    function anyDate(get){ for(var i=0;i<ALL.length;i++){ var v=get(ALL[i]); if(v && String(v).indexOf('1900')!==0) return true; } return false; }
+    var st={}; ALL.forEach(function(r){ st[String(r.status||'')]=1; });
+    return {
+      status:    Object.keys(st).length > 1,                 // hide a single fabricated status (MAKRO = all '04')
+      listing:   anyVal(function(r){return r.listing;}),
+      rp:        anyVal(function(r){return r.rp;}),
+      supply:    anyVal(function(r){return r.supply;}),
+      last_recv: anyDate(function(r){return r.last_recv;}),
+      last_ord:  anyDate(function(r){return r.last_ord;}),
+      soh_value: anyPos(function(r){return r.soh_value;})
+    };
+  })();
+  // MAKRO lines carry a per-line Rand Stock value (PNP does not) — use that as the channel signal for
+  // branding (logo), the Phantom/Discontinued headline metric, and the glossary wording.
+  var IS_MAKRO = SHOW.soh_value;
+
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
     { key:'oos', label:'Out of stock', cta:'Out of stock — order needed',
@@ -243,13 +271,15 @@
       metric:function(r){return num(r.dsc).toFixed(1);}, unit:'days', head:'Days cover',
       cmp:function(a,b){return num(a.dsc)-num(b.dsc);} },
     { key:'phantom', label:'Phantom', cta:'Missing stock — verify count',
-      metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
+      metric:function(r){return IS_MAKRO ? fmtMoney(r.soh_value) : String(Math.round(num(r.soh)));},
+      unit: IS_MAKRO ? '' : 'on hand', head: IS_MAKRO ? 'Stock value' : 'On hand',
       cmp:function(a,b){return (num(b.soh_value)-num(a.soh_value)) || (num(b.soh)-num(a.soh));} },  // by stock value (MAKRO); falls back to on-hand for PNP
     { key:'negative', label:'Negative SOH', cta:'Negative on-hand — count needed',
       metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
       cmp:function(a,b){return num(a.soh)-num(b.soh);} },
     { key:'discontinued', label:'Discontinued with SOH', cta:'',
-      metric:function(r){return String(Math.round(num(r.soh)));}, unit:'on hand', head:'On hand',
+      metric:function(r){return IS_MAKRO ? fmtMoney(r.soh_value) : String(Math.round(num(r.soh)));},
+      unit: IS_MAKRO ? '' : 'on hand', head: IS_MAKRO ? 'Stock value' : 'On hand',
       cmp:function(a,b){return (num(b.soh_value)-num(a.soh_value)) || (num(b.soh)-num(a.soh));} }  // by stock value (MAKRO); falls back to on-hand for PNP
   ];
   var CAT = {}; CATS.forEach(function(c){ CAT[c.key]=c; });
@@ -277,25 +307,6 @@
   // ---- Client list ----
   var CLIENTS = (function(){ var s={}; ALL.forEach(function(r){ if(r.vendor) s[r.vendor]=1; }); return Object.keys(s).sort(); })();
 
-  // ---- Which optional detail fields to show: hide any field the data source doesn't populate for this
-  // report (e.g. MAKRO has no Listing / RP / Supply / received-ordered dates, but does carry a Stock value).
-  // A field appears only if at least one line carries it — so PNP is unchanged and MAKRO drops the empties.
-  var SHOW = (function(){
-    function anyVal(get){ for(var i=0;i<ALL.length;i++){ if(get(ALL[i])) return true; } return false; }
-    function anyPos(get){ for(var i=0;i<ALL.length;i++){ if(num(get(ALL[i]))>0) return true; } return false; }
-    function anyDate(get){ for(var i=0;i<ALL.length;i++){ var v=get(ALL[i]); if(v && String(v).indexOf('1900')!==0) return true; } return false; }
-    var st={}; ALL.forEach(function(r){ st[String(r.status||'')]=1; });
-    return {
-      status:    Object.keys(st).length > 1,                 // hide a single fabricated status (MAKRO = all '04')
-      listing:   anyVal(function(r){return r.listing;}),
-      rp:        anyVal(function(r){return r.rp;}),
-      supply:    anyVal(function(r){return r.supply;}),
-      last_recv: anyDate(function(r){return r.last_recv;}),
-      last_ord:  anyDate(function(r){return r.last_ord;}),
-      soh_value: anyPos(function(r){return r.soh_value;})
-    };
-  })();
-
   // ---- Buckets for the current client ----
   var buckets={}, viewAll=[];
   function rebuild(){
@@ -316,6 +327,16 @@
     CLIENTS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
   document.getElementById('footer').textContent =
     [ activeCount()+' active', ALL.length+' total', meta.generated?('generated '+meta.generated):'' ].filter(Boolean).join(' · ');
+
+  // ---- Channel logo (PnP or Makro) ----
+  (function(){
+    var logo=document.getElementById('channelLogo'); if(!logo) return;
+    var base='https://MarkBlackburnOJ.github.io/StoreReports/assets/';
+    logo.src = base + (IS_MAKRO ? 'makro-logo.png' : 'pnp-logo.png');
+    logo.alt = IS_MAKRO ? 'Makro' : 'Pick n Pay';
+    logo.onerror = function(){ logo.style.display='none'; };   // never leave a broken-image box
+    logo.removeAttribute('hidden');
+  })();
 
   // ---- Icons ----
   var ICO_CHEV='<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>';
@@ -458,7 +479,13 @@
 
   // ---- Glossary ----
   function renderGlossary(){
-    var items=[
+    var items = IS_MAKRO ? [
+      {t:'Out of stock', c:'var(--red)', d:'A line with on-hand at or below 0 — the shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
+      {t:'Low Stock Cover', c:'var(--red)', d:'A line with days cover &le; 14 that is still selling (DROS &gt; 0) — about to run out, reorder. Lines with no sales velocity are excluded.'},
+      {t:'Phantom', c:'var(--red)', d:'On-hand &gt; 0 but no sale in 60+ days (1900 dates ignored) — stock the system shows that may not be on the shelf. Verify with a physical count. Ranked by <b>Rand stock value</b>, highest first.'},
+      {t:'Negative SOH', c:'var(--red)', d:'On-hand below 0 — an impossible figure. Count the shelf to correct the system. Takes priority over Out of stock.'},
+      {t:'Discontinued with SOH', c:'var(--red)', d:'Discontinued lines still holding stock, ranked by <b>Rand stock value</b>. MAKRO article statuses aren&rsquo;t in the feed yet, so this list stays empty until they arrive.'}
+    ] : [
       {t:'Out of stock', c:'var(--red)', d:'Active line (status 04) with on-hand at or below 0 — shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
       {t:'Low Stock Cover', c:'var(--red)', d:'Active line with days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. An out-of-stock line that&rsquo;s still selling appears here and under Out of stock.'},
       {t:'Phantom', c:'var(--red)', d:'Active line with on-hand &gt; 0 but no sale in 60+ days (1900 dates ignored). The system shows stock that may not be on the shelf — verify with a physical count.'},
@@ -466,7 +493,9 @@
       {t:'Discontinued with SOH', c:'var(--red)', d:'Non-active line (status 72, 07, 71, 70, 06, 60, 61, 08) still holding stock — clear or return it.'},
       {t:'New', c:'var(--blue)', d:'Active line with stock, received in the last 30 days and not yet sold — a new line to get onto the shelf and selling. An indicator, not an action list.'}
     ];
-    var html='<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
+    var html = IS_MAKRO
+      ? '<p class="gnote">MAKRO lines don&rsquo;t carry an article status yet, so every line is treated as <b>active</b>, and status-based lists (Discontinued) stay empty until statuses arrive. Phantom and Discontinued are ranked by <b>Rand stock value</b>. An article can appear in <b>more than one</b> list — its chips show the others. Tick it off in any list and it&rsquo;s ticked off everywhere.</p>'
+      : '<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
     html += items.map(function(g){
       return '<div class="gitem"><div class="gt"><span class="gdot" style="background:'+g.c+'"></span>'+g.t+'</div><div class="gd">'+g.d+'</div></div>';
     }).join('');
