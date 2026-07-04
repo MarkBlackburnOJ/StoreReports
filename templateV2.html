@@ -211,6 +211,7 @@
     return (+p[2]) + ' ' + (MO[(+p[1])-1]||'') + " '" + p[0].slice(2);
   }
   function ago(d){ return (d==null) ? '' : ' · '+d+'d'; }
+  function fmtMoney(v){ var n=num(v); if(!n) return '—'; return 'R'+Math.round(n).toLocaleString('en-ZA'); }
   function isPhantomStale(r){
     var ls = r.last_sold || '';
     if(!ls || String(ls).indexOf('1900')===0) return false;
@@ -276,6 +277,25 @@
   // ---- Client list ----
   var CLIENTS = (function(){ var s={}; ALL.forEach(function(r){ if(r.vendor) s[r.vendor]=1; }); return Object.keys(s).sort(); })();
 
+  // ---- Which optional detail fields to show: hide any field the data source doesn't populate for this
+  // report (e.g. MAKRO has no Listing / RP / Supply / received-ordered dates, but does carry a Stock value).
+  // A field appears only if at least one line carries it — so PNP is unchanged and MAKRO drops the empties.
+  var SHOW = (function(){
+    function anyVal(get){ for(var i=0;i<ALL.length;i++){ if(get(ALL[i])) return true; } return false; }
+    function anyPos(get){ for(var i=0;i<ALL.length;i++){ if(num(get(ALL[i]))>0) return true; } return false; }
+    function anyDate(get){ for(var i=0;i<ALL.length;i++){ var v=get(ALL[i]); if(v && String(v).indexOf('1900')!==0) return true; } return false; }
+    var st={}; ALL.forEach(function(r){ st[String(r.status||'')]=1; });
+    return {
+      status:    Object.keys(st).length > 1,                 // hide a single fabricated status (MAKRO = all '04')
+      listing:   anyVal(function(r){return r.listing;}),
+      rp:        anyVal(function(r){return r.rp;}),
+      supply:    anyVal(function(r){return r.supply;}),
+      last_recv: anyDate(function(r){return r.last_recv;}),
+      last_ord:  anyDate(function(r){return r.last_ord;}),
+      soh_value: anyPos(function(r){return r.soh_value;})
+    };
+  })();
+
   // ---- Buckets for the current client ----
   var buckets={}, viewAll=[];
   function rebuild(){
@@ -322,18 +342,18 @@
   function cell(l,v){ return '<div><div class="lbl">'+esc(l)+'</div><div class="val">'+v+'</div></div>'; }
   function detailGrid(r){
     var status = (r.status||'') + (sdefs[r.status] ? ' '+sdefs[r.status] : '');
-    return '<div class="grid">'+
-      cell('SOH', Math.round(num(r.soh))) +
-      cell('DROS', num(r.dros).toFixed(2)) +
-      cell('Days cover', num(r.dsc).toFixed(1)) +
-      cell('Last sold', fmtDate(r.last_sold)+ago(r.days_sold)) +
-      cell('Last received', fmtDate(r.last_recv)+ago(r.days_recv)) +
-      cell('Last ordered', fmtDate(r.last_ord)+ago(r.days_ord)) +
-      cell('Status', esc(status||'—')) +
-      cell('Listing', esc(r.listing||'—')) +
-      cell('RP type', esc(r.rp||'—')) +
-      cell('Supply', esc(r.supply||'—')) +
-    '</div>';
+    var cells = [ cell('SOH', Math.round(num(r.soh))) ];
+    if (SHOW.soh_value) cells.push(cell('Stock value', fmtMoney(r.soh_value)));
+    cells.push(cell('DROS', num(r.dros).toFixed(2)));
+    cells.push(cell('Days cover', num(r.dsc).toFixed(1)));
+    cells.push(cell('Last sold', fmtDate(r.last_sold)+ago(r.days_sold)));
+    if (SHOW.last_recv) cells.push(cell('Last received', fmtDate(r.last_recv)+ago(r.days_recv)));
+    if (SHOW.last_ord)  cells.push(cell('Last ordered', fmtDate(r.last_ord)+ago(r.days_ord)));
+    if (SHOW.status)    cells.push(cell('Status', esc(status||'—')));
+    if (SHOW.listing)   cells.push(cell('Listing', esc(r.listing||'—')));
+    if (SHOW.rp)        cells.push(cell('RP type', esc(r.rp||'—')));
+    if (SHOW.supply)    cells.push(cell('Supply', esc(r.supply||'—')));
+    return '<div class="grid">'+cells.join('')+'</div>';
   }
   // A genuinely new line: active, has stock, never sold, received within the last 30 days.
   function isNew(r){
