@@ -33,6 +33,8 @@
   .hright{display:flex;align-items:center;gap:10px;flex-shrink:0;}
   .brand{height:22px;width:auto;max-width:118px;object-fit:contain;background:#fff;border-radius:7px;
     padding:5px 8px;box-shadow:0 1px 2px rgba(0,0,0,.18);display:block;}
+  .notice{margin:16px 12px 6px;background:#FFF4CE;border:1px solid #F1D67C;border-left:4px solid #E8A400;
+    border-radius:10px;padding:13px 15px;font-size:12.5px;color:#4A3B00;line-height:1.55;}
 
   /* Client filter */
   .filterbar{padding:12px 14px 2px;}
@@ -185,6 +187,7 @@
   </div>
 
   <div class="list" id="list"></div>
+  <div class="notice" id="notice" hidden></div>
   <footer id="footer">—</footer>
 </div>
 
@@ -336,6 +339,16 @@
     logo.alt = IS_MAKRO ? 'Makro' : 'Pick n Pay';
     logo.onerror = function(){ logo.style.display='none'; };   // never leave a broken-image box
     logo.removeAttribute('hidden');
+  })();
+
+  // ---- Bottom notice (channel-aware): reassures the rep the report is read-only / independent ----
+  (function(){
+    var n=document.getElementById('notice'); if(!n) return;
+    var brand = IS_MAKRO ? 'Makro' : 'Pick and Pay';
+    n.innerHTML = 'This data comes from '+brand+' and it is used to help show you what you need to do in the store. '
+      + '<b>This report is not linked to the '+brand+' system</b>, clicking <b>Completed</b> is just so you can track '
+      + 'what you have completed, it does not affect the '+brand+' system.';
+    n.removeAttribute('hidden');
   })();
 
   // ---- Icons ----
