@@ -109,7 +109,10 @@
 <div class="wrap">
   <header>
     <div><div class="eyebrow">Account Manager &middot; Daily Report</div><h1>Portfolio stock health</h1><div class="meta" id="meta">—</div></div>
-    <button class="ibtn" id="glossaryBtn" type="button">How it's calculated</button>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;">
+      <img id="brandLogo" alt="" style="height:30px;width:auto;background:#fff;padding:4px 9px;border-radius:7px;display:none;">
+      <button class="ibtn" id="glossaryBtn" type="button">How it's calculated</button>
+    </div>
   </header>
   <div class="tabs" id="tabs"></div>
   <div class="filterbar">
@@ -138,6 +141,9 @@
   var D; try{ D=JSON.parse(document.getElementById('payload').textContent); }catch(e){ document.getElementById('pane').innerHTML='<p>Could not load data.</p>'; return; }
   var meta=D.meta||{}, KSC=D.KSC||[], KPS=D.KPS||[], SITES=D.sites||[], CLIENT_N=D.clients||[], PROD=D.products||[], SC=D.sc||[], PS=D.ps||[], PORT=D.port||{c:[],p:[],w:[]};
   var CLIENT_MODE=meta.client||'';   // single-client report: payload pre-filtered to one client
+  // Channel branding (SAMS): swap the header logo + brand-prefix the eyebrow. Absent/pnp keeps the PNP look.
+  var CHANNEL=(function(){var c=String(meta.channel||'').toLowerCase();return (c==='makro'||c==='massbuild'||c==='game')?c:'pnp';})();
+  var BRANDS={makro:{name:'Makro',logo:'makro-logo.png'},massbuild:{name:'Massbuild',logo:'massbuild-logo.jpg'},game:{name:'Game',logo:'game-logo.png'}};
   function objSC(a){ a=a||[]; var o={}; for(var i=0;i<KSC.length;i++) o[KSC[i]]=a[i]||0; return o; }
   function objPS(a){ a=a||[]; var o={}; for(var i=0;i<KPS.length;i++) o[KPS[i]]=a[i]||0; return o; }
 
@@ -218,6 +224,12 @@
     document.querySelector('header h1').textContent=CLIENT_MODE;
     document.querySelector('header .eyebrow').textContent='Account Manager · Client Report';
     var fcl=document.getElementById('fClient'); if(fcl&&fcl.parentNode) fcl.parentNode.style.display='none';
+  }
+  if(BRANDS[CHANNEL]){
+    var _b=BRANDS[CHANNEL];
+    var _ey=document.querySelector('header .eyebrow'); if(_ey) _ey.textContent=_b.name+' · Account Manager · '+(CLIENT_MODE?'Client Report':'Daily Report');
+    var _lg=document.getElementById('brandLogo'); if(_lg){ _lg.src='https://MarkBlackburnOJ.github.io/StoreReports/assets/'+_b.logo+'?v=1'; _lg.alt=_b.name; _lg.style.display=''; }
+    try{ document.title=_b.name+' — Account Manager Report'; }catch(e){}
   }
   document.getElementById('meta').textContent=(CLIENT_MODE?[meta.sites+' sites',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]:[meta.sites+' sites',meta.clients+' clients',meta.products+' flagged products','Today '+pdate(meta.current)+' · yest '+pdate(meta.previous)+' · last wk '+pdate(meta.weekago)]).join('  ·  ');
   document.getElementById('footer').textContent=['Generated '+(meta.generated||''),nf(objSC(PORT.c).active)+' active lines','lower is better on every KPI','ARIA'].join('  ·  ');
