@@ -324,12 +324,15 @@
   // ---- One-time header + filter ----
   document.getElementById('storeName').textContent = meta.store_name || meta.store_code || 'Store report';
   document.getElementById('storeMeta').textContent =
-    [meta.store_code, meta.profile, meta.week_ending_pretty ? ('Week ending '+meta.week_ending_pretty) : ''].filter(Boolean).join(' · ');
+    [meta.store_code, meta.profile,
+     meta.week_ending_pretty ? ('Date of data '+meta.week_ending_pretty) : '',
+     meta.generated ? ('Generated '+meta.generated) : ''
+    ].filter(Boolean).join(' · ');
   document.getElementById('client').innerHTML =
     '<option value="">All clients ('+ALL.length+')</option>' +
     CLIENTS.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join('');
   document.getElementById('footer').textContent =
-    [ activeCount()+' active', ALL.length+' total', meta.generated?('generated '+meta.generated):'' ].filter(Boolean).join(' · ');
+    [ activeCount()+' active', ALL.length+' total' ].filter(Boolean).join(' · ');   // dates now shown in the header
 
   // ---- Channel logo (PnP or Makro) ----
   (function(){
@@ -384,6 +387,7 @@
     if (SHOW.last_recv) cells.push(cell('Last received', fmtDate(r.last_recv)+ago(r.days_recv)));
     if (SHOW.last_ord)  cells.push(cell('Last ordered', fmtDate(r.last_ord)+ago(r.days_ord)));
     if (SHOW.status)    cells.push(cell('Status', esc(status||'—')));
+    if (IS_MAKRO && r.src_status) cells.push(cell('Status', esc(r.src_status)));   // raw MAKRO code (D/M/S); meanings TBD
     if (SHOW.listing)   cells.push(cell('Listing', esc(r.listing||'—')));
     if (SHOW.rp)        cells.push(cell('RP type', esc(r.rp||'—')));
     if (SHOW.supply)    cells.push(cell('Supply', esc(r.supply||'—')));
@@ -497,7 +501,7 @@
       {t:'Low Stock Cover', c:'var(--red)', d:'A line with days cover &le; 14 that is still selling (DROS &gt; 0) — about to run out, reorder. Lines with no sales velocity are excluded.'},
       {t:'Phantom', c:'var(--red)', d:'On-hand &gt; 0 but no sale in 60+ days (1900 dates ignored) — stock the system shows that may not be on the shelf. Verify with a physical count. Ranked by <b>Rand stock value</b>, highest first.'},
       {t:'Negative SOH', c:'var(--red)', d:'On-hand below 0 — an impossible figure. Count the shelf to correct the system. Takes priority over Out of stock.'},
-      {t:'Discontinued with SOH', c:'var(--red)', d:'Discontinued lines still holding stock, ranked by <b>Rand stock value</b>. MAKRO article statuses aren&rsquo;t in the feed yet, so this list stays empty until they arrive.'}
+      {t:'Discontinued with SOH', c:'var(--red)', d:'Discontinued lines still holding stock, ranked by <b>Rand stock value</b>. MAKRO article statuses are still being mapped, so this list stays empty for now.'}
     ] : [
       {t:'Out of stock', c:'var(--red)', d:'Active line (status 04) with on-hand at or below 0 — shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
       {t:'Low Stock Cover', c:'var(--red)', d:'Active line with days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. An out-of-stock line that&rsquo;s still selling appears here and under Out of stock.'},
@@ -507,7 +511,7 @@
       {t:'New', c:'var(--blue)', d:'Active line with stock, received in the last 30 days and not yet sold — a new line to get onto the shelf and selling. An indicator, not an action list.'}
     ];
     var html = IS_MAKRO
-      ? '<p class="gnote">MAKRO lines don&rsquo;t carry an article status yet, so every line is treated as <b>active</b>, and status-based lists (Discontinued) stay empty until statuses arrive. Phantom and Discontinued are ranked by <b>Rand stock value</b>. An article can appear in <b>more than one</b> list — its chips show the others. Tick it off in any list and it&rsquo;s ticked off everywhere.</p>'
+      ? '<p class="gnote">MAKRO article statuses are starting to arrive (shown per line under <b>Status</b> where present) but their meanings aren&rsquo;t confirmed yet, so every line is still treated as <b>active</b> and status-based lists (Discontinued) stay empty for now. Phantom and Discontinued are ranked by <b>Rand stock value</b>. An article can appear in <b>more than one</b> list — its chips show the others. Tick it off in any list and it&rsquo;s ticked off everywhere.</p>'
       : '<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
     html += items.map(function(g){
       return '<div class="gitem"><div class="gt"><span class="gdot" style="background:'+g.c+'"></span>'+g.t+'</div><div class="gd">'+g.d+'</div></div>';

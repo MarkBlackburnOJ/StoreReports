@@ -1036,7 +1036,7 @@ footer .brand {
     <div class="hero-meta">
       <span><svg class="icon"><use href="#i-store"/></svg><span id="hero-code">—</span></span>
       <span id="hero-profile">—</span>
-      <span><svg class="icon"><use href="#i-calendar"/></svg>Week ending <span id="hero-week">—</span></span>
+      <span><svg class="icon"><use href="#i-calendar"/></svg>Date of data <span id="hero-week">—</span></span>
       <span><svg class="icon"><use href="#i-package"/></svg><span id="hero-active-count">—</span> active items</span>
     </div>
     <div class="hero-stats">
@@ -1239,7 +1239,7 @@ footer .brand {
   $('#hero-profile').textContent = D.meta.profile;
   $('#hero-week').textContent = D.meta.week_ending_pretty;
   $('#footer-meta').textContent = 'Generated ' + D.meta.generated + ' · '
-    + fmt.int(D.summary.total_articles) + ' articles · week ending ' + D.meta.week_ending_pretty;
+    + fmt.int(D.summary.total_articles) + ' articles · date of data ' + D.meta.week_ending_pretty;
 
   // ====== CLIENT FILTER WIRING ======
   const clientSel = $('#client-filter');
