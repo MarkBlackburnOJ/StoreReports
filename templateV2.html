@@ -268,7 +268,7 @@
   // fall back to the SOH-value signal so older payloads still brand right (value -> makro, none -> pnp).
   var CHANNEL = (function(){ var c=String(meta.channel||'').toLowerCase();
     return (c==='makro'||c==='massbuild') ? c : (IS_MAKRO ? 'makro' : 'pnp'); })();
-  var BRAND = CHANNEL==='massbuild' ? 'Builders' : CHANNEL==='makro' ? 'Makro' : 'Pick and Pay';
+  var BRAND = CHANNEL==='massbuild' ? 'Massbuild' : CHANNEL==='makro' ? 'Makro' : 'Pick and Pay';
 
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
