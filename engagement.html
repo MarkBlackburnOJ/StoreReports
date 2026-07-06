@@ -95,6 +95,9 @@
   th.num,td.num{text-align:right;}
   th .arr{color:var(--brand);}
   td.scope{font-weight:600;}
+  td.scope a.rlink{color:var(--brand);text-decoration:none;border-bottom:1px dashed var(--brand);}
+  td.scope a.rlink:hover{border-bottom-style:solid;}
+  td.scope a.rlink .ext{color:var(--soft);font-weight:400;font-size:.9em;margin-left:2px;}
   td.rec{color:var(--mute);font-size:12px;}
   .yes{color:var(--green);font-weight:700;}
   .no{color:var(--red);font-weight:700;}
@@ -176,7 +179,9 @@
       <b>What “opened” means:</b> the report page loaded in the recipient’s browser and fired its tracking beacon.
       A report opened on several devices counts once. Email preview panes or blocked images can make a real open go
       uncounted, so treat the rate as a floor. The <b>KPI cards and table both reflect the active filters</b>;
-      unopened rows are tinted red. Times are <b>SAST</b>. Source: <code>dbo.vReportEngagement</code>.
+      unopened rows are tinted red. A <b>Store / Client / Report name is a link to the live report</b> &mdash;
+      opening it from here <b>won&rsquo;t count as an open</b> (reports expire after a day or two, so older rows aren&rsquo;t linked).
+      Times are <b>SAST</b>. Source: <code>dbo.vReportEngagement</code>.
     </div>
     <div id="gen" style="margin-top:10px;"></div>
   </footer>
@@ -230,12 +235,12 @@ const DATA = __PAYLOAD__;
     {key:'repmx',  label:'Reps',        cols:[], head:[]},
     {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
   ];
-  // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role]
+  // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role, url]
   const rowsByKind = {store:[],client:[],account:[]};
   (DATA.reports||[]).forEach(r=>{
     (rowsByKind[r[0]]||(rowsByKind[r[0]]=[])).push({
       scope:r[1]||(r[0]==='account'?'Account portfolio':''), rec:r[2]||'', opened:r[3]===1,
-      sent:r[4]||'', first:r[5]||'', mins:r[6], role:r[7]||''
+      sent:r[4]||'', first:r[5]||'', mins:r[6], role:r[7]||'', url:r[8]||''
     });
   });
 
@@ -539,7 +544,11 @@ const DATA = __PAYLOAD__;
       const trs = $('tbody').querySelectorAll('tr');
       rows2.forEach((r,i)=>{
         const tr = trs[i];
-        const sc = tr.querySelector('td.scope'); if(sc) sc.textContent = r.scope;
+        const sc = tr.querySelector('td.scope');
+        if(sc){
+          if(r.url){ sc.innerHTML = '<a class="rlink" target="_blank" rel="noopener noreferrer" title="Open the live report (won\'t count as an open)" href="'+esc(r.url)+'#noopen">'+esc(r.scope)+'<span class="ext">↗</span></a>'; }
+          else { sc.textContent = r.scope; }
+        }
         const rc = tr.querySelector('td.rec');   if(rc) rc.textContent = r.rec || '—';
       });
     }
