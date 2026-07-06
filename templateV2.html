@@ -267,8 +267,8 @@
   // Channel identity drives BRANDING (logo + notice/glossary wording). Prefer the explicit meta.channel;
   // fall back to the SOH-value signal so older payloads still brand right (value -> makro, none -> pnp).
   var CHANNEL = (function(){ var c=String(meta.channel||'').toLowerCase();
-    return (c==='makro'||c==='massbuild') ? c : (IS_MAKRO ? 'makro' : 'pnp'); })();
-  var BRAND = CHANNEL==='massbuild' ? 'Massbuild' : CHANNEL==='makro' ? 'Makro' : 'Pick and Pay';
+    return (c==='makro'||c==='massbuild'||c==='game') ? c : (IS_MAKRO ? 'makro' : 'pnp'); })();
+  var BRAND = CHANNEL==='massbuild' ? 'Massbuild' : CHANNEL==='makro' ? 'Makro' : CHANNEL==='game' ? 'Game' : 'Pick and Pay';
 
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
@@ -343,7 +343,7 @@
   (function(){
     var logo=document.getElementById('channelLogo'); if(!logo) return;
     var base='https://MarkBlackburnOJ.github.io/StoreReports/assets/';
-    var LOGO_FILE = {pnp:'pnp-logo.png', makro:'makro-logo.png', massbuild:'massbuild-logo.jpg'};
+    var LOGO_FILE = {pnp:'pnp-logo.png', makro:'makro-logo.png', massbuild:'massbuild-logo.jpg', game:'game-logo.png'};
     logo.src = base + (LOGO_FILE[CHANNEL]||LOGO_FILE.pnp) + '?v=3';   // ?v bumps on logo change to bust caches
     logo.alt = BRAND;
     logo.onerror = function(){ logo.style.display='none'; };   // never leave a broken-image box
