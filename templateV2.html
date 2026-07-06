@@ -261,9 +261,14 @@
       soh_value: anyPos(function(r){return r.soh_value;})
     };
   })();
-  // MAKRO lines carry a per-line Rand Stock value (PNP does not) — use that as the channel signal for
-  // branding (logo), the Phantom/Discontinued headline metric, and the glossary wording.
+  // MAKRO/MASSBUILD lines carry a per-line Rand Stock value (PNP does not) — that drives the Phantom/
+  // Discontinued headline metric + value ranking (any value channel).
   var IS_MAKRO = SHOW.soh_value;
+  // Channel identity drives BRANDING (logo + notice/glossary wording). Prefer the explicit meta.channel;
+  // fall back to the SOH-value signal so older payloads still brand right (value -> makro, none -> pnp).
+  var CHANNEL = (function(){ var c=String(meta.channel||'').toLowerCase();
+    return (c==='makro'||c==='massbuild') ? c : (IS_MAKRO ? 'makro' : 'pnp'); })();
+  var BRAND = CHANNEL==='massbuild' ? 'Builders' : CHANNEL==='makro' ? 'Makro' : 'Pick and Pay';
 
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
@@ -338,8 +343,9 @@
   (function(){
     var logo=document.getElementById('channelLogo'); if(!logo) return;
     var base='https://MarkBlackburnOJ.github.io/StoreReports/assets/';
-    logo.src = base + (IS_MAKRO ? 'makro-logo.png' : 'pnp-logo.png') + '?v=2';   // ?v bumps on logo change to bust caches
-    logo.alt = IS_MAKRO ? 'Makro' : 'Pick n Pay';
+    var LOGO_FILE = {pnp:'pnp-logo.png', makro:'makro-logo.png', massbuild:'massbuild-logo.jpg'};
+    logo.src = base + (LOGO_FILE[CHANNEL]||LOGO_FILE.pnp) + '?v=3';   // ?v bumps on logo change to bust caches
+    logo.alt = BRAND;
     logo.onerror = function(){ logo.style.display='none'; };   // never leave a broken-image box
     logo.removeAttribute('hidden');
   })();
@@ -347,7 +353,7 @@
   // ---- Bottom notice (channel-aware): reassures the rep the report is read-only / independent ----
   (function(){
     var n=document.getElementById('notice'); if(!n) return;
-    var brand = IS_MAKRO ? 'Makro' : 'Pick and Pay';
+    var brand = BRAND;
     n.innerHTML = 'This data comes from '+brand+' and it is used to help show you what you need to do in the store. '
       + '<b>This report is not linked to the '+brand+' system</b>, clicking <b>Completed</b> is just so you can track '
       + 'what you have completed, it does not affect the '+brand+' system.';
@@ -501,7 +507,7 @@
       {t:'Low Stock Cover', c:'var(--red)', d:'A line with days cover &le; 14 that is still selling (DROS &gt; 0) — about to run out, reorder. Lines with no sales velocity are excluded.'},
       {t:'Phantom', c:'var(--red)', d:'On-hand &gt; 0 but no sale in 60+ days (1900 dates ignored) — stock the system shows that may not be on the shelf. Verify with a physical count. Ranked by <b>Rand stock value</b>, highest first.'},
       {t:'Negative SOH', c:'var(--red)', d:'On-hand below 0 — an impossible figure. Count the shelf to correct the system. Takes priority over Out of stock.'},
-      {t:'Discontinued with SOH', c:'var(--red)', d:'Discontinued lines still holding stock, ranked by <b>Rand stock value</b>. MAKRO article statuses are still being mapped, so this list stays empty for now.'}
+      {t:'Discontinued with SOH', c:'var(--red)', d:'Discontinued lines still holding stock, ranked by <b>Rand stock value</b>. '+BRAND+' article statuses are still being mapped, so this list stays empty for now.'}
     ] : [
       {t:'Out of stock', c:'var(--red)', d:'Active line (status 04) with on-hand at or below 0 — shelf is empty, raise an order. Ranked by lost sales per day. A negative on-hand also shows under Negative SOH.'},
       {t:'Low Stock Cover', c:'var(--red)', d:'Active line with days cover &le; 14 and still selling (DROS &gt; 0) — about to run out, reorder. An out-of-stock line that&rsquo;s still selling appears here and under Out of stock.'},
@@ -511,7 +517,7 @@
       {t:'New', c:'var(--blue)', d:'Active line with stock, received in the last 30 days and not yet sold — a new line to get onto the shelf and selling. An indicator, not an action list.'}
     ];
     var html = IS_MAKRO
-      ? '<p class="gnote">MAKRO article statuses are starting to arrive (shown per line under <b>Status</b> where present) but their meanings aren&rsquo;t confirmed yet, so every line is still treated as <b>active</b> and status-based lists (Discontinued) stay empty for now. Phantom and Discontinued are ranked by <b>Rand stock value</b>. An article can appear in <b>more than one</b> list — its chips show the others. Tick it off in any list and it&rsquo;s ticked off everywhere.</p>'
+      ? '<p class="gnote">'+BRAND+' article statuses aren&rsquo;t fully mapped yet, so every line is treated as <b>active</b> and status-based lists (Discontinued) stay empty for now. Phantom and Discontinued are ranked by <b>Rand stock value</b>. An article can appear in <b>more than one</b> list — its chips show the others. Tick it off in any list and it&rsquo;s ticked off everywhere.</p>'
       : '<p class="gnote">An article can appear in <b>more than one</b> list when it matches several rules — its chips show the others (e.g. <b>+ Negative SOH</b>). Tick it off in any list and it&rsquo;s ticked off everywhere. A card turns <b style="color:var(--green)">green</b> once every item in its list is ticked off.</p>';
     html += items.map(function(g){
       return '<div class="gitem"><div class="gt"><span class="gdot" style="background:'+g.c+'"></span>'+g.t+'</div><div class="gd">'+g.d+'</div></div>';
