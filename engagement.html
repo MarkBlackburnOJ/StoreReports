@@ -67,6 +67,10 @@
   .toggle.on{background:#fdeaea;border-color:#f3c0c0;color:var(--red);}
   .count{font-size:12px;color:var(--soft);margin-left:auto;}
 
+  .filterbar{padding-bottom:6px;position:sticky;top:0;z-index:50;box-shadow:0 6px 16px rgba(15,62,120,.10);}
+  .filterbar .tabs{margin-bottom:12px;}
+  .filterbar .toolbar{margin-bottom:2px;}
+
   /* multi-select checkbox dropdown */
   .ms{position:relative;display:inline-block;}
   .ms-btn{font:inherit;font-size:13px;padding:8px 10px;border:1px solid var(--line);border-radius:8px;
@@ -105,6 +109,9 @@
   .role{font-size:11px;padding:2px 8px;border-radius:20px;border:0.5px solid var(--line);color:var(--mute);white-space:nowrap;}
   .role-field{background:var(--tint);color:var(--brand-d);border-color:var(--brand);}
   .role-internal{color:var(--soft);}
+  .ctype{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px;white-space:nowrap;}
+  .ct-cli{background:var(--tint);color:var(--brand-d);}
+  .ct-acc{background:#eef2f7;color:var(--mute);}
   tbody tr:hover{background:#f8fafc;}
   tbody tr.row-unopened{background:var(--unopen);}
   tbody tr.row-unopened:hover{background:#fbe0e0;}
@@ -128,7 +135,9 @@
   table.matrix th.mx-rep,table.matrix td.mx-rep{position:sticky;left:0;background:var(--card);z-index:1;font-weight:600;min-width:150px;border-right:1px solid var(--line);}
   table.matrix thead tr:first-child th.mx-rep{z-index:4;}
   table.matrix thead tr.mx-total th.mx-rep{z-index:3;background:var(--tint);}
-  table.matrix .mx-tot{border-left:2px solid var(--line);}
+  table.matrix th.mx-t,table.matrix td.mx-t{background:#f7faff;}
+  table.matrix thead tr.mx-total th.mx-t{background:#dbe6f5;}
+  table.matrix .mx-sep{border-right:2px solid var(--line);}
 
   footer{color:var(--mute);font-size:12px;line-height:1.6;margin-top:8px;}
   footer b{color:var(--ink);font-weight:600;}
@@ -146,6 +155,19 @@
 
   <div class="asof" id="asof"></div>
 
+  <div class="panel filterbar">
+    <div class="tabs" id="tabs"></div>
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
+      <span class="ms-host" id="msDate"></span>
+      <span class="ms-host" id="msScope"></span>
+      <span class="ms-host" id="msRecip"></span>
+      <span class="ms-host" id="msDomain"></span>
+      <span class="toggle" id="unopened"><span>Unopened only</span></span>
+      <span class="count" id="rowcount"></span>
+    </div>
+  </div>
+
   <div class="kpis" id="kpis"></div>
 
   <div class="panel">
@@ -155,17 +177,6 @@
   </div>
 
   <div class="panel">
-    <div class="tabs" id="tabs"></div>
-    <div class="toolbar">
-      <input type="search" id="search" placeholder="Search store, client or recipient…" autocomplete="off">
-      <span class="ms-host" id="msDate"></span>
-      <span class="ms-host" id="msScope"></span>
-      <span class="ms-host" id="msRecip"></span>
-      <span class="ms-host" id="msDomain"></span>
-      <span class="toggle" id="repsOnly"><span>Reps only</span></span>
-      <span class="toggle" id="unopened"><span>Unopened only</span></span>
-      <span class="count" id="rowcount"></span>
-    </div>
     <div id="tblwrap">
       <table id="tbl">
         <thead id="thead"></thead>
@@ -230,10 +241,9 @@ const DATA = __PAYLOAD__;
   // ---- data prep ----
   const KINDS = [
     {key:'store',  label:'Detail',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
-    {key:'client', label:'Clients',     cols:['scope','rec','role','sent','opened','first'],         head:['Client','Recipient','Role','Sent','Opened','First open']},
-    {key:'account',label:'Account',     cols:['scope','rec','role','sent','opened','first'],           head:['Report','Recipient','Role','Sent','Opened','First open']},
     {key:'repmx',  label:'Reps',        cols:[], head:[]},
     {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
+    {key:'ca',     label:'Clients + Accounts', cols:['ctype','scope','rec','role','sent','opened','first'], head:['Type','Name','Recipient','Role','Sent','Opened','First open']},
   ];
   // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role, url]
   const rowsByKind = {store:[],client:[],account:[]};
@@ -243,6 +253,15 @@ const DATA = __PAYLOAD__;
       sent:r[4]||'', first:r[5]||'', mins:r[6], role:r[7]||'', url:r[8]||''
     });
   });
+  // Combined Clients + Accounts rows (tagged so one table/KPI set can show both). Built once.
+  let _caRows = null;
+  function caRows(){
+    if(_caRows) return _caRows;
+    const c=(rowsByKind.client ||[]).map(r=>Object.assign({ctype:'Client'},  r));
+    const a=(rowsByKind.account||[]).map(r=>Object.assign({ctype:'Account'}, r));
+    _caRows = c.concat(a);
+    return _caRows;
+  }
 
   // date helpers (the "dd MMM" part of the Sent column)
   const MON = {Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12};
@@ -252,7 +271,7 @@ const DATA = __PAYLOAD__;
 
   // ---- filter state ----
   let tab = 'store', sortCol = null, sortDir = 1, query = '';
-  let repsOnly = false, unopenedOnly = false;
+  let unopenedOnly = false;
 
   // ---- multi-select checkbox dropdown ----
   const MSes = [];
@@ -311,7 +330,11 @@ const DATA = __PAYLOAD__;
   const msDomain= MultiSelect($('msDomain'),'All domains',    {onChange:render});
 
   // ---- filtering ----
-  function sourceRows(){ return (tab==='reps') ? (rowsByKind.store||[]) : (rowsByKind[tab]||[]); }
+  function sourceRows(){
+    if(tab==='reps') return rowsByKind.store||[];
+    if(tab==='ca')   return caRows();
+    return rowsByKind[tab]||[];
+  }
 
   function passesF(r, useScope){
     const d=msDate.selected(), s=msScope.selected(), rc=msRecip.selected(), dm=msDomain.selected();
@@ -319,7 +342,6 @@ const DATA = __PAYLOAD__;
     if(useScope && s.size && !s.has(r.scope)) return false;
     if(rc.size && !rc.has(r.rec)) return false;
     if(dm.size && !dm.has(domainOf(r.rec))) return false;
-    if(repsOnly && r.role!=='field') return false;
     if(unopenedOnly && r.opened) return false;
     if(query){ const q=query.toLowerCase(); if(!((r.scope+' '+r.rec).toLowerCase().includes(q))) return false; }
     return true;
@@ -381,28 +403,40 @@ const DATA = __PAYLOAD__;
     const {dates, reps, cell, total} = repMatrix();
     renderRepKpis(reps, total);
     const arr = c => sortCol===c ? `<span class="arr">${sortDir>0?'▲':'▼'}</span>` : '';
+    const alpha = (a,b)=>a.toLowerCase()<b.toLowerCase()?-1:a.toLowerCase()>b.toLowerCase()?1:0;
     let list=reps.slice();
-    if(sortCol==='rep') list.sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-sortDir:a.toLowerCase()>b.toLowerCase()?sortDir:0);
-    else if(sortCol==='total') list.sort((a,b)=>(bandPct(total[a][0],total[a][1])-bandPct(total[b][0],total[b][1]))*sortDir);
-    else if(sortCol) list.sort((a,b)=>{ const ca=cell[a][sortCol], cb=cell[b][sortCol]; return ((ca?bandPct(ca[0],ca[1]):-1)-(cb?bandPct(cb[0],cb[1]):-1))*sortDir; });
-    else list.sort((a,b)=>a.toLowerCase()<b.toLowerCase()?-1:1);
+    if(sortCol==='rep')          list.sort((a,b)=>alpha(a,b)*sortDir);
+    else if(sortCol==='topened') list.sort((a,b)=>(total[a][0]-total[b][0])*sortDir);
+    else if(sortCol==='tsent')   list.sort((a,b)=>(total[a][1]-total[b][1])*sortDir);
+    else if(sortCol==='topct')   list.sort((a,b)=>(bandPct(total[a][0],total[a][1])-bandPct(total[b][0],total[b][1]))*sortDir);
+    else if(sortCol)             list.sort((a,b)=>{ const ca=cell[a][sortCol], cb=cell[b][sortCol]; return ((ca?bandPct(ca[0],ca[1]):-1)-(cb?bandPct(cb[0],cb[1]):-1))*sortDir; });
+    else                         list.sort(alpha);
 
+    // Totals (Opened · Sent · Open %) sit on the far left, right after Rep — each independently sortable — then the date columns.
     const head = '<tr><th class="mx-rep" data-c="rep">Rep '+arr('rep')+'</th>'
+      + `<th class="num mx-t" data-c="topened">Opened ${arr('topened')}</th>`
+      + `<th class="num mx-t" data-c="tsent">Sent ${arr('tsent')}</th>`
+      + `<th class="num mx-t mx-sep" data-c="topct">Open % ${arr('topct')}</th>`
       + dates.map(d=>`<th class="num" data-c="${d}">${isoLabel(d)} ${arr(d)}</th>`).join('')
-      + `<th class="num mx-tot" data-c="total">Total ${arr('total')}</th></tr>`;
+      + '</tr>';
     let go=0, gs=0;
-    const totCells = dates.map(d=>{ let o=0,s=0; reps.forEach(rp=>{ const c=cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); return `<th class="num">${chiclet(o,s)}</th>`; }).join('');
     reps.forEach(rp=>{ go+=total[rp][0]; gs+=total[rp][1]; });
-    const totRow = `<tr class="mx-total"><th class="mx-rep">All reps</th>${totCells}<th class="num mx-tot">${chiclet(go,gs)}</th></tr>`;
+    const totCells = dates.map(d=>{ let o=0,s=0; reps.forEach(rp=>{ const c=cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); return `<th class="num">${chiclet(o,s)}</th>`; }).join('');
+    const totRow = '<tr class="mx-total"><th class="mx-rep">All reps</th>'
+      + `<th class="num mx-t">${go}</th><th class="num mx-t">${gs}</th><th class="num mx-t mx-sep">${chiclet(go,gs)}</th>`
+      + totCells + '</tr>';
     $('thead').innerHTML = head + totRow;
     bindSort();
 
     if(list.length===0){
-      $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${dates.length+2}">No rep data in range.</td></tr>`;
+      $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${dates.length+4}">No rep data in range.</td></tr>`;
     } else {
       $('tbody').innerHTML = list.map(rp=>{
+        const t=total[rp];
         const tds=dates.map(d=>{ const c=cell[rp][d]; return `<td class="num">${c?chiclet(c[0],c[1]):'<span class="dash">—</span>'}</td>`; }).join('');
-        return `<tr><td class="mx-rep"></td>${tds}<td class="num mx-tot">${chiclet(total[rp][0],total[rp][1])}</td></tr>`;
+        return '<tr><td class="mx-rep"></td>'
+          + `<td class="num mx-t">${t[0]}</td><td class="num mx-t">${t[1]}</td><td class="num mx-t mx-sep">${chiclet(t[0],t[1])}</td>`
+          + tds + '</tr>';
       }).join('');
       const trs=$('tbody').querySelectorAll('tr');
       list.forEach((rp,i)=>{ const c=trs[i].querySelector('td.mx-rep'); if(c) c.textContent=rp; });
@@ -410,32 +444,42 @@ const DATA = __PAYLOAD__;
     $('rowcount').textContent = `${list.length} rep${list.length===1?'':'s'}`;
   }
 
-  // ---- KPI cards (recompute from the filtered rows) ----
+  // ---- KPI cards (recompute from the filtered rows; every card reflects the active filters) ----
   function renderKpis(rows){
     const cards=[];
     const k=(v,l,s,cls)=>cards.push(`<div class="kpi ${cls||''}"><div class="v">${v}</div><div class="l">${l}</div><div class="s">${s||''}</div></div>`);
-    if(tab==='reps'){
-      const stores=new Set(rows.map(r=>r.scope||'—')).size;
-      const reps=new Set(); rows.forEach(r=>{ if(r.role==='field'&&r.rec) reps.add(r.rec); });
-      const reports=rows.length, opened=rows.filter(r=>r.opened).length;
-      const avg = stores ? Math.round(reps.size/stores*10)/10 : 0;
-      k(stores,'Stores','in view');
-      k(reps.size,'Reps','distinct field recipients');
-      k(avg,'Avg reps / store','');
-      k(reports,'Reports','sent in view');
-      k(reports?pct(opened,reports)+'%':'–','Open rate',`${opened} / ${reports}`);
-    } else {
-      const sent=rows.length, opened=rows.filter(r=>r.opened).length, un=sent-opened;
-      const field=rows.filter(r=>r.role==='field'), fo=field.filter(r=>r.opened).length;
-      const mins=rows.filter(r=>r.opened && r.mins!=null).map(r=>r.mins).sort((a,b)=>a-b);
-      const median=mins.length ? mins[Math.floor((mins.length-1)/2)] : null;
+    const distinctReps = rs => { const set=new Set(); rs.forEach(r=>{ if(r.role==='field'&&r.rec) set.add(r.rec); }); return set.size; };
+    const medianMins = rs => { const m=rs.filter(r=>r.opened && r.mins!=null).map(r=>r.mins).sort((a,b)=>a-b); return m.length ? m[Math.floor((m.length-1)/2)] : null; };
+    const opened = rows.filter(r=>r.opened).length, sent = rows.length, un = sent-opened;
+    if(tab==='ca'){
+      // Clients + Accounts — its own (non-rep) engagement cards.
+      const clients = new Set(rows.filter(r=>r.ctype==='Client').map(r=>r.scope)).size;
+      const accounts = rows.filter(r=>r.ctype==='Account').length;
+      const md = medianMins(rows);
       k(sent,'Sent','in view');
-      k(sent?pct(opened,sent)+'%':'–','Opened',`${opened} / ${sent}`);
+      k(sent?pct(opened,sent)+'%':'–','Open rate',`${opened} / ${sent}`);
       k(un,'Unopened',un?'awaiting open':'all opened',un?'bad':'ok');
-      k(field.length?pct(fo,field.length)+'%':'–','Reps opened',field.length?`${fo} / ${field.length}`:'no reps');
-      const cr=(rowsByKind.client||[]).filter(x=>passesF(x,false)), cro=cr.filter(r=>r.opened).length;
-      k(cr.length?pct(cro,cr.length)+'%':'–','Client reports',cr.length?`${cro} / ${cr.length} opened`:'none sent');
-      k(median==null?'–':fmtMins(median),'Median to open','first open');
+      k(clients,'Clients','distinct');
+      k(accounts,'Accounts','reports');
+      k(md==null?'–':fmtMins(md),'Median to open','first open');
+    } else if(tab==='reps'){
+      // Reps / store — rep-focused.
+      const stores = new Set(rows.map(r=>r.scope||'—')).size;
+      const reps = distinctReps(rows);
+      const avg = stores ? Math.round(reps/stores*10)/10 : 0;
+      k(stores,'Stores','in view');
+      k(reps,'Reps','distinct field reps');
+      k(avg,'Avg reps / store','');
+      k(sent?pct(opened,sent)+'%':'–','Open rate',`${opened} / ${sent}`);
+      k(un,'Unopened',un?'awaiting open':'all opened',un?'bad':'ok');
+    } else {
+      // Detail (store sends) — rep engagement only.
+      const md = medianMins(rows);
+      k(distinctReps(rows),'Reps','distinct field reps');
+      k(sent,'Sent','in view');
+      k(sent?pct(opened,sent)+'%':'–','Open rate',`${opened} / ${sent}`);
+      k(un,'Unopened',un?'awaiting open':'all opened',un?'bad':'ok');
+      k(md==null?'–':fmtMins(md),'Median to open','first open');
     }
     $('kpis').innerHTML=cards.join('');
   }
@@ -456,7 +500,7 @@ const DATA = __PAYLOAD__;
     const recs  =[...new Set(rs.map(r=>r.rec).filter(Boolean))].sort();
     const doms  =[...new Set(rs.map(r=>domainOf(r.rec)).filter(Boolean))].sort();
     msDate.set(dates, 'All dates');
-    msScope.set(stores, tab==='client'?'All clients':tab==='account'?'All reports':'All stores');
+    msScope.set(stores, tab==='ca'?'All names':'All stores');
     msRecip.set(recs, 'All recipients');
     msDomain.set(doms, 'All domains');
   }
@@ -465,6 +509,7 @@ const DATA = __PAYLOAD__;
   $('tabs').innerHTML = KINDS.map(kd=>{
     const n = kd.key==='reps' ? new Set((rowsByKind.store||[]).map(r=>r.scope||'—')).size
             : kd.key==='repmx' ? new Set((DATA.repDaily||[]).map(x=>x[0])).size
+            : kd.key==='ca' ? caRows().length
             : (rowsByKind[kd.key]||[]).length;
     return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
   }).join('');
@@ -513,7 +558,7 @@ const DATA = __PAYLOAD__;
       return;
     }
 
-    // per-report tabs (store / client / account)
+    // per-report tabs (store Detail / combined Clients+Accounts)
     let rows2 = rows.slice();
     if(sortCol){
       rows2.sort((a,b)=>{
@@ -533,9 +578,10 @@ const DATA = __PAYLOAD__;
       $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">Nothing to show here.</td></tr>`;
     } else {
       $('tbody').innerHTML = rows2.map(r=>`<tr class="${r.opened?'row-opened':'row-unopened'}">`+kd.cols.map(col=>{
+        if(col==='ctype'){ const cls=r.ctype==='Account'?'ct-acc':'ct-cli'; return `<td><span class="ctype ${cls}">${esc(r.ctype)}</span></td>`; }
         if(col==='scope') return `<td class="scope"></td>`;
         if(col==='rec')   return `<td class="rec"></td>`;
-        if(col==='role'){ const lbl=r.role==='field'?(tab==='client'?'client':'rep'):(r.role||''); return `<td><span class="role role-${r.role||'none'}">${lbl||'—'}</span></td>`; }
+        if(col==='role'){ const lbl=r.role==='field'?(r.ctype==='Client'?'client':r.ctype==='Account'?'AM':'rep'):(r.role||''); return `<td><span class="role role-${r.role||'none'}">${lbl||'—'}</span></td>`; }
         if(col==='opened')return r.opened?'<td class="yes">&#10003;</td>':'<td class="no">&#10007;</td>';
         if(col==='mins')  return `<td class="num">${r.mins==null?'<span class="dash">—</span>':fmtMins(r.mins)}</td>`;
         if(col==='first') return `<td>${r.first?esc(r.first):'<span class="dash">—</span>'}</td>`;
@@ -557,7 +603,6 @@ const DATA = __PAYLOAD__;
 
   $('search').oninput = e=>{ query=e.target.value; render(); };
   $('unopened').onclick = ()=>{ unopenedOnly=!unopenedOnly; $('unopened').classList.toggle('on',unopenedOnly); render(); };
-  $('repsOnly').onclick = ()=>{ repsOnly=!repsOnly; $('repsOnly').classList.toggle('on',repsOnly); render(); };
 
   rebuildFilters();
   render();
