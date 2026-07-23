@@ -394,15 +394,19 @@
   function nextSeq(){ var n=(parseInt(lsGet(OSEQ,'0'),10)||0)+1; lsSet(OSEQ,String(n)); return n; }
   function outbox(){ try{ var a=JSON.parse(lsGet(OBOX,'[]')); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
   function setOutbox(a){ lsSet(OBOX, JSON.stringify(a)); }
-  function queueAnswer(item, value){
+  // One task/check-off event -> the outbox. Used by BOTH the visit checklist ('chk:<item>' / done|notdone)
+  // and the action-card check-offs (article id / checked|unchecked). Rep's beaconed copy only.
+  function queueEvent(articleId, action){
     var fb=window.__ARIA_FB__; if(!fb || !fb.id) return;        // un-beaconed managers copy → local-only, no submit
+    if(!articleId || articleId.length>60) return;               // ArticleId is VARCHAR(60) at the SQL sink
     var ob=outbox();
     ob.push({ type:'task', kind:fb.kind||'store', reportId:fb.id, scope:fb.scope||(meta.store_code||''),
-              articleId:'chk:'+item, action:value, exp:fb.exp, tok:fb.tok,
+              articleId:articleId, action:action, exp:fb.exp, tok:fb.tok,
               deviceId:deviceId(), deviceSeq:nextSeq(), ts:Date.now() });
     if(ob.length>500) ob=ob.slice(-500);                        // hard cap — never grow unbounded
     setOutbox(ob); flushOutbox();
   }
+  function queueAnswer(item, value){ queueEvent('chk:'+item, value); }   // visit checklist item
   var flushing=false;
   function flushOutbox(){
     var fb=window.__ARIA_FB__; if(!fb || !fb.ep || flushing) return;
@@ -759,6 +763,10 @@
   document.getElementById('list').addEventListener('change', function(e){
     var c=e.target.closest('.chk'); if(!c) return;
     var id=c.getAttribute('data-id');
+    // Record the check-off to the DB too (rep's copy only; local ticking is unaffected). id == keyOf(r) = the
+    // article number for real lines; composite (desc|barcode) keys carry a '|' and are skipped so only clean
+    // article ids submit. Fires on tick AND untick.
+    if(id.indexOf('|')<0) queueEvent(id, c.checked ? 'checked' : 'unchecked');
     function commit(){ done.add(id); persist(); renderCards(); renderList(); }
     // Untick (from Completed) stays instant.
     if(!c.checked){ done.delete(id); persist(); renderCards(); renderList(); return; }
