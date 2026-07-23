@@ -216,6 +216,7 @@ const DATA = __PAYLOAD__;
   // ---- trend chart: open-rate per day, computed from the CURRENTLY FILTERED data of the active tab,
   //      colour-banded like the chiclets, with a % data label on each bar. Rendered from render(). ----
   function trendData(){
+    if(tab==='visitexec') return [];                 // visit tab isn't about opens — no trend
     if(tab==='repmx'){
       const m = repMatrix();
       return m.dates.map(d=>{ let o=0,s=0; m.reps.forEach(rp=>{ const c=m.cell[rp][d]; if(c){o+=c[0];s+=c[1];} }); return [isoLabel(d), s, o]; });
@@ -243,6 +244,7 @@ const DATA = __PAYLOAD__;
     {key:'store',  label:'Detail',      cols:['scope','rec','role','sent','opened','first','mins'], head:['Store','Recipient','Role','Sent','Opened','First open','To open']},
     {key:'repmx',  label:'Reps',        cols:[], head:[]},
     {key:'reps',   label:'Reps / store',cols:['store','reps','reports','opened','openpct'],           head:['Store','Reps','Reports','Opened','Open %']},
+    {key:'visitexec', label:'Visit execution', cols:['scope','rec','date','check','notdone','actions'], head:['Store','Rep','Date','Checklist','Not done','Items done']},
     {key:'ca',     label:'Clients + Accounts', cols:['ctype','scope','rec','role','sent','opened','first'], head:['Type','Name','Recipient','Role','Sent','Opened','First open']},
   ];
   // reports row = [kind, scope, recipient, opened, sentSast, firstOpenSast, mins, role, url]
@@ -261,6 +263,70 @@ const DATA = __PAYLOAD__;
     const a=(rowsByKind.account||[]).map(r=>Object.assign({ctype:'Account'}, r));
     _caRows = c.concat(a);
     return _caRows;
+  }
+
+  // ---- Visit execution: per-store-visit checklist + action-card check-offs (the "did the rep do the work"
+  //      tab). visits row = [store, rep, iso-date, done, answered, notDone, notDoneItems, actionItems]. ----
+  const CHK_LABELS = { walk:'Store walk', soh:'SOH check', shelf:'Shelf fill/face/rotate', price:'Pricing & promo',
+    nosale:'No-sales actioned', order:'Order placed', blocked:'Blocked lines opened', plano:'Planogram executed',
+    space:'Secondary space', photo:'Photos taken', mgr:'Manager aligned', upload:'Uploads same-day' };
+  const chkLabels = s => String(s||'').split(',').map(x=>x.trim()).filter(Boolean).map(x=>CHK_LABELS[x]||x).join(', ');
+  const visitRows = (DATA.visits||[]).map(v=>({
+    scope:v[0]||'', rec:v[1]||'', date:v[2]||'', done:+v[3]||0, answered:+v[4]||0,
+    notdone:+v[5]||0, notdoneitems:v[6]||'', actions:+v[7]||0,
+    pct: (+v[4]>0) ? Math.round((+v[3])*100/(+v[4])) : -1
+  }));
+  function visitFiltered(){
+    const rq=query.toLowerCase(), rc=msRecip.selected(), dm=msDomain.selected(), ds=msDate.selected(), sc=msScope.selected();
+    return visitRows.filter(v=>{
+      if(rc.size && !rc.has(v.rec)) return false;
+      if(dm.size && !dm.has(domainOf(v.rec))) return false;
+      if(ds.size && !ds.has(isoLabel(v.date))) return false;
+      if(sc.size && !sc.has(v.scope)) return false;
+      if(query && !((v.scope+' '+v.rec).toLowerCase().includes(rq))) return false;
+      return true;
+    });
+  }
+  function renderVisitKpis(rows){
+    const reps=new Set(rows.map(r=>r.rec).filter(Boolean)).size;
+    let td=0,ta=0,tnd=0,tac=0; rows.forEach(r=>{ td+=r.done; ta+=r.answered; tnd+=r.notdone; tac+=r.actions; });
+    const p = ta>0?Math.round(td*100/ta):0;
+    const cards=[
+      ['', rows.length, 'Visits', 'with feedback'],
+      ['', reps, 'Reps', 'reporting'],
+      [ta?(p>=90?'ok':p<60?'bad':''):'', ta?p+'%':'–', 'Checklist done', td+' / '+ta],
+      [tnd>0?'bad':'', tnd, 'Not done', 'items flagged'],
+      ['', tac, 'Items done', 'action cards'],
+    ];
+    $('kpis').innerHTML = cards.map(c=>`<div class="kpi ${c[0]}"><div class="v">${c[1]}</div><div class="l">${c[2]}</div><div class="s">${c[3]||''}</div></div>`).join('');
+  }
+  function renderVisitExec(){
+    let rows=visitFiltered();
+    if(sortCol){
+      const key = r => sortCol==='check'?r.pct : sortCol==='notdone'?r.notdone : sortCol==='actions'?r.actions
+                     : sortCol==='date'?r.date : String(r[sortCol]||'').toLowerCase();
+      rows.sort((a,b)=>{ const x=key(a),y=key(b); return (x>y?1:x<y?-1:0)*sortDir; });
+    } else rows.sort((a,b)=> a.date<b.date?1:a.date>b.date?-1:0);   // latest visit first
+    renderVisitKpis(rows);
+    const kd=KINDS.find(k=>k.key==='visitexec');
+    $('thead').innerHTML = headHtml(kd, ['actions']);
+    bindSort();
+    if(!rows.length){ $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">No visit feedback in range.</td></tr>`; }
+    else {
+      $('tbody').innerHTML = rows.map(r=>{
+        const chk = r.answered>0 ? `<span class="ch ${r.pct>=90?'ch-green':r.pct>=60?'ch-yellow':'ch-red'}">${r.done}/${r.answered} · ${r.pct}%</span>` : '<span class="dash">—</span>';
+        const nd = r.notdone>0 ? `<span class="no">${r.notdone}</span> <span style="color:var(--soft);font-size:11px">${esc(chkLabels(r.notdoneitems))}</span>` : '<span class="dash">0</span>';
+        return '<tr>'+
+          `<td class="scope">${esc(r.scope)}</td>`+
+          `<td class="rec">${esc(r.rec||'—')}</td>`+
+          `<td>${esc(isoLabel(r.date))}</td>`+
+          `<td>${chk}</td>`+
+          `<td>${nd}</td>`+
+          `<td class="num">${r.actions? r.actions : '<span class="dash">0</span>'}</td>`+
+        '</tr>';
+      }).join('');
+    }
+    $('rowcount').textContent = `${rows.length} visit${rows.length===1?'':'s'}`;
   }
 
   // date helpers (the "dd MMM" part of the Sent column)
@@ -494,6 +560,13 @@ const DATA = __PAYLOAD__;
       msDomain.set([...new Set(rd.map(x=>domainOf(x[0])).filter(Boolean))].sort(), 'All domains');
       return;
     }
+    if(tab==='visitexec'){
+      msDate.set([...new Set(visitRows.map(v=>isoLabel(v.date)))].sort((a,b)=>dkey(b)-dkey(a)), 'All dates');
+      msScope.set([...new Set(visitRows.map(v=>v.scope).filter(Boolean))].sort(), 'All stores');
+      msRecip.set([...new Set(visitRows.map(v=>v.rec).filter(Boolean))].sort(), 'All reps');
+      msDomain.set([...new Set(visitRows.map(v=>domainOf(v.rec)).filter(Boolean))].sort(), 'All domains');
+      return;
+    }
     const rs = sourceRows();
     const dates =[...new Set(rs.map(r=>dateOf(r.sent)).filter(Boolean))].sort((a,b)=>dkey(b)-dkey(a));
     const stores=[...new Set(rs.map(r=>r.scope).filter(Boolean))].sort();
@@ -510,6 +583,7 @@ const DATA = __PAYLOAD__;
     const n = kd.key==='reps' ? new Set((rowsByKind.store||[]).map(r=>r.scope||'—')).size
             : kd.key==='repmx' ? new Set((DATA.repDaily||[]).map(x=>x[0])).size
             : kd.key==='ca' ? caRows().length
+            : kd.key==='visitexec' ? visitRows.length
             : (rowsByKind[kd.key]||[]).length;
     return `<button class="tab" data-k="${kd.key}">${kd.label} <span class="c">· ${n}</span></button>`;
   }).join('');
@@ -535,6 +609,7 @@ const DATA = __PAYLOAD__;
     $('tbl').classList.toggle('matrix', tab==='repmx');
     renderTrend();
     if(tab==='repmx'){ renderRepMatrix(); return; }
+    if(tab==='visitexec'){ renderVisitExec(); return; }
     const rows = filteredRows();
     renderKpis(rows);
 
