@@ -58,6 +58,28 @@
   .pb-hint li{font-size:12px;color:#4A3B00;line-height:1.5;margin:2px 0;}
   .pb-hint li b{color:#7A5B00;}
 
+  /* Before-you-leave visit checklist (PNP only) */
+  .pb-check{margin:10px 12px 2px;border-radius:12px;border:1px solid var(--line);background:var(--card);overflow:hidden;}
+  .pb-check.done{border-color:#BFE4C9;background:var(--green-tint);}
+  .pc-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;user-select:none;}
+  .pc-title{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:700;color:var(--ink);}
+  .pc-title svg{color:var(--blue);flex-shrink:0;}
+  .pb-check.done .pc-title svg{color:var(--green);}
+  .pc-right{display:flex;align-items:center;gap:9px;}
+  .pc-prog{font-size:12px;font-weight:700;color:var(--mute-2);background:var(--paper);border-radius:999px;padding:3px 10px;white-space:nowrap;}
+  .pc-prog.ok{color:var(--green-deep);background:#D5EDDD;}
+  .pc-head .chev{color:#B4B2A9;transition:transform .18s;}
+  .pb-check.open .pc-head .chev{transform:rotate(180deg);color:var(--blue);}
+  .pc-body{padding:0 14px 10px;display:flex;flex-direction:column;}
+  .pc-item{padding:11px 2px 12px;border-top:.5px solid var(--line-soft);}
+  .pc-lbl{font-size:13px;color:var(--ink);line-height:1.35;margin-bottom:8px;}
+  .pc-item.answered .pc-lbl{color:var(--mute-2);}
+  .pc-seg{display:flex;gap:8px;}
+  .pc-btn{flex:1;font:inherit;font-size:12.5px;font-weight:600;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);color:var(--mute-2);cursor:pointer;transition:background .14s,border-color .14s,color .14s;}
+  .pc-btn:active{transform:translateY(1px);}
+  .pc-btn.pc-done.on{background:var(--green);border-color:var(--green);color:#fff;}
+  .pc-btn.pc-not.on{background:#E8A400;border-color:#E8A400;color:#fff;}
+
   /* Client filter */
   .filterbar{padding:12px 14px 2px;}
   .field{display:flex;align-items:center;gap:10px;background:var(--card);border:.5px solid #DFE3E8;
@@ -185,6 +207,8 @@
   </header>
 
   <div class="pb-banner" id="pbBanner" hidden></div>
+
+  <div class="pb-check" id="pbCheck" hidden></div>
 
   <div class="filterbar">
     <label class="field">
@@ -331,6 +355,86 @@
       'Get documentation + a photo, uploaded same day.' ] }
   };
 
+  // ---- "Before you leave" visit checklist (PNP only) — the playbook's capture/governance non-negotiables,
+  // format-aware, ticked as the rep works. Ticks persist per store+week in localStorage (separate key from the
+  // article check-offs) and degrade to in-memory. ----
+  var CHK_ICON='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>';
+  var CHECK_ITEMS = [
+    {id:'walk',  t:'Full store walk — shelf, gaps, pricing, expiries'},
+    {id:'soh',   t:'SOH checked — shelf vs backroom'},
+    {id:'shelf', t:'Shelves filled, faced &amp; rotated (FIFO)'},
+    {id:'price', t:'Pricing &amp; promo tickets correct'},
+    {id:'nosale',t:'No-sales lines actioned'}
+  ].concat(
+    FORMAT==='franchise' ? [
+      {id:'order',  t:'Order placed — ~2 weeks&rsquo; cover'},
+      {id:'blocked',t:'Blocked lines opened (or buyer emailed in-store)'}
+    ] : FORMAT==='corporate' ? [
+      {id:'plano',  t:'Planogram executed — before/after photos'},
+      {id:'space',  t:'Secondary space secured'}
+    ] : []
+  ).concat([
+    {id:'photo', t:'Photos taken — shelf + before/after'},
+    {id:'mgr',   t:'Manager aligned before leaving'},
+    {id:'upload',t:'Forms + photos uploaded — same day'}
+  ]);
+  // Answer state: itemId -> 'done' | 'notdone' (absent = unanswered). Persisted per store+week on the device.
+  var CKEY = 'aria-v2-visit::' + (meta.store_code||'') + '::' + (meta.week_ending||'');
+  var vans = (function(){ try{ var raw=window.localStorage.getItem(CKEY); if(raw){ var o=JSON.parse(raw); if(o&&typeof o==='object'&&!Array.isArray(o)) return o; } }catch(e){} return {}; })();
+  function vpersist(){ try{ window.localStorage.setItem(CKEY, JSON.stringify(vans)); }catch(e){} }
+
+  // ---- Offline outbox: each answer becomes a task/check-off event delivered to the feedback Worker (the
+  // report NEVER talks to SQL — ARIA pulls the Worker's buffer into SQL). Append-only with a per-device
+  // monotonic sequence so SQL can do last-writer-wins per (report,item); entries clear only on a confirmed
+  // 2xx and re-flush on load / reconnect. Active ONLY on the rep's beaconed copy (window.__ARIA_FB__ set). ----
+  var ODEV='aria-fb-dev', OSEQ='aria-fb-seq', OBOX='aria-fb-outbox';
+  function lsGet(k,d){ try{ var v=localStorage.getItem(k); return v==null?d:v; }catch(e){ return d; } }
+  function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+  function deviceId(){ var d=lsGet(ODEV,''); if(!d){ d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,7); lsSet(ODEV,d); } return d; }
+  function nextSeq(){ var n=(parseInt(lsGet(OSEQ,'0'),10)||0)+1; lsSet(OSEQ,String(n)); return n; }
+  function outbox(){ try{ var a=JSON.parse(lsGet(OBOX,'[]')); return Array.isArray(a)?a:[]; }catch(e){ return []; } }
+  function setOutbox(a){ lsSet(OBOX, JSON.stringify(a)); }
+  function queueAnswer(item, value){
+    var fb=window.__ARIA_FB__; if(!fb || !fb.id) return;        // un-beaconed managers copy → local-only, no submit
+    var ob=outbox();
+    ob.push({ type:'task', kind:fb.kind||'store', reportId:fb.id, scope:fb.scope||(meta.store_code||''),
+              articleId:'chk:'+item, action:value, exp:fb.exp, tok:fb.tok,
+              deviceId:deviceId(), deviceSeq:nextSeq(), ts:Date.now() });
+    if(ob.length>500) ob=ob.slice(-500);                        // hard cap — never grow unbounded
+    setOutbox(ob); flushOutbox();
+  }
+  var flushing=false;
+  function flushOutbox(){
+    var fb=window.__ARIA_FB__; if(!fb || !fb.ep || flushing) return;
+    var ob=outbox(); if(!ob.length) return;
+    flushing=true;
+    // A plain-string body is a CORS "simple" request (no preflight); keepalive lets it survive page unload.
+    fetch(fb.ep, { method:'POST', body:JSON.stringify(ob[0]), keepalive:true })
+      .then(function(res){ flushing=false;
+        if(res && (res.status===204 || res.status===200 || res.ok)){ var cur=outbox(); cur.shift(); setOutbox(cur); if(cur.length) flushOutbox(); }
+      })
+      .catch(function(){ flushing=false; });                    // offline / unreadable response → keep, retry later
+  }
+
+  function renderChecklist(){
+    var el=document.getElementById('pbCheck'); if(!el || !IS_PNP || !FORMAT) return;   // PNP + known format only
+    var n=CHECK_ITEMS.length, ans=0; CHECK_ITEMS.forEach(function(it){ if(vans[it.id]) ans++; });
+    var allAns=(ans===n), open=state.checkOpen;
+    el.className='pb-check'+(allAns?' done':'')+(open?' open':'');
+    el.innerHTML =
+      '<div class="pc-head"><div class="pc-title">'+CHK_ICON+'Before you leave</div>'+
+        '<div class="pc-right"><span class="pc-prog'+(allAns?' ok':'')+'">'+(allAns?'All answered ✓':ans+' / '+n)+'</span>'+ICO_CHEV+'</div></div>'+
+      (open ? '<div class="pc-body">'+CHECK_ITEMS.map(function(it){
+        var a=vans[it.id];
+        return '<div class="pc-item'+(a?' answered':'')+'"><div class="pc-lbl">'+it.t+'</div>'+
+          '<div class="pc-seg">'+
+            '<button type="button" class="pc-btn pc-done'+(a==='done'?' on':'')+'" data-cid="'+it.id+'" data-v="done">Done</button>'+
+            '<button type="button" class="pc-btn pc-not'+(a==='notdone'?' on':'')+'" data-cid="'+it.id+'" data-v="notdone">Not done</button>'+
+          '</div></div>';
+      }).join('')+'</div>' : '');
+    el.removeAttribute('hidden');
+  }
+
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
     { key:'oos', label:'Out of stock', cta:'Out of stock — order needed',
@@ -371,7 +475,7 @@
   function persist(){ try{ window.localStorage.setItem(STKEY, JSON.stringify(Array.from(done))); }catch(e){} }
   function keyOf(r){ return String(r.id || (String(r.desc||'')+'|'+String(r.barcode||''))); }
 
-  var state = { view:'oos', q:'', sort:'urgent', client:'', open:null, compOpen:{} };
+  var state = { view:'oos', q:'', sort:'urgent', client:'', open:null, compOpen:{}, checkOpen:false };
 
   // ---- Client list ----
   var CLIENTS = (function(){ var s={}; ALL.forEach(function(r){ if(r.vendor) s[r.vendor]=1; }); return Object.keys(s).sort(); })();
@@ -676,10 +780,25 @@
   document.getElementById('glossaryBtn').addEventListener('click', function(){ document.getElementById('glossary').hidden=false; });
   document.getElementById('glossaryClose').addEventListener('click', function(){ document.getElementById('glossary').hidden=true; });
   document.getElementById('glossary').addEventListener('click', function(e){ if(e.target.id==='glossary') e.target.hidden=true; });
+  // Visit checklist: header toggles collapse; each item's Done / Not-done button records the answer
+  // (persisted locally, and queued to the database on the rep's beaconed copy).
+  document.getElementById('pbCheck').addEventListener('click', function(e){
+    var btn=e.target.closest('.pc-btn');
+    if(btn){
+      var id=btn.getAttribute('data-cid'), v=btn.getAttribute('data-v');
+      if(vans[id]!==v){ vans[id]=v; vpersist(); queueAnswer(id, v); renderChecklist(); }   // switching Done<->Not done re-queues
+      return;
+    }
+    if(!e.target.closest('.pc-head')) return;            // only the header toggles collapse
+    state.checkOpen=!state.checkOpen; renderChecklist();
+  });
+  window.addEventListener('online', flushOutbox);
 
   renderBanner();
+  renderChecklist();
   renderGlossary();
   refresh();
+  setTimeout(flushOutbox, 0);   // deferred so the __BEACON__ script (which sets window.__ARIA_FB__) has run
 })();
 </script>
 __BEACON__
