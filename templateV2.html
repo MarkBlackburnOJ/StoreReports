@@ -36,6 +36,28 @@
   .notice{margin:16px 12px 6px;background:#FFF4CE;border:1px solid #F1D67C;border-left:4px solid #E8A400;
     border-radius:10px;padding:13px 15px;font-size:12.5px;color:#4A3B00;line-height:1.55;}
 
+  /* ---- Playbook layer (PNP only) ---- */
+  .pb-banner{margin:14px 12px 2px;border-radius:12px;padding:13px 15px;
+    background:linear-gradient(180deg,#eaf1fb,#dfeaf8);border:1px solid #ccdbf2;border-left:4px solid var(--blue);}
+  .pb-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--blue);
+    display:flex;align-items:center;gap:6px;}
+  .pb-title{font-size:15px;font-weight:700;margin-top:3px;color:var(--blue-deep);letter-spacing:-.01em;}
+  .pb-steps{margin-top:9px;display:flex;flex-direction:column;gap:6px;}
+  .pb-step{font-size:12.5px;color:#26374d;display:flex;gap:8px;line-height:1.38;}
+  .pb-step b{color:var(--blue-deep);}
+  .pb-n{flex-shrink:0;width:18px;height:18px;border-radius:50%;background:var(--blue);color:#fff;font-size:10.5px;
+    font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+  .pb-order{display:flex;align-items:center;gap:12px;background:var(--green-tint);border:1px solid #BFE4C9;
+    border-radius:10px;padding:10px 13px;margin:0 0 11px;}
+  .pb-order .oq{font-size:22px;font-weight:800;color:var(--green-deep);line-height:1;white-space:nowrap;}
+  .pb-order .ot{font-size:12px;color:var(--green-text);line-height:1.4;}
+  .pb-order .ot b{color:var(--green-deep);}
+  .pb-hint{background:#FFF8E6;border:1px solid #F1DE9B;border-radius:10px;padding:10px 13px;margin:0 0 11px;}
+  .pb-hint .pb-h{font-size:12px;font-weight:700;color:#7A5B00;display:flex;align-items:center;gap:7px;}
+  .pb-hint ul{margin:7px 0 0;padding-left:18px;}
+  .pb-hint li{font-size:12px;color:#4A3B00;line-height:1.5;margin:2px 0;}
+  .pb-hint li b{color:#7A5B00;}
+
   /* Client filter */
   .filterbar{padding:12px 14px 2px;}
   .field{display:flex;align-items:center;gap:10px;background:var(--card);border:.5px solid #DFE3E8;
@@ -162,6 +184,8 @@
     </div>
   </header>
 
+  <div class="pb-banner" id="pbBanner" hidden></div>
+
   <div class="filterbar">
     <label class="field">
       <span class="flabel">Client</span>
@@ -270,6 +294,43 @@
     return (c==='makro'||c==='massbuild'||c==='game') ? c : (IS_MAKRO ? 'makro' : 'pnp'); })();
   var BRAND = CHANNEL==='massbuild' ? 'Massbuild' : CHANNEL==='makro' ? 'Makro' : CHANNEL==='game' ? 'Game' : 'Pick and Pay';
 
+  // ---- Playbook layer (PNP ONLY): store-format visit focus + per-item playbook actions + suggested order.
+  // Everything here is gated on IS_PNP, so Makro/Massbuild/Game reports are unchanged.
+  var IS_PNP = (CHANNEL==='pnp');
+  var FORMAT = /franch/i.test(meta.profile||'') ? 'franchise' : /corp/i.test(meta.profile||'') ? 'corporate' : '';
+  // Playbook "drive the order" — top up to ~2 weeks cover at the current rate of sale, rounded UP to whole
+  // orderable packs (never under 2 weeks). OOS/negative = 0 cover. Returns null when there's nothing to order.
+  function suggestOrder(r){
+    var dros=num(r.dros); if(dros<=0) return null;
+    var soh=num(r.soh), dsc=num(r.dsc);
+    var coverDays = soh<=0 ? 0 : Math.max(0, dsc);
+    var need = (14 - coverDays) * dros;
+    if(need<=0) return null;
+    var pack = num(r.pack); if(!(pack>=1)) pack=1;      // no / '0' pack size -> order in singles
+    var packs = Math.ceil(need/pack);
+    return { units:packs*pack, packs:packs, pack:pack };
+  }
+  // Per-category playbook actions (verbatim intent from the PNP in-store playbook). Steps are trusted HTML.
+  var PLAYBOOK = {
+    oos:{ h:'Out of stock — playbook', steps:[
+      'Check the <b>backroom</b> first — never leave stock in the back when the shelf is empty.',
+      'Fill and face the shelf, then raise the order below.',
+      'Place the order with the manager <b>before you leave</b>.' ] },
+    low_cover:{ h:'Low cover — playbook', steps:[
+      'Pull stock forward, fill gaps, rotate (FIFO).',
+      'Order ~2 weeks&rsquo; cover (below) so it doesn&rsquo;t go out of stock.' ] },
+    phantom:{ h:'No-sales check (critical)', steps:[
+      'System shows stock but no sale in 60+ days — find out <b>why</b>:',
+      'Wrong price? Not on shelf? Not visible? Blocked / not ranged? Wrong position?',
+      'Count the shelf. If unresolved &rarr; <b>escalate with a photo</b>.' ] },
+    negative:{ h:'Negative on-hand', steps:[
+      'On-hand below zero is impossible — <b>count the shelf</b> to correct the system.',
+      'Raise it with the store; nothing stays verbal.' ] },
+    discontinued:{ h:'Discontinued with stock', steps:[
+      'Discontinued but still holding stock — <b>clear or return</b> it.',
+      'Get documentation + a photo, uploaded same day.' ] }
+  };
+
   // ---- Category display config (in YOUR requested display order) ----
   var CATS = [
     { key:'oos', label:'Out of stock', cta:'Out of stock — order needed',
@@ -363,6 +424,47 @@
   // ---- Icons ----
   var ICO_CHEV='<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"></path></svg>';
   var ICO_ALERT='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"></path></svg>';
+  var ICO_BOOK='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>';
+
+  // Store-format visit-focus banner (PNP only). Static (independent of filters) → rendered once.
+  function renderBanner(){
+    var el=document.getElementById('pbBanner'); if(!el || !IS_PNP || !FORMAT) return;
+    var cfg = FORMAT==='franchise'
+      ? { eye:'Franchise visit — non-negotiables', title:'Drive the order &amp; open blocked lines', steps:[
+          'Full <b>store walk</b> + SOH check (shelf vs backroom).',
+          'Open any <b>blocked lines</b> — if the store can&rsquo;t, help them <b>email the buyer</b> while you&rsquo;re there.',
+          '<b>Place the order</b> before you leave — suggested 2-week quantities are on each item.',
+          'Photos + form, uploaded <b>same day</b>.' ] }
+      : { eye:'Corporate visit — non-negotiables', title:'Execute the shelf &amp; stay compliant', steps:[
+          'Full <b>store walk</b> + SOH check (shelf vs backroom).',
+          '<b>Planogram</b>: before/after photos, follow the layout exactly.',
+          'Fix shelf, <b>pricing</b> and promo on the spot; secure secondary space.',
+          'Photos + form, uploaded <b>same day</b>.' ] };
+    el.innerHTML = '<div class="pb-eyebrow">'+ICO_BOOK+cfg.eye+'</div>'+
+      '<div class="pb-title">'+cfg.title+'</div>'+
+      '<div class="pb-steps">'+cfg.steps.map(function(s,i){
+        return '<div class="pb-step"><span class="pb-n">'+(i+1)+'</span><span>'+s+'</span></div>'; }).join('')+'</div>';
+    el.removeAttribute('hidden');
+  }
+  // Per-item playbook block shown in the expanded detail: suggested order (OOS/low cover) + action steps.
+  function playbookBlock(r, cfg){
+    // Prefer the list you're viewing (so the Low-cover tab shows the low-cover hint even if the item is
+    // also OOS); fall back to the item's primary problem in the All-products view.
+    var cat = (cfg && PLAYBOOK[cfg.key]) ? cfg.key : classify(r);
+    var html='';
+    var so=suggestOrder(r);
+    if(so && (cat==='oos'||cat==='low_cover')){
+      var perWk=Math.round(num(r.dros)*7);
+      var packLine = so.pack>1 ? (' &middot; '+so.packs+' &times; '+so.pack+'-pack') : '';
+      html += '<div class="pb-order"><div class="oq">'+so.units+'</div><div class="ot"><b>Suggested order</b>'+packLine+' &mdash; ~2 weeks&rsquo; cover at the current rate of sale'+(perWk>0?(' (~'+perWk+'/wk)'):'')+'.</div></div>';
+    }
+    var pb = cat && PLAYBOOK[cat];
+    if(pb){
+      html += '<div class="pb-hint"><div class="pb-h">'+ICO_BOOK+esc(pb.h)+'</div><ul>'+
+        pb.steps.map(function(s){return '<li>'+s+'</li>';}).join('')+'</ul></div>';
+    }
+    return html;
+  }
   function barcodeBit(r){
     if(!r.barcode) return '';
     return '<span class="bc"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M4 5v14M7.5 5v14M11 5v14M14 5v14M17.5 5v14M20 5v14"></path></svg>'+esc(r.barcode)+'</span>';
@@ -428,8 +530,9 @@
         (r.id?('<span>#'+esc(r.id)+'</span>'):'') + barcodeBit(r) +
         (r.vendor?('<span class="vend">'+esc(r.vendor)+'</span>'):'') + badges +
       '</div>';
+    var pbBlock = (isOpen && IS_PNP) ? playbookBlock(r, cfg) : '';
     var detail = isOpen ? ('<div class="detail">'+
-        (ctaText?('<div class="cta">'+ICO_ALERT+esc(ctaText)+'</div>'):'')+ detailGrid(r) +'</div>') : '';
+        (ctaText?('<div class="cta">'+ICO_ALERT+esc(ctaText)+'</div>'):'')+ pbBlock + detailGrid(r) +'</div>') : '';
     return '<div class="row'+(isDone?' done':'')+(isOpen?' open':'')+'" data-id="'+esc(id)+'">'+
       '<div class="top">'+
         '<input type="checkbox" class="chk" data-id="'+esc(id)+'"'+(isDone?' checked':'')+' aria-label="Mark complete">'+
@@ -574,6 +677,7 @@
   document.getElementById('glossaryClose').addEventListener('click', function(){ document.getElementById('glossary').hidden=true; });
   document.getElementById('glossary').addEventListener('click', function(e){ if(e.target.id==='glossary') e.target.hidden=true; });
 
+  renderBanner();
   renderGlossary();
   refresh();
 })();
