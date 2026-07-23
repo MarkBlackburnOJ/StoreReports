@@ -271,9 +271,13 @@ const DATA = __PAYLOAD__;
     nosale:'No-sales actioned', order:'Order placed', blocked:'Blocked lines opened', plano:'Planogram executed',
     space:'Secondary space', photo:'Photos taken', mgr:'Manager aligned', upload:'Uploads same-day' };
   const chkLabels = s => String(s||'').split(',').map(x=>x.trim()).filter(Boolean).map(x=>CHK_LABELS[x]||x).join(', ');
+  // "order: buyer away  |  blocked: line inactive" -> "Order placed: buyer away · Blocked lines opened: line inactive"
+  const prettyReasons = s => String(s||'').split('|').map(x=>x.trim()).filter(Boolean).map(x=>{
+    const i=x.indexOf(':'); if(i<0) return x; const id=x.slice(0,i).trim(); return (CHK_LABELS[id]||id)+': '+x.slice(i+1).trim();
+  }).join(' · ');
   const visitRows = (DATA.visits||[]).map(v=>({
     scope:v[0]||'', rec:v[1]||'', date:v[2]||'', done:+v[3]||0, answered:+v[4]||0,
-    notdone:+v[5]||0, notdoneitems:v[6]||'', actions:+v[7]||0,
+    notdone:+v[5]||0, notdoneitems:v[6]||'', notdonereasons:v[7]||'', actions:+v[8]||0,
     pct: (+v[4]>0) ? Math.round((+v[3])*100/(+v[4])) : -1
   }));
   function visitFiltered(){
@@ -315,7 +319,7 @@ const DATA = __PAYLOAD__;
     else {
       $('tbody').innerHTML = rows.map(r=>{
         const chk = r.answered>0 ? `<span class="ch ${r.pct>=90?'ch-green':r.pct>=60?'ch-yellow':'ch-red'}">${r.done}/${r.answered} · ${r.pct}%</span>` : '<span class="dash">—</span>';
-        const nd = r.notdone>0 ? `<span class="no">${r.notdone}</span> <span style="color:var(--soft);font-size:11px">${esc(chkLabels(r.notdoneitems))}</span>` : '<span class="dash">0</span>';
+        const nd = r.notdone>0 ? `<span class="no">${r.notdone}</span> <span style="color:var(--soft);font-size:11px">${esc(chkLabels(r.notdoneitems))}</span>`+(r.notdonereasons?`<div style="color:var(--soft);font-size:11px;margin-top:2px">${esc(prettyReasons(r.notdonereasons))}</div>`:'') : '<span class="dash">0</span>';
         return '<tr>'+
           `<td class="scope">${esc(r.scope)}</td>`+
           `<td class="rec">${esc(r.rec||'—')}</td>`+
