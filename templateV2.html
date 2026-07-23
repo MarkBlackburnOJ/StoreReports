@@ -79,6 +79,10 @@
   .pc-btn:active{transform:translateY(1px);}
   .pc-btn.pc-done.on{background:var(--green);border-color:var(--green);color:#fff;}
   .pc-btn.pc-not.on{background:#E8A400;border-color:#E8A400;color:#fff;}
+  .pc-why{margin-top:8px;}
+  .pc-why-in{width:100%;box-sizing:border-box;font:inherit;font-size:12.5px;color:inherit;padding:8px 10px;border-radius:8px;border:1.5px solid var(--line);background:var(--card);}
+  .pc-why-in::placeholder{color:var(--mute-2);}
+  .pc-why-in:focus{outline:none;border-color:#E8A400;}
 
   /* Client filter */
   .filterbar{padding:12px 14px 2px;}
@@ -382,6 +386,10 @@
   var CKEY = 'aria-v2-visit::' + (meta.store_code||'') + '::' + (meta.week_ending||'');
   var vans = (function(){ try{ var raw=window.localStorage.getItem(CKEY); if(raw){ var o=JSON.parse(raw); if(o&&typeof o==='object'&&!Array.isArray(o)) return o; } }catch(e){} return {}; })();
   function vpersist(){ try{ window.localStorage.setItem(CKEY, JSON.stringify(vans)); }catch(e){} }
+  // Per-item "why not?" reason text (only meaningful for a 'notdone' answer). Persisted per store+week.
+  var RKEY = CKEY + '::why';
+  var vreasons = (function(){ try{ var raw=window.localStorage.getItem(RKEY); if(raw){ var o=JSON.parse(raw); if(o&&typeof o==='object'&&!Array.isArray(o)) return o; } }catch(e){} return {}; })();
+  function rpersist(){ try{ window.localStorage.setItem(RKEY, JSON.stringify(vreasons)); }catch(e){} }
 
   // ---- Offline outbox: each answer becomes a task/check-off event delivered to the feedback Worker (the
   // report NEVER talks to SQL — ARIA pulls the Worker's buffer into SQL). Append-only with a per-device
@@ -396,17 +404,18 @@
   function setOutbox(a){ lsSet(OBOX, JSON.stringify(a)); }
   // One task/check-off event -> the outbox. Used by BOTH the visit checklist ('chk:<item>' / done|notdone)
   // and the action-card check-offs (article id / checked|unchecked). Rep's beaconed copy only.
-  function queueEvent(articleId, action){
+  function queueEvent(articleId, action, note){
     var fb=window.__ARIA_FB__; if(!fb || !fb.id) return;        // un-beaconed managers copy → local-only, no submit
     if(!articleId || articleId.length>60) return;               // ArticleId is VARCHAR(60) at the SQL sink
-    var ob=outbox();
-    ob.push({ type:'task', kind:fb.kind||'store', reportId:fb.id, scope:fb.scope||(meta.store_code||''),
-              articleId:articleId, action:action, exp:fb.exp, tok:fb.tok,
-              deviceId:deviceId(), deviceSeq:nextSeq(), ts:Date.now() });
+    var ev={ type:'task', kind:fb.kind||'store', reportId:fb.id, scope:fb.scope||(meta.store_code||''),
+             articleId:articleId, action:action, exp:fb.exp, tok:fb.tok,
+             deviceId:deviceId(), deviceSeq:nextSeq(), ts:Date.now() };
+    if(note!=null){ var t=String(note).slice(0,500); if(t) ev.note=t; }   // optional reason (Not-done "why"); SQL sink caps too
+    var ob=outbox(); ob.push(ev);
     if(ob.length>500) ob=ob.slice(-500);                        // hard cap — never grow unbounded
     setOutbox(ob); flushOutbox();
   }
-  function queueAnswer(item, value){ queueEvent('chk:'+item, value); }   // visit checklist item
+  function queueAnswer(item, value, note){ queueEvent('chk:'+item, value, note); }   // visit checklist item (+ optional reason)
   var flushing=false;
   function flushOutbox(){
     var fb=window.__ARIA_FB__; if(!fb || !fb.ep || flushing) return;
@@ -415,7 +424,10 @@
     // A plain-string body is a CORS "simple" request (no preflight); keepalive lets it survive page unload.
     fetch(fb.ep, { method:'POST', body:JSON.stringify(ob[0]), keepalive:true })
       .then(function(res){ flushing=false;
-        if(res && (res.status===204 || res.status===200 || res.ok)){ var cur=outbox(); cur.shift(); setOutbox(cur); if(cur.length) flushOutbox(); }
+        var s = res ? res.status : 0, ok = (s===204 || s===200 || (res && res.ok));
+        // Drop the head on success OR on a permanent client-reject (4xx except 429), so one bad event can never
+        // wedge the FIFO queue behind it. Keep only on transient failure: 5xx, 429, or a network error (.catch).
+        if(ok || (s>=400 && s<500 && s!==429)){ var cur=outbox(); cur.shift(); setOutbox(cur); if(cur.length) flushOutbox(); }
       })
       .catch(function(){ flushing=false; });                    // offline / unreadable response → keep, retry later
   }
@@ -434,7 +446,9 @@
           '<div class="pc-seg">'+
             '<button type="button" class="pc-btn pc-done'+(a==='done'?' on':'')+'" data-cid="'+it.id+'" data-v="done">Done</button>'+
             '<button type="button" class="pc-btn pc-not'+(a==='notdone'?' on':'')+'" data-cid="'+it.id+'" data-v="notdone">Not done</button>'+
-          '</div></div>';
+          '</div>'+
+          (a==='notdone' ? '<div class="pc-why"><input type="text" class="pc-why-in" data-rid="'+it.id+'" maxlength="500" placeholder="What’s blocking it? (optional)" value="'+esc(vreasons[it.id]||'')+'"></div>' : '')+
+        '</div>';
       }).join('')+'</div>' : '');
     el.removeAttribute('hidden');
   }
@@ -794,11 +808,17 @@
     var btn=e.target.closest('.pc-btn');
     if(btn){
       var id=btn.getAttribute('data-cid'), v=btn.getAttribute('data-v');
-      if(vans[id]!==v){ vans[id]=v; vpersist(); queueAnswer(id, v); renderChecklist(); }   // switching Done<->Not done re-queues
+      if(vans[id]!==v){ vans[id]=v; vpersist(); queueAnswer(id, v, v==='notdone' ? vreasons[id] : null); renderChecklist(); }   // switching Done<->Not done re-queues (carry reason on Not done)
       return;
     }
     if(!e.target.closest('.pc-head')) return;            // only the header toggles collapse
     state.checkOpen=!state.checkOpen; renderChecklist();
+  });
+  // Reason text ("why not?") — 'change' fires on blur/enter, so we queue once per edit, not per keystroke.
+  document.getElementById('pbCheck').addEventListener('change', function(e){
+    var inp=e.target.closest('.pc-why-in'); if(!inp) return;
+    var id=inp.getAttribute('data-rid'), txt=(inp.value||'').trim();
+    if((vreasons[id]||'')!==txt){ vreasons[id]=txt; rpersist(); if(vans[id]==='notdone') queueAnswer(id,'notdone',txt); }   // resend the Not-done answer carrying the reason (LWW keeps the latest)
   });
   window.addEventListener('online', flushOutbox);
 
@@ -806,7 +826,7 @@
   renderChecklist();
   renderGlossary();
   refresh();
-  setTimeout(flushOutbox, 0);   // deferred so the __BEACON__ script (which sets window.__ARIA_FB__) has run
+  setTimeout(flushOutbox, 0);   // deferred so the injected beacon (which sets window.__ARIA_FB__) has run first
 })();
 </script>
 __BEACON__
