@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Action Effectiveness — ARIA</title>
+<style>
+  :root{
+    --brand:#16539F; --brand-d:#0f3e78; --red:#E31E24; --green:#1E8E3E; --amber:#B7791F;
+    --ink:#1f2937; --mute:#6b7280; --soft:#9aa3af; --line:#e5e7eb;
+    --paper:#eef1f4; --card:#ffffff; --tint:#e7eef8;
+    --radius:12px; --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 16px 60px;}
+  a{color:var(--brand)}
+
+  header.mast{background:var(--brand);color:#fff;border-radius:0 0 var(--radius) var(--radius);
+    padding:22px 24px;margin-bottom:14px;}
+  .mast .eyebrow{font-size:11px;font-weight:600;letter-spacing:1.6px;text-transform:uppercase;color:rgba(255,255,255,.66);}
+  .mast h1{margin:5px 0 0;font-size:21px;font-weight:700;letter-spacing:.2px;}
+  .mast .sub{font-size:13px;color:rgba(255,255,255,.82);margin-top:6px;}
+
+  .asof{display:flex;align-items:center;gap:9px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;
+    border-radius:var(--radius);padding:11px 15px;margin-bottom:18px;font-size:13.5px;font-weight:600;}
+  .asof::before{content:"\1F553";font-size:15px;}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px;}
+  .kpi{background:var(--card);border-radius:var(--radius);padding:15px 16px;border:1px solid var(--line);}
+  .kpi .v{font-size:25px;font-weight:700;line-height:1;color:var(--ink);}
+  .kpi .v small{font-size:15px;font-weight:600;}
+  .kpi .l{font-size:12px;color:var(--mute);margin-top:7px;}
+  .kpi .s{font-size:11.5px;color:var(--soft);margin-top:2px;}
+  .kpi .v.up{color:var(--red)} .kpi .v.down{color:var(--green)}
+
+  .panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:14px 16px;margin-bottom:18px;}
+  .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:2px;}
+  .toolbar input{font:inherit;font-size:14px;padding:8px 11px;border:1px solid var(--line);border-radius:8px;background:var(--paper);min-width:230px;}
+  .count{font-size:12px;color:var(--soft);margin-left:auto;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--mute);margin-top:10px;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
+  .dot.good{background:var(--green)} .dot.warn{background:var(--amber)} .dot.info{background:var(--brand)} .dot.none{background:var(--soft)}
+
+  .tblwrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top;}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.4px;color:var(--mute);font-weight:600;cursor:pointer;user-select:none;white-space:nowrap;}
+  th.num,td.num{text-align:center;white-space:nowrap;}
+  th.sorted{color:var(--brand);}
+  tbody tr:hover{background:#f7f9fb;}
+  .store{font-weight:600;color:var(--ink);}
+  .rep{color:var(--mute);font-size:12px;}
+  .dash{color:var(--soft);}
+
+  .mv{font-weight:700;white-space:nowrap;}
+  .mv .arrow{font-weight:400;color:var(--soft);}
+  .mv.down{color:var(--green)} .mv.up{color:var(--red)} .mv.flat{color:var(--ink)}
+  .conf{display:inline-block;margin-top:3px;font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:5px;white-space:nowrap;}
+  .conf.ok{background:#e3f5ea;color:#12703a;} .conf.no{background:#fbf1d6;color:#7a5c00;}
+
+  .vd{display:inline-block;font-size:11.5px;font-weight:600;padding:3px 9px;border-radius:7px;white-space:nowrap;}
+  .vd.v-warn{background:#fbf1d6;color:#7a5c00;} .vd.v-good{background:#e3f5ea;color:#12703a;}
+  .vd.v-info{background:var(--tint);color:var(--brand-d);} .vd.v-none{background:#f1f3f6;color:var(--soft);}
+  .chk{font-weight:600;} .chk .of{color:var(--soft);font-weight:400;}
+
+  .empty{text-align:center;color:var(--soft);padding:40px 10px;}
+  footer{margin-top:14px;font-size:11.5px;color:var(--soft);line-height:1.6;}
+  footer b{color:var(--mute);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="mast">
+    <div class="eyebrow">IRAM · ARIA</div>
+    <h1>Action Effectiveness</h1>
+    <div class="sub" id="sub"></div>
+  </header>
+
+  <div class="asof" id="asof"></div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="panel">
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Search store or rep…" autocomplete="off">
+      <span class="count" id="count"></span>
+    </div>
+    <div class="legend">
+      <span><i class="dot good"></i> Actioned &amp; improved</span>
+      <span><i class="dot warn"></i> Confirmed, no change</span>
+      <span><i class="dot info"></i> Improved, not logged</span>
+      <span><i class="dot none"></i> No action logged</span>
+    </div>
+  </div>
+
+  <div class="panel" style="padding:0">
+    <div class="tblwrap">
+      <table id="tbl"><thead id="thead"></thead><tbody id="tbody"></tbody></table>
+    </div>
+  </div>
+
+  <footer>
+    <b>Then → now</b> compares each store&rsquo;s KPI on the visit day to today&rsquo;s data. <b>Confirmed</b> is what the rep
+    ticked off in their store report. A cell&rsquo;s <b>✓N</b> badge is green when that KPI improved after they confirmed it,
+    amber when it didn&rsquo;t. Green numbers dropped after the visit; red went up. Times are SAST.
+    <div id="gen" style="margin-top:8px"></div>
+  </footer>
+</div>
+
+<script>
+const DATA = __PAYLOAD__;
+(function(){
+  const $ = id => document.getElementById(id);
+  const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  const meta = DATA.meta||{};
+  // payload KPI order: [oos, low_cover, phantom, negative, discontinued]. Display order below.
+  const KPIS = [
+    {i:0, label:'Out of stock'},
+    {i:2, label:'Phantom'},
+    {i:1, label:'Low cover'},
+    {i:3, label:'Negative'},
+    {i:4, label:'Discontinued'},
+  ];
+  const num = a => Array.isArray(a) ? a.map(x=>+x||0) : [0,0,0,0,0];
+
+  const stores = (DATA.stores||[]).map(s=>({
+    code:s.code||'', name:s.name||s.code||'', rep:s.rep||'—',
+    then:num(s.then), now:num(s.now), confirmed:num(s.confirmed),
+    chk:Array.isArray(s.chk)?[+s.chk[0]||0,+s.chk[1]||0]:[0,0]
+  }));
+
+  // ---- verdict per store ----
+  function verdict(s){
+    let cFlat=false, cMoved=false, moved=false;
+    for(let k=0;k<5;k++){
+      if(s.confirmed[k]>0){ if(s.now[k]<s.then[k]) cMoved=true; else cFlat=true; }
+      else if(s.now[k]<s.then[k]) moved=true;
+    }
+    if(cFlat)  return {cls:'v-warn', txt:'Confirmed, no change', rank:3};
+    if(cMoved) return {cls:'v-good', txt:'Actioned & improved', rank:2};
+    if(moved)  return {cls:'v-info', txt:'Improved, not logged', rank:1};
+    return {cls:'v-none', txt:'No action logged', rank:0};
+  }
+
+  // ---- header ----
+  $('sub').textContent = 'Did yesterday’s visits move the numbers?  ·  visited ' + (meta.visitDate||'') + '  ·  measured vs ' + (meta.nowDate||'');
+  $('asof').innerHTML = 'Snapshot as of <b>' + esc(meta.generated) + ' (SAST)</b> — “now” is today’s data; “then” is the visit day.';
+  $('gen').innerHTML = 'Generated ' + esc(meta.generated) + ' · ARIA ' + esc(meta.version);
+
+  // ---- hero KPIs (across all stores) ----
+  function renderKpis(rows){
+    const reps = new Set(rows.map(r=>r.rep)).size;
+    const sum = (arr,i) => rows.reduce((a,r)=>a+r[arr][i],0);
+    const cards = [];
+    cards.push(['', rows.length, 'Stores visited', '']);
+    cards.push(['', reps, 'Reps', '']);
+    [ {i:0,l:'Out of stock'},{i:2,l:'Phantom'},{i:1,l:'Low cover'} ].forEach(k=>{
+      const t=sum('then',k.i), n=sum('now',k.i), d=n-t;
+      const cls = d<0?'down':d>0?'up':'';
+      const big = d<0?('−'+(-d)):d>0?('+'+d):'0';
+      cards.push([cls, big, k.l+' net', t+' → '+n]);
+    });
+    const vs = rows.map(verdict);
+    const flat = vs.filter(v=>v.rank===3).length;
+    cards.push([flat>0?'up':'', flat, 'Confirmed, no change', 'stores flagged']);
+    $('kpis').innerHTML = cards.map(c=>
+      `<div class="kpi"><div class="v ${c[0]}">${c[1]}</div><div class="l">${esc(c[2])}</div><div class="s">${esc(c[3]||'')}</div></div>`
+    ).join('');
+  }
+
+  // ---- table ----
+  const COLS = [
+    {k:'store', h:'Store', num:false},
+    {k:'rep',   h:'Rep',   num:false},
+  ].concat(KPIS.map((k,ix)=>({k:'k'+ix, h:k.label, num:true, kpi:k.i})))
+   .concat([{k:'chk', h:'Checklist', num:true}, {k:'verdict', h:'Verdict', num:false}]);
+
+  let sortCol='verdict', sortDir=-1, query='';
+
+  function moveCell(then, now, conf){
+    const d = now - then;
+    const cls = d<0?'down':d>0?'up':'flat';
+    const arrow = '<span class="arrow">→</span>';
+    const main = (then===0&&now===0&&conf===0) ? '<span class="dash">·</span>'
+      : `<span class="mv ${cls}">${then} ${arrow} ${now}</span>`;
+    let badge = '';
+    if(conf>0){ const ok = now<then; badge = `<div><span class="conf ${ok?'ok':'no'}">✓${conf}${ok?'':' · flat'}</span></div>`; }
+    return main + badge;
+  }
+
+  function sortVal(r, c){
+    if(c.k==='store') return (r.name||'').toLowerCase();
+    if(c.k==='rep')   return (r.rep||'').toLowerCase();
+    if(c.k==='chk')   return r.chk[1]>0 ? r.chk[0]/r.chk[1] : -1;
+    if(c.k==='verdict') return verdict(r).rank;
+    if(c.kpi!=null)   return r.now[c.kpi] - r.then[c.kpi];   // sort KPI cols by movement (most improved first when asc)
+    return 0;
+  }
+
+  function render(){
+    let rows = stores.filter(r=>{
+      if(!query) return true;
+      const q=query.toLowerCase();
+      return (r.code+' '+r.name+' '+r.rep).toLowerCase().includes(q);
+    });
+    const col = COLS.find(c=>c.k===sortCol);
+    rows.sort((a,b)=>{ const x=sortVal(a,col), y=sortVal(b,col); return (x>y?1:x<y?-1:0)*sortDir
+      || ((a.name||'')<(b.name||'')?-1:1); });
+
+    renderKpis(rows);
+
+    const arrow = k => sortCol===k ? (sortDir>0?' ▲':' ▼') : '';
+    $('thead').innerHTML = '<tr>'+COLS.map(c=>
+      `<th data-c="${c.k}" class="${c.num?'num':''}${sortCol===c.k?' sorted':''}">${esc(c.h)}${arrow(c.k)}</th>`).join('')+'</tr>';
+    $('thead').querySelectorAll('th').forEach(th=>th.onclick=()=>{
+      const k=th.getAttribute('data-c');
+      if(sortCol===k) sortDir=-sortDir; else { sortCol=k; sortDir = (k==='store'||k==='rep')?1:-1; }
+      render();
+    });
+
+    if(!rows.length){ $('tbody').innerHTML = `<tr><td colspan="${COLS.length}" class="empty">No stores visited in range.</td></tr>`; }
+    else {
+      $('tbody').innerHTML = rows.map(r=>{
+        const v = verdict(r);
+        const chk = r.chk[1]>0 ? `<span class="chk">${r.chk[0]}<span class="of">/${r.chk[1]}</span></span>` : '<span class="dash">·</span>';
+        return '<tr>'+
+          `<td><div class="store">${esc(r.name)}</div><div class="rep">${esc(r.code)}</div></td>`+
+          `<td class="rep">${esc(r.rep)}</td>`+
+          KPIS.map(k=>`<td class="num">${moveCell(r.then[k.i], r.now[k.i], r.confirmed[k.i])}</td>`).join('')+
+          `<td class="num">${chk}</td>`+
+          `<td><span class="vd ${v.cls}">${esc(v.txt)}</span></td>`+
+        '</tr>';
+      }).join('');
+    }
+    $('count').textContent = `${rows.length} store${rows.length===1?'':'s'}`;
+  }
+
+  $('search').addEventListener('input', e=>{ query=e.target.value; render(); });
+  render();
+})();
+</script>
+</body>
+</html>
