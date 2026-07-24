@@ -646,6 +646,7 @@
     opts = opts || {};
     var id=keyOf(r), isDone=done.has(id), isOpen=(state.open===id);
     var primary=classify(r);
+    var cat = opts.allView ? (primary||'') : cfg.key;   // KPI bucket recorded on a tick (All view → the item's primary tag)
     var ctaText = opts.allView ? (primary?CAT[primary].cta:'') : cfg.cta;
     var badges = catBadges(r, opts.allView ? null : cfg.key);
     var d2 = '<div class="d2">'+
@@ -657,7 +658,7 @@
         (ctaText?('<div class="cta">'+ICO_ALERT+esc(ctaText)+'</div>'):'')+ pbBlock + detailGrid(r) +'</div>') : '';
     return '<div class="row'+(isDone?' done':'')+(isOpen?' open':'')+'" data-id="'+esc(id)+'">'+
       '<div class="top">'+
-        '<input type="checkbox" class="chk" data-id="'+esc(id)+'"'+(isDone?' checked':'')+' aria-label="Mark complete">'+
+        '<input type="checkbox" class="chk" data-id="'+esc(id)+'" data-cat="'+esc(cat)+'"'+(isDone?' checked':'')+' aria-label="Mark complete">'+
         '<div class="tap" data-id="'+esc(id)+'">'+
           '<div class="desc"><div class="d1">'+esc(r.desc||'(no description)')+'</div>'+d2+'</div>'+
           '<div class="metric"><span class="mv" style="color:'+(cfg.key==='all'?'var(--ink)':'var(--red-deep)')+'">'+cfg.metric(r)+'</span> <span class="mu">'+esc(cfg.unit)+'</span></div>'+
@@ -780,7 +781,7 @@
     // Record the check-off to the DB too (rep's copy only; local ticking is unaffected). id == keyOf(r) = the
     // article number for real lines; composite (desc|barcode) keys carry a '|' and are skipped so only clean
     // article ids submit. Fires on tick AND untick.
-    if(id.indexOf('|')<0) queueEvent(id, c.checked ? 'checked' : 'unchecked');
+    if(id.indexOf('|')<0) queueEvent(id, c.checked ? 'checked' : 'unchecked', c.getAttribute('data-cat')||null);
     function commit(){ done.add(id); persist(); renderCards(); renderList(); }
     // Untick (from Completed) stays instant.
     if(!c.checked){ done.delete(id); persist(); renderCards(); renderList(); return; }
