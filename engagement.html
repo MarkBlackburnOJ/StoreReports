@@ -54,6 +54,15 @@
   .vx-ck-n b{color:var(--ink);font-weight:600;}
   .vx-split{color:var(--soft);font-size:10.5px;font-weight:400;margin-top:3px;white-space:nowrap;}
   @media(max-width:640px){ .vx-ck-row{grid-template-columns:130px 1fr;} .vx-ck-n{grid-column:1/-1;text-align:left;margin-top:-2px;} }
+  .vx-dtl-wrap{overflow-x:auto;}
+  .vx-dtl{width:100%;border-collapse:collapse;font-size:12.5px;}
+  .vx-dtl th,.vx-dtl td{padding:6px 9px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap;}
+  .vx-dtl th{font-size:11px;color:var(--mute);font-weight:600;cursor:pointer;user-select:none;}
+  .vx-dtl th.num,.vx-dtl td.num{text-align:right;}
+  .vx-dtl th.sorted{color:var(--brand);}
+  .vx-dtl td b{color:var(--ink);font-weight:700;}
+  .vx-dtl tbody tr:hover{background:var(--paper);}
+  .vx-dtl-empty{color:var(--soft);text-align:center;padding:16px;}
 
   .panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:16px 18px;margin-bottom:18px;}
   .panel h2{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--ink);}
@@ -366,8 +375,58 @@ const DATA = __PAYLOAD__;
     if(k[5]>0) parts.push('Other '+k[5]);
     return parts.length ? `<div class="vx-split">${parts.join(' · ')}</div>` : '';
   }
-  // Completed-by-KPI cards + before-you-leave checklist breakdown for the current (filtered) visit set.
+  // ---- "Completed items by KPI — by visit" detail table (date · store · rep × KPI), sortable, filter-linked ----
+  const VXD_COLS = [
+    {k:'date',   h:'Date'},
+    {k:'store',  h:'Store'},
+    {k:'rep',    h:'Rep'},
+    {k:'oos',    h:'OOS',       num:true, i:0},
+    {k:'low',    h:'Low cover', num:true, i:1},
+    {k:'phantom',h:'Phantom',   num:true, i:2},
+    {k:'neg',    h:'Negative',  num:true, i:3},
+    {k:'disc',   h:'Discont.',  num:true, i:4},
+    {k:'other',  h:'Other',     num:true, i:5},
+    {k:'total',  h:'Total',     num:true},
+  ];
+  let vxdSort='date', vxdDir=-1;                          // default: latest visit first
+  const vxdCell = n => n>0 ? String(n) : '<span class="dash">·</span>';
+  function vxDetailRows(rows){
+    const out = rows.map(r=>{ let t=0; for(let i=0;i<6;i++) t+=(r.kpi[i]||0); return {date:r.date, store:r.scope, rep:r.rec, k:r.kpi, total:t}; })
+                    .filter(r=>r.total>0);               // only visits with at least one completed item
+    const col = VXD_COLS.find(c=>c.k===vxdSort);
+    const key = r => vxdSort==='date'  ? r.date
+                   : vxdSort==='store' ? (r.store||'').toLowerCase()
+                   : vxdSort==='rep'   ? (r.rep||'').toLowerCase()
+                   : vxdSort==='total' ? r.total
+                   : (col && col.i!=null ? (r.k[col.i]||0) : 0);
+    out.sort((a,b)=>{ const x=key(a),y=key(b); return (x>y?1:x<y?-1:0)*vxdDir || (a.date<b.date?1:a.date>b.date?-1:0); });
+    return out;
+  }
+  function vxDetailHtml(rows){
+    const dr=vxDetailRows(rows);
+    const arr = k => vxdSort===k ? (vxdDir>0?' ▲':' ▼') : '';
+    const head = '<tr>'+VXD_COLS.map(c=>`<th data-vxd="${c.k}" class="${c.num?'num':''}${vxdSort===c.k?' sorted':''}">${esc(c.h)}${arr(c.k)}</th>`).join('')+'</tr>';
+    if(!dr.length) return `<div class="vx-dtl-wrap"><table class="vx-dtl"><thead>${head}</thead><tbody><tr><td colspan="${VXD_COLS.length}" class="vx-dtl-empty">No completed items in range.</td></tr></tbody></table></div>`;
+    const body = dr.map(r=>'<tr>'+
+      `<td>${esc(isoLabel(r.date))}</td>`+
+      `<td>${esc(r.store||'—')}</td>`+
+      `<td>${esc(r.rep||'—')}</td>`+
+      VKPI.map(m=>`<td class="num">${vxdCell(r.k[m.i])}</td>`).join('')+
+      `<td class="num">${vxdCell(r.k[5])}</td>`+
+      `<td class="num"><b>${r.total}</b></td>`+
+    '</tr>').join('');
+    return `<div class="vx-dtl-wrap"><table class="vx-dtl"><thead>${head}</thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  // Completed-by-KPI cards + by-visit detail + before-you-leave checklist breakdown for the current (filtered) visit set.
   function renderVxPanel(rows){
+    if(!renderVxPanel._bound){ renderVxPanel._bound=true;                 // sort the detail table on header click (delegated → survives re-render)
+      $('vxPanel').addEventListener('click', e=>{ const th=e.target.closest('[data-vxd]'); if(!th) return;
+        const k=th.getAttribute('data-vxd');
+        if(vxdSort===k) vxdDir=-vxdDir; else { vxdSort=k; vxdDir=(k==='store'||k==='rep')?1:-1; }
+        render();
+      });
+    }
     const k=[0,0,0,0,0,0]; rows.forEach(r=>{ for(let i=0;i<6;i++) k[i]+=(r.kpi[i]||0); });
     const totalDone=k.reduce((a,b)=>a+b,0);
     let cards=VKPI.map(m=>`<div class="vx-k"><div class="v">${k[m.i]}</div><div class="l">${m.label}</div></div>`).join('');
@@ -389,6 +448,8 @@ const DATA = __PAYLOAD__;
     $('vxPanel').innerHTML =
       `<div class="vx-sect"><div class="vx-h">Completed items by KPI <span class="sub">${totalDone} marked complete &middot; reflects filters</span></div>`+
         `<div class="vx-kpis">${cards}</div></div>`+
+      `<div class="vx-sect"><div class="vx-h">Completed items by KPI &mdash; by visit <span class="sub">date &middot; store &middot; rep &middot; click a header to sort</span></div>`+
+        `${vxDetailHtml(rows)}</div>`+
       `<div class="vx-sect"><div class="vx-h">Before you leave <span class="sub">visit non-negotiables &middot; done vs not done</span></div>`+
         `<div class="vx-ck">${ck||'<div class="vx-ck-lab" style="color:var(--soft)">No checklist answers in range.</div>'}</div></div>`;
   }
