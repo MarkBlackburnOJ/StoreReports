@@ -236,7 +236,7 @@ const DATA = __PAYLOAD__;
 
 (function(){
   const $ = id => document.getElementById(id);
-  const esc = s => (s==null?'':String(s));
+  const esc = s => (s==null?'':String(s)).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const pct = (o,s) => s>0 ? Math.round(o*100/s) : 0;
   const fmtMins = m => m==null ? '' : (m<60 ? m+'m' : Math.floor(m/60)+'h '+(m%60)+'m');
   const domainOf = e => { const i=(e||'').lastIndexOf('@'); return i>=0 ? e.slice(i+1).toLowerCase() : ''; };
@@ -313,15 +313,23 @@ const DATA = __PAYLOAD__;
                  {i:2,label:'Phantom',ab:'Ph'}, {i:3,label:'Negative',ab:'Neg'}, {i:4,label:'Discontinued',ab:'Disc'} ];
   const CHK_ORDER = ['walk','soh','shelf','price','nosale','order','blocked','plano','space','photo','mgr','upload'];
   const csvSet = s => new Set(String(s||'').split(',').map(x=>x.trim()).filter(Boolean));
-  const visitRows = (DATA.visits||[]).map(v=>({
-    scope:v[0]||'', rec:v[1]||'', date:v[2]||'', done:+v[3]||0, answered:+v[4]||0,
-    notdone:+v[5]||0, notdoneitems:v[6]||'', notdonereasons:v[7]||'', actions:+v[8]||0,
-    kpi: (Array.isArray(v[9])?v[9]:[]).map(n=>+n||0).concat([0,0,0,0,0,0]).slice(0,6),
-    doneitems: v[10]||'',
-    // per-KPI "to-do" denominator [oos,low,phantom,neg,disc]; each null when the report pre-dates the feature
-    kpif: (function(){ const a=Array.isArray(v[11])?v[11]:[]; return [0,1,2,3,4].map(i=> (i<a.length && a[i]!=null) ? (+a[i]||0) : null); })(),
-    pct: (+v[4]>0) ? Math.round((+v[3])*100/(+v[4])) : -1
-  }));
+  const visitRows = (DATA.visits||[]).map(v=>{
+    const done=+v[3]||0, answered=+v[4]||0;
+    // pset = the checklist items the visit actually PRESENTED (v[12]); its size is the completion denominator.
+    // Empty = pre-feature / non-PNP report → no honest %, we fall back to raw counts instead of done÷answered.
+    const pset=csvSet(v[12]), pc=pset.size;
+    return {
+      scope:v[0]||'', rec:v[1]||'', date:v[2]||'', done:done, answered:answered,
+      notdone:+v[5]||0, notdoneitems:v[6]||'', notdonereasons:v[7]||'', actions:+v[8]||0,
+      kpi: (Array.isArray(v[9])?v[9]:[]).map(n=>+n||0).concat([0,0,0,0,0,0]).slice(0,6),
+      doneitems: v[10]||'',
+      // per-KPI "to-do" denominator [oos,low,phantom,neg,disc]; each null when the report pre-dates the feature
+      kpif: (function(){ const a=Array.isArray(v[11])?v[11]:[]; return [0,1,2,3,4].map(i=> (i<a.length && a[i]!=null) ? (+a[i]||0) : null); })(),
+      pset:pset, presented:pc,
+      unanswered: pc>0 ? Math.max(0, pc-answered) : 0,           // items shown but never answered (count as not-done)
+      pct: pc>0 ? Math.min(100, Math.round(done*100/pc)) : -1     // Completed ÷ items presented; -1 = no denominator
+    };
+  });
   function visitFiltered(){
     const rq=query.toLowerCase(), rc=msRecip.selected(), dm=msDomain.selected(), ds=msDate.selected(), sc=msScope.selected();
     return visitRows.filter(v=>{
@@ -335,12 +343,16 @@ const DATA = __PAYLOAD__;
   }
   function renderVisitKpis(rows){
     const reps=new Set(rows.map(r=>r.rec).filter(Boolean)).size;
-    let td=0,ta=0,tnd=0,tac=0; rows.forEach(r=>{ td+=r.done; ta+=r.answered; tnd+=r.notdone; tac+=r.actions; });
-    const p = ta>0?Math.round(td*100/ta):0;
+    // Completion % = Completed ÷ items PRESENTED (only visits that recorded a presented set contribute the
+    // denominator; unanswered items count against it). Not-done + action items span all visits.
+    let td=0,tp=0,tu=0,tnd=0,tac=0;
+    rows.forEach(r=>{ tnd+=r.notdone; tac+=r.actions; if(r.presented>0){ td+=r.done; tp+=r.presented; tu+=r.unanswered; } });
+    const p = tp>0?Math.min(100,Math.round(td*100/tp)):0;
     const cards=[
       ['', rows.length, 'Visits', 'with feedback'],
       ['', reps, 'Reps', 'reporting'],
-      [ta?(p>=90?'ok':p<60?'bad':''):'', ta?p+'%':'–', 'Checklist done', td+' / '+ta],
+      [tp?(p>=90?'ok':p<60?'bad':''):'', tp?p+'%':'–', 'Checklist done', td+' / '+tp],
+      [tu>0?'bad':'', tu, 'Unanswered', 'items skipped'],
       [tnd>0?'bad':'', tnd, 'Not done', 'items flagged'],
       ['', tac, 'Items done', 'action cards'],
     ];
@@ -361,7 +373,9 @@ const DATA = __PAYLOAD__;
     if(!rows.length){ $('tbody').innerHTML = `<tr class="empty-row"><td colspan="${kd.head.length}">No visit feedback in range.</td></tr>`; }
     else {
       $('tbody').innerHTML = rows.map(r=>{
-        const chk = r.answered>0 ? `<span class="ch ${r.pct>=90?'ch-green':r.pct>=60?'ch-yellow':'ch-red'}">${r.done}/${r.answered} · ${r.pct}%</span>` : '<span class="dash">—</span>';
+        const chk = r.presented>0
+          ? `<span class="ch ${r.pct>=90?'ch-green':r.pct>=60?'ch-yellow':'ch-red'}">${r.done}/${r.presented} · ${r.pct}%</span>`+(r.unanswered>0?` <span class="dash" style="font-size:11px" title="shown but not answered">${r.unanswered} skipped</span>`:'')
+          : ((r.done||r.notdone) ? `<span class="ch ch-yellow">${r.done} done · ${r.notdone} not</span>` : '<span class="dash">—</span>');
         const nd = r.notdone>0 ? `<span class="no">${r.notdone}</span> <span style="color:var(--soft);font-size:11px">${esc(chkLabels(r.notdoneitems))}</span>`+(r.notdonereasons?`<div style="color:var(--soft);font-size:11px;margin-top:2px">${esc(prettyReasons(r.notdonereasons))}</div>`:'') : '<span class="dash">0</span>';
         return '<tr>'+
           `<td class="scope">${esc(r.scope)}</td>`+
@@ -449,17 +463,22 @@ const DATA = __PAYLOAD__;
       return `<div class="vx-k"><div class="v">${d}</div><div class="l">${m.label}</div>${sub}</div>`; }).join('');
     if(k[5]>0) cards+=`<div class="vx-k"><div class="v">${k[5]}</div><div class="l">Other</div></div>`;
 
-    // Each checklist item: how many filtered visits marked it Done vs Not done (bar = done rate).
+    // Each checklist item, across the visits that PRESENTED it: Done / Not done / Unanswered (bar = done rate =
+    // done ÷ presented). Only visits with a recorded presented set count (pre-feature visits can't attribute
+    // unanswered, so they're excluded here rather than inflating the rate). p ≥ d+n by construction (a rep can
+    // only answer an item they were shown), so skipped = p-d-n ≥ 0.
     const acc={}; rows.forEach(r=>{
-      csvSet(r.doneitems).forEach(id=>{ (acc[id]||(acc[id]={d:0,n:0})).d++; });
-      csvSet(r.notdoneitems).forEach(id=>{ (acc[id]||(acc[id]={d:0,n:0})).n++; });
+      if(!r.pset || !r.pset.size) return;
+      r.pset.forEach(id=>{ (acc[id]||(acc[id]={d:0,n:0,p:0})).p++; });
+      csvSet(r.doneitems).forEach(id=>{ if(acc[id]) acc[id].d++; });
+      csvSet(r.notdoneitems).forEach(id=>{ if(acc[id]) acc[id].n++; });
     });
     const ids=Object.keys(acc).sort((a,b)=>{ const ia=CHK_ORDER.indexOf(a),ib=CHK_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
     const ck=ids.map(id=>{
-      const a=acc[id], ans=a.d+a.n, rate=ans?Math.round(a.d*100/ans):0;
+      const a=acc[id], u=Math.max(0,a.p-a.d-a.n), rate=a.p?Math.min(100,Math.round(a.d*100/a.p)):0;
       return `<div class="vx-ck-row"><div class="vx-ck-lab">${esc(CHK_LABELS[id]||id)}</div>`+
              `<div class="vx-bar"><i style="width:${rate}%"></i></div>`+
-             `<div class="vx-ck-n"><b>${a.d}</b> done &middot; ${a.n} not &middot; ${rate}%</div></div>`;
+             `<div class="vx-ck-n"><b>${a.d}</b> done &middot; ${a.n} not &middot; ${u} skipped &middot; ${rate}%</div></div>`;
     }).join('');
 
     $('vxPanel').innerHTML =
@@ -467,7 +486,7 @@ const DATA = __PAYLOAD__;
         `<div class="vx-kpis">${cards}</div></div>`+
       `<div class="vx-sect"><div class="vx-h">Completed items by KPI &mdash; by visit <span class="sub">date &middot; store &middot; rep &middot; click a header to sort</span></div>`+
         `${vxDetailHtml(rows)}</div>`+
-      `<div class="vx-sect"><div class="vx-h">Before you leave <span class="sub">visit non-negotiables &middot; done vs not done</span></div>`+
+      `<div class="vx-sect"><div class="vx-h">Before you leave <span class="sub">non-negotiables &middot; done &middot; not done &middot; skipped &middot; % of items shown</span></div>`+
         `<div class="vx-ck">${ck||'<div class="vx-ck-lab" style="color:var(--soft)">No checklist answers in range.</div>'}</div></div>`;
   }
 
