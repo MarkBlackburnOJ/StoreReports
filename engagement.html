@@ -63,6 +63,10 @@
   .vx-dtl td b{color:var(--ink);font-weight:700;}
   .vx-dtl tbody tr:hover{background:var(--paper);}
   .vx-dtl-empty{color:var(--soft);text-align:center;padding:16px;}
+  .vxc-p{font-size:11px;font-weight:600;}
+  .vxc-g{color:var(--green);} .vxc-y{color:#b7791f;} .vxc-r{color:var(--red);}
+  .vx-kf{font-size:11px;color:var(--soft);margin-top:4px;}
+  .vx-kf b{color:var(--ink);font-weight:700;}
 
   .panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:16px 18px;margin-bottom:18px;}
   .panel h2{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--ink);}
@@ -314,6 +318,8 @@ const DATA = __PAYLOAD__;
     notdone:+v[5]||0, notdoneitems:v[6]||'', notdonereasons:v[7]||'', actions:+v[8]||0,
     kpi: (Array.isArray(v[9])?v[9]:[]).map(n=>+n||0).concat([0,0,0,0,0,0]).slice(0,6),
     doneitems: v[10]||'',
+    // per-KPI "to-do" denominator [oos,low,phantom,neg,disc]; each null when the report pre-dates the feature
+    kpif: (function(){ const a=Array.isArray(v[11])?v[11]:[]; return [0,1,2,3,4].map(i=> (i<a.length && a[i]!=null) ? (+a[i]||0) : null); })(),
     pct: (+v[4]>0) ? Math.round((+v[3])*100/(+v[4])) : -1
   }));
   function visitFiltered(){
@@ -390,9 +396,18 @@ const DATA = __PAYLOAD__;
   ];
   let vxdSort='date', vxdDir=-1;                          // default: latest visit first
   const vxdCell = n => n>0 ? String(n) : '<span class="dash">·</span>';
+  // A KPI cell with its to-do denominator: done/flagged + colour-banded %. flagged null (report pre-dates the
+  // feature) → done only; flagged 0 (store had none in this KPI) → blank.
+  function vxdKcell(done, flagged){
+    if(flagged==null) return done>0 ? '<b>'+done+'</b>' : '<span class="dash">·</span>';
+    if(flagged===0)   return '<span class="dash">·</span>';
+    const p=Math.round(done*100/flagged), band=p>=90?'g':p>=60?'y':'r';
+    return '<b>'+done+'</b>/'+flagged+' <span class="vxc-p vxc-'+band+'">'+p+'%</span>';
+  }
   function vxDetailRows(rows){
-    const out = rows.map(r=>{ let t=0; for(let i=0;i<6;i++) t+=(r.kpi[i]||0); return {date:r.date, store:r.scope, rep:r.rec, k:r.kpi, total:t}; })
-                    .filter(r=>r.total>0);               // only visits with at least one completed item
+    const out = rows.map(r=>{ let d=0,f=0; for(let i=0;i<6;i++) d+=(r.kpi[i]||0); for(let i=0;i<5;i++) f+=(r.kpif[i]||0);
+                              return {date:r.date, store:r.scope, rep:r.rec, k:r.kpi, f:r.kpif, total:d, flagged:f}; })
+                    .filter(r=>r.total>0 || r.flagged>0);  // a completion OR a to-do (0%-completion visits matter most)
     const col = VXD_COLS.find(c=>c.k===vxdSort);
     const key = r => vxdSort==='date'  ? r.date
                    : vxdSort==='store' ? (r.store||'').toLowerCase()
@@ -406,12 +421,12 @@ const DATA = __PAYLOAD__;
     const dr=vxDetailRows(rows);
     const arr = k => vxdSort===k ? (vxdDir>0?' ▲':' ▼') : '';
     const head = '<tr>'+VXD_COLS.map(c=>`<th data-vxd="${c.k}" class="${c.num?'num':''}${vxdSort===c.k?' sorted':''}">${esc(c.h)}${arr(c.k)}</th>`).join('')+'</tr>';
-    if(!dr.length) return `<div class="vx-dtl-wrap"><table class="vx-dtl"><thead>${head}</thead><tbody><tr><td colspan="${VXD_COLS.length}" class="vx-dtl-empty">No completed items in range.</td></tr></tbody></table></div>`;
+    if(!dr.length) return `<div class="vx-dtl-wrap"><table class="vx-dtl"><thead>${head}</thead><tbody><tr><td colspan="${VXD_COLS.length}" class="vx-dtl-empty">Nothing to show in range.</td></tr></tbody></table></div>`;
     const body = dr.map(r=>'<tr>'+
       `<td>${esc(isoLabel(r.date))}</td>`+
       `<td>${esc(r.store||'—')}</td>`+
       `<td>${esc(r.rep||'—')}</td>`+
-      VKPI.map(m=>`<td class="num">${vxdCell(r.k[m.i])}</td>`).join('')+
+      VKPI.map(m=>`<td class="num">${vxdKcell(r.k[m.i], r.f[m.i])}</td>`).join('')+
       `<td class="num">${vxdCell(r.k[5])}</td>`+
       `<td class="num"><b>${r.total}</b></td>`+
     '</tr>').join('');
@@ -427,9 +442,11 @@ const DATA = __PAYLOAD__;
         render();
       });
     }
-    const k=[0,0,0,0,0,0]; rows.forEach(r=>{ for(let i=0;i<6;i++) k[i]+=(r.kpi[i]||0); });
+    const k=[0,0,0,0,0,0], f=[0,0,0,0,0]; rows.forEach(r=>{ for(let i=0;i<6;i++) k[i]+=(r.kpi[i]||0); for(let i=0;i<5;i++) f[i]+=(r.kpif[i]||0); });
     const totalDone=k.reduce((a,b)=>a+b,0);
-    let cards=VKPI.map(m=>`<div class="vx-k"><div class="v">${k[m.i]}</div><div class="l">${m.label}</div></div>`).join('');
+    let cards=VKPI.map(m=>{ const d=k[m.i], fl=f[m.i];
+      const sub = fl>0 ? `<div class="vx-kf">of ${fl} · <b>${Math.round(d*100/fl)}%</b> done</div>` : '';
+      return `<div class="vx-k"><div class="v">${d}</div><div class="l">${m.label}</div>${sub}</div>`; }).join('');
     if(k[5]>0) cards+=`<div class="vx-k"><div class="v">${k[5]}</div><div class="l">Other</div></div>`;
 
     // Each checklist item: how many filtered visits marked it Done vs Not done (bar = done rate).
