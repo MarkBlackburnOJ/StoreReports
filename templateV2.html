@@ -533,13 +533,22 @@
     logo.removeAttribute('hidden');
   })();
 
-  // ---- Bottom notice (channel-aware): reassures the rep the report is read-only / independent ----
+  // ---- Bottom notice (channel-aware). PNP: check-offs + the "before you leave" checklist ARE tracked by IRAM
+  //      (the report is beacon-tracked) — tell the rep honestly. SAMS channels strip the beacon (check-offs are
+  //      local-only), so they keep the original "just for you" wording. ----
   (function(){
     var n=document.getElementById('notice'); if(!n) return;
     var brand = BRAND;
-    n.innerHTML = 'This data comes from '+brand+' and it is used to help show you what you need to do in the store. '
-      + '<b>This report is not linked to the '+brand+' system</b>, clicking <b>Completed</b> is just so you can track '
-      + 'what you have completed, it does not affect the '+brand+' system.';
+    if (IS_PNP) {
+      n.innerHTML = 'This data comes from Pick and Pay to show you what to action in store. '
+        + '<b>This report is not linked to the Pick and Pay system</b> &mdash; ticking items off does not change anything on their side. '
+        + 'But your check-offs and the &lsquo;before you leave&rsquo; checklist <b>are now recorded by IRAM</b> and used in our reporting, '
+        + 'to confirm the actions were done and whether they moved the store&rsquo;s numbers. Marking off your work is how it gets recognised.';
+    } else {
+      n.innerHTML = 'This data comes from '+brand+' and it is used to help show you what you need to do in the store. '
+        + '<b>This report is not linked to the '+brand+' system</b>, clicking <b>Completed</b> is just so you can track '
+        + 'what you have completed, it does not affect the '+brand+' system.';
+    }
     n.removeAttribute('hidden');
   })();
 
