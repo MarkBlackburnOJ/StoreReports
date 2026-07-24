@@ -37,6 +37,24 @@
   .kpi .s{font-size:12px;color:var(--soft);margin-top:2px;}
   .kpi.ok .v{color:var(--green)} .kpi.bad .v{color:var(--red)}
 
+  /* Visit-execution breakdowns: Completed-by-KPI + before-you-leave checklist (both reflect the active filters) */
+  .vx-sect + .vx-sect{margin-top:18px;padding-top:16px;border-top:1px solid var(--line);}
+  .vx-h{font-size:13px;font-weight:600;color:var(--ink);margin:0 0 11px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .vx-h .sub{font-weight:400;color:var(--soft);font-size:12px;}
+  .vx-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(114px,1fr));gap:10px;}
+  .vx-k{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper);}
+  .vx-k .v{font-size:21px;font-weight:700;line-height:1;color:var(--brand);}
+  .vx-k .l{font-size:11.5px;color:var(--mute);margin-top:5px;}
+  .vx-ck{display:flex;flex-direction:column;gap:8px;}
+  .vx-ck-row{display:grid;grid-template-columns:190px 1fr 138px;gap:12px;align-items:center;}
+  .vx-ck-lab{font-size:12.5px;color:var(--ink);}
+  .vx-bar{height:9px;border-radius:5px;background:#f3d7d8;overflow:hidden;}
+  .vx-bar > i{display:block;height:100%;background:var(--green);border-radius:5px;}
+  .vx-ck-n{font-size:11.5px;color:var(--soft);text-align:right;white-space:nowrap;}
+  .vx-ck-n b{color:var(--ink);font-weight:600;}
+  .vx-split{color:var(--soft);font-size:10.5px;font-weight:400;margin-top:3px;white-space:nowrap;}
+  @media(max-width:640px){ .vx-ck-row{grid-template-columns:130px 1fr;} .vx-ck-n{grid-column:1/-1;text-align:left;margin-top:-2px;} }
+
   .panel{background:var(--card);border-radius:var(--radius);border:1px solid var(--line);padding:16px 18px;margin-bottom:18px;}
   .panel h2{margin:0 0 12px;font-size:14px;font-weight:600;color:var(--ink);}
   .panel h2 .hint{font-weight:400;color:var(--soft);font-size:12px;margin-left:6px;}
@@ -170,7 +188,9 @@
 
   <div class="kpis" id="kpis"></div>
 
-  <div class="panel">
+  <div class="panel" id="vxPanel" hidden></div>
+
+  <div class="panel" id="trendPanel">
     <h2>Open rate <span class="hint" id="trendHint"></span></h2>
     <div class="trend" id="trend"></div>
     <div class="trend-x" id="trendX"></div>
@@ -275,9 +295,16 @@ const DATA = __PAYLOAD__;
   const prettyReasons = s => String(s||'').split('|').map(x=>x.trim()).filter(Boolean).map(x=>{
     const i=x.indexOf(':'); if(i<0) return x; const id=x.slice(0,i).trim(); return (CHK_LABELS[id]||id)+': '+x.slice(i+1).trim();
   }).join(' · ');
+  // kpi = [oos, low_cover, phantom, negative, discontinued, other] completed counts; doneItems = checklist items done.
+  const VKPI = [ {i:0,label:'Out of stock',ab:'OOS'}, {i:1,label:'Low cover',ab:'LC'},
+                 {i:2,label:'Phantom',ab:'Ph'}, {i:3,label:'Negative',ab:'Neg'}, {i:4,label:'Discontinued',ab:'Disc'} ];
+  const CHK_ORDER = ['walk','soh','shelf','price','nosale','order','blocked','plano','space','photo','mgr','upload'];
+  const csvSet = s => new Set(String(s||'').split(',').map(x=>x.trim()).filter(Boolean));
   const visitRows = (DATA.visits||[]).map(v=>({
     scope:v[0]||'', rec:v[1]||'', date:v[2]||'', done:+v[3]||0, answered:+v[4]||0,
     notdone:+v[5]||0, notdoneitems:v[6]||'', notdonereasons:v[7]||'', actions:+v[8]||0,
+    kpi: (Array.isArray(v[9])?v[9]:[]).map(n=>+n||0).concat([0,0,0,0,0,0]).slice(0,6),
+    doneitems: v[10]||'',
     pct: (+v[4]>0) ? Math.round((+v[3])*100/(+v[4])) : -1
   }));
   function visitFiltered(){
@@ -312,6 +339,7 @@ const DATA = __PAYLOAD__;
       rows.sort((a,b)=>{ const x=key(a),y=key(b); return (x>y?1:x<y?-1:0)*sortDir; });
     } else rows.sort((a,b)=> a.date<b.date?1:a.date>b.date?-1:0);   // latest visit first
     renderVisitKpis(rows);
+    renderVxPanel(rows);
     const kd=KINDS.find(k=>k.key==='visitexec');
     $('thead').innerHTML = headHtml(kd, ['actions']);
     bindSort();
@@ -326,11 +354,43 @@ const DATA = __PAYLOAD__;
           `<td>${esc(isoLabel(r.date))}</td>`+
           `<td>${chk}</td>`+
           `<td>${nd}</td>`+
-          `<td class="num">${r.actions? r.actions : '<span class="dash">0</span>'}</td>`+
+          `<td class="num">${r.actions? (r.actions + kpiSplit(r.kpi)) : '<span class="dash">0</span>'}</td>`+
         '</tr>';
       }).join('');
     }
     $('rowcount').textContent = `${rows.length} visit${rows.length===1?'':'s'}`;
+  }
+  // Per-row split of "Items done" by KPI bucket (only the non-zero buckets), shown under the total.
+  function kpiSplit(k){
+    const parts=VKPI.filter(m=>k[m.i]>0).map(m=>`${m.ab} ${k[m.i]}`);
+    if(k[5]>0) parts.push('Other '+k[5]);
+    return parts.length ? `<div class="vx-split">${parts.join(' · ')}</div>` : '';
+  }
+  // Completed-by-KPI cards + before-you-leave checklist breakdown for the current (filtered) visit set.
+  function renderVxPanel(rows){
+    const k=[0,0,0,0,0,0]; rows.forEach(r=>{ for(let i=0;i<6;i++) k[i]+=(r.kpi[i]||0); });
+    const totalDone=k.reduce((a,b)=>a+b,0);
+    let cards=VKPI.map(m=>`<div class="vx-k"><div class="v">${k[m.i]}</div><div class="l">${m.label}</div></div>`).join('');
+    if(k[5]>0) cards+=`<div class="vx-k"><div class="v">${k[5]}</div><div class="l">Other</div></div>`;
+
+    // Each checklist item: how many filtered visits marked it Done vs Not done (bar = done rate).
+    const acc={}; rows.forEach(r=>{
+      csvSet(r.doneitems).forEach(id=>{ (acc[id]||(acc[id]={d:0,n:0})).d++; });
+      csvSet(r.notdoneitems).forEach(id=>{ (acc[id]||(acc[id]={d:0,n:0})).n++; });
+    });
+    const ids=Object.keys(acc).sort((a,b)=>{ const ia=CHK_ORDER.indexOf(a),ib=CHK_ORDER.indexOf(b); return (ia<0?99:ia)-(ib<0?99:ib); });
+    const ck=ids.map(id=>{
+      const a=acc[id], ans=a.d+a.n, rate=ans?Math.round(a.d*100/ans):0;
+      return `<div class="vx-ck-row"><div class="vx-ck-lab">${esc(CHK_LABELS[id]||id)}</div>`+
+             `<div class="vx-bar"><i style="width:${rate}%"></i></div>`+
+             `<div class="vx-ck-n"><b>${a.d}</b> done &middot; ${a.n} not &middot; ${rate}%</div></div>`;
+    }).join('');
+
+    $('vxPanel').innerHTML =
+      `<div class="vx-sect"><div class="vx-h">Completed items by KPI <span class="sub">${totalDone} marked complete &middot; reflects filters</span></div>`+
+        `<div class="vx-kpis">${cards}</div></div>`+
+      `<div class="vx-sect"><div class="vx-h">Before you leave <span class="sub">visit non-negotiables &middot; done vs not done</span></div>`+
+        `<div class="vx-ck">${ck||'<div class="vx-ck-lab" style="color:var(--soft)">No checklist answers in range.</div>'}</div></div>`;
   }
 
   // date helpers (the "dd MMM" part of the Sent column)
@@ -611,6 +671,8 @@ const DATA = __PAYLOAD__;
     $('tabs').querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.k===tab));
     $('tblwrap').classList.toggle('scrollbox', tab==='repmx');
     $('tbl').classList.toggle('matrix', tab==='repmx');
+    $('trendPanel').hidden = (tab==='visitexec');   // open-rate trend is meaningless on the visit tab
+    $('vxPanel').hidden = (tab!=='visitexec');
     renderTrend();
     if(tab==='repmx'){ renderRepMatrix(); return; }
     if(tab==='visitexec'){ renderVisitExec(); return; }
